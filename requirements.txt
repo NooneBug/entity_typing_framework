@@ -1,0 +1,1 @@
+pytorch-lightning[extra]==1.5.7
