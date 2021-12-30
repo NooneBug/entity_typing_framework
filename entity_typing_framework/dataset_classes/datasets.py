@@ -20,7 +20,7 @@ class BaseDataset:
         
         partitions = {}
 
-        for partition_name, partition_path in self.dataset_paths.items():
+        for partition_name, partition_path in self.dataset_paths['init_args'].items():
             partitions[partition_name] = DatasetPartition(partition_path=partition_path)
 
         self.partitions = partitions
@@ -52,3 +52,7 @@ class DatasetPartition:
         self.left_contexts = left_contexts
         self.right_contexts = right_contexts
         self.labels = labels
+    
+    def get_elements_number(self):
+
+        return len(self.mentions)

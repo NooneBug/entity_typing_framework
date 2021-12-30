@@ -1,0 +1,29 @@
+# this yaml file contains all possible parameters with description for the modules in this library
+model:
+  class_path: entity_typing_framework.main_module.main_module.MainModule
+  # path to class of the main module, which contains the dataset_manager and the Entity_typing_network
+  init_args:
+    dataset_manager:
+      class_path: entity_typing_framework.dataset_classes.dataset_managers.DatasetManager
+      # path to class of the dataset manager class, which acquire, format, tokenize datasets and build the dataloader (according to the Entity_typing_network)
+      init_args:
+        dataset_paths:
+          # path to the dataset reader class, which acquire the data
+          class_path: entity_typing_framework.dataset_classes.datasets.BaseDataset
+          init_args:
+            # datasets partitions has to be named (train, dev, test) and their path has to be passed as parameter. custom names are allowed but have to be managed by the dataset manager.
+            train: datasets/toy_datasets/toy_bbn_train.json
+            dev: datasets/toy_datasets/toy_bbn_dev.json
+            test: datasets/toy_datasets/toy_bbn_test.json
+        tokenizer_params:
+          class_path: entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset
+          #path to the tokenizer class, a valid huggingface model will tokenize each input sentence following the truncation parameters
+          init_args:    
+            bertlike_model_name: distilbert-base-uncased
+            # a valid huggingface model name, will be used to tokenize each input sentence
+            max_mention_words: 1
+            # truncation parameter: the mention is truncated to obtain a mention with the first max_mention_words words; mentions with less max_mention_words words will be padded   
+            max_right_words: 2
+            # truncation parameter: the right context is truncated to obtain a right context with the first max_right_words words; right contexts with less max_right_words words will be padded   
+            max_left_words: 2
+            # truncation parameter: the left context is truncated to obtain a left context with the last max_left_words words; left contexts with less max_left_words words will be padded   
