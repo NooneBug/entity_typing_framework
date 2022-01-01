@@ -20,10 +20,29 @@ model:
           #path to the tokenizer class, a valid huggingface model will tokenize each input sentence following the truncation parameters
           init_args:    
             bertlike_model_name: distilbert-base-uncased
-            # a valid huggingface model name, will be used to tokenize each input sentence
+            # a valid huggingface model name, will be used to tokenize each input sentence. Sentences can be padded
             max_mention_words: 1
-            # truncation parameter: the mention is truncated to obtain a mention with the first max_mention_words words; mentions with less max_mention_words words will be padded   
+            # truncation parameter: the mention is truncated to obtain a mention with the first max_mention_words words   
             max_right_words: 2
-            # truncation parameter: the right context is truncated to obtain a right context with the first max_right_words words; right contexts with less max_right_words words will be padded   
+            # truncation parameter: the right context is truncated to obtain a right context with the first max_right_words words   
             max_left_words: 2
-            # truncation parameter: the left context is truncated to obtain a left context with the last max_left_words words; left contexts with less max_left_words words will be padded   
+            # truncation parameter: the left context is truncated to obtain a left context with the last max_left_words words   
+        dataloader_params:
+          # for each dataset partition, define the dataloader class and the params. Note: the partition name are to be equal to the one in dataset_paths 
+          train:
+          #partition name
+            class_path: torch.utils.data.dataloader.DataLoader
+            # dataloader class
+            init_args:
+              batch_size: 512
+              # batch size for dataloader
+              shuffle: True
+              # shuffle each epoch
+          dev:
+            class_path: torch.utils.data.dataloader.DataLoader
+            init_args:
+              batch_size: 512
+          test:
+            class_path: torch.utils.data.dataloader.DataLoader
+            init_args:
+              batch_size: 512
