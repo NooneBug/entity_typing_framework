@@ -38,30 +38,10 @@ class MainModule(LightningModule):
         return loss
         
     def train_dataloader(self):
-        return DataLoader(RandomDataset(32, 100))
+        return self.dataset_manager.dataloaders['train']
 
         
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=0.1)
         return optimizer
-
-# class Layer(LightningModule):
-#     def __init__(self, units = 12) -> None:
-#         super().__init__()
-#         self.units = units
-
-# class MyModel(LightningModule):
-#     def __init__(self, encoder_layer: Layer, decoder_layer: Layer):
-#         """Example encoder-decoder model
-
-#         Args:
-#             encoder_layers: Number of layers for the encoder
-#             decoder_layers: Number of layers for each decoder block
-#         """
-#         super().__init__()
-#         self.encoder = encoder_layer
-#         self.decoder = decoder_layer
-
-
-#         self.save_hyperparameters()
 

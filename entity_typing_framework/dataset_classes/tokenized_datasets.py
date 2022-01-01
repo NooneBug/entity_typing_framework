@@ -1,12 +1,13 @@
-from typing import Dict
 from entity_typing_framework.dataset_classes.datasets import BaseDataset
 from torch.utils.data import Dataset
 from transformers import AutoTokenizer
 from tqdm import tqdm
+import torch
 
 class BaseBERTTokenizedDataset(Dataset):
     def __init__(self, 
                 dataset : BaseDataset, 
+                type2id : dict,
                 bertlike_model_name : str, 
                 max_mention_words : int = 5,
                 max_left_words : int = 10,
@@ -25,7 +26,22 @@ class BaseBERTTokenizedDataset(Dataset):
 
         sentences = [self.create_sentence(s, self.max_mention_words, self.max_left_words, self.max_right_words) for s in sentences]
 
-        tokenized_sentences = self.tokenize(sentences)
+        self.tokenized_sentences, self.max_length, self.avg_length = self.tokenize(sentences)
+
+        self.type2id = type2id
+        
+        self.tokenized_types = self.tokenize_types(dataset)
+        self.one_hot_types = self.types2onehot(num_classes = len(self.type2id), types = self.tokenized_types)
+
+    def types2onehot(self, num_classes, types):
+        one_hot = torch.zeros(len(types), num_classes)
+        for id, t in enumerate(types):
+            one_hot[id, t] = 1
+        return one_hot
+
+    def tokenize_types(self, dataset):
+        tokenized_types = [[self.type2id[t] for t in example_types] for example_types in dataset.labels]
+        return tokenized_types
     
     def create_sentences_from_dataset(self, dataset):
         sentences = [
@@ -76,8 +92,8 @@ class BaseBERTTokenizedDataset(Dataset):
             if tokens > max_length:
                 max_length = tokens
         avg_len = total_tokens/len(sent)
-        print('\nmax length : {} (first and last tokens are [CLS] and [END])'.format(max_length))
-        print('\navg length : {:.2f} (first and last tokens are [CLS] and [END])'.format(avg_len))
+        print('\nmax length : {} (first and last tokens are [CLS] and [SEP])'.format(max_length))
+        print('\navg length : {:.2f} (first and last tokens are [CLS] and [SEP])'.format(avg_len))
 
         return max_length, avg_len
         
