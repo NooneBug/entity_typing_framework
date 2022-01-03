@@ -36,3 +36,6 @@ class DatasetManager():
 
         self.type2id = {t: id for id, t in enumerate(dataset_unique_types)}
         self.id2type = {id: t for t, id in self.type2id.items()}
+
+    def get_type_number(self):
+        return len(self.type2id)
