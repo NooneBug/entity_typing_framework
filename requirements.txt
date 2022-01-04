@@ -1,2 +1,3 @@
 pytorch-lightning[extra]==1.5.7
 adapter-transformers==2.2.0
+wandb

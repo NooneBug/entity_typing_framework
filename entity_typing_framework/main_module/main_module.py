@@ -1,8 +1,11 @@
 from entity_typing_framework.EntityTypingNetwork_classes.base_network import BaseEntityTypingNetwork
-from entity_typing_framework.EntityTypingNetwork_classes.losses import Loss
+from entity_typing_framework.main_module.inference_manager import InferenceManager
+from entity_typing_framework.main_module.losses import Loss
 from entity_typing_framework.dataset_classes.dataset_managers import DatasetManager
+from entity_typing_framework.main_module.metric_manager import MetricManager
 from pytorch_lightning.core.lightning import LightningModule
 import torch
+from torchmetrics import metric
 
 class MainModule(LightningModule):
     def __init__(self, dataset_manager : DatasetManager
@@ -13,23 +16,34 @@ class MainModule(LightningModule):
         self.dataset_manager = dataset_manager
         self.ET_Network = BaseEntityTypingNetwork(**ET_Network_params['init_args'], type_number = dataset_manager.get_type_number())
         self.loss = loss
+        self.metric_manager = MetricManager()
+        self.inference_manager = InferenceManager()
         self.save_hyperparameters()
     
     def training_step(self, batch, batch_step):
-        network_output, label_representation = self.ET_Network(batch)
-        loss = self.loss.compute_loss(network_output, label_representation)
-        # self.log('train_loss', loss, on_epoch=True, on_step=False)
+        network_output, type_representations = self.ET_Network(batch)
+        loss = self.loss.compute_loss(network_output, type_representations)
+        return loss
+
+    def validation_step(self, batch):
+        _, _, true_types = batch
+        network_output, type_representations = self.ET_Network(batch)
+        loss = self.loss.compute_loss(network_output, type_representations)
+        inferred_types = self.inference_manager.infer_types(network_output)
+        self.metric_manager.update(inferred_types, true_types)
 
         return loss
+    
+    def validation_epoch_end(self, out):
+        metrics = self.metric_manager.compute()
         
     def train_dataloader(self):
         return self.dataset_manager.dataloaders['train']
     
     def val_dataloader(self):
         return self.dataset_manager.dataloaders['dev']
-
         
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=0.1)
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
         return optimizer
 
