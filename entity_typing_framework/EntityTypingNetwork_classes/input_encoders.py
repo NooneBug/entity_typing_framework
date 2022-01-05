@@ -3,10 +3,15 @@ from pytorch_lightning.core.lightning import LightningModule
 from torch.nn import Linear
 
 class BaseBERTLikeEncoder(LightningModule):
-    def __init__(self, bertlike_model_name : str) -> None:
+    def __init__(self, bertlike_model_name : str, freeze_encoder : bool = False) -> None:
         super().__init__()
         self.bertlike_model_name = bertlike_model_name
         self.encoder = AutoModel.from_pretrained(self.bertlike_model_name)
+        if freeze_encoder:
+            self.freeze_encoder()
+    
+    def freeze_encoder(self):
+        self.freeze()
 
     def forward(self, batched_tokenized_sentence, batched_attn_masks):
         raise Exception("Implement this function")
@@ -15,8 +20,8 @@ class BaseBERTLikeEncoder(LightningModule):
         return self.encoder.config.dim
 
 class DistilBERTEncoder(BaseBERTLikeEncoder):
-    def __init__(self, bertlike_model_name: str = 'distilbert-base-uncased') -> None:
-        super().__init__(bertlike_model_name=bertlike_model_name)
+    def __init__(self, bertlike_model_name: str = 'distilbert-base-uncased', **kwargs) -> None:
+        super().__init__(bertlike_model_name=bertlike_model_name, **kwargs)
     
     def forward(self, batched_tokenized_sentence, batched_attn_masks):
         return self.aggregate_function(self.encoder(batched_tokenized_sentence, batched_attn_masks))

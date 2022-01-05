@@ -59,6 +59,8 @@ model:
             init_args:
               bertlike_model_name: distilbert-base-uncased
               # name of the huggingface pretrained model that has to be used (DistilBERTEncoder has also a default value for this param, so this param is redundant)
+              freeze_encoder: True
+              # freeze or not encoder weights
           type_encoder_params:
           # params of the type encode, the module that has to represent types
             class_path: entity_typing_framework.EntityTypingNetwork_classes.type_encoders.OneHotTypeEncoder
