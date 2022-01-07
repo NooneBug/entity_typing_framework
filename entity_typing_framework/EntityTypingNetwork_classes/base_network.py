@@ -2,6 +2,7 @@ from entity_typing_framework.EntityTypingNetwork_classes.input_encoders import D
 from entity_typing_framework.EntityTypingNetwork_classes.projectors import Classifier
 from entity_typing_framework.EntityTypingNetwork_classes.type_encoders import OneHotTypeEncoder
 from pytorch_lightning.core.lightning import LightningModule
+from entity_typing_framework.utils.implemented_classes import IMPLEMENTED_CLASSES
 
 class BaseEntityTypingNetwork(LightningModule):
     def __init__(self, network_params, type_number
@@ -11,15 +12,15 @@ class BaseEntityTypingNetwork(LightningModule):
         super().__init__()
 
         encoder_params = network_params['encoder_params']
-        self.encoder = DistilBERTEncoder(**encoder_params['init_args'])
+        self.encoder = IMPLEMENTED_CLASSES[encoder_params['name']](**encoder_params)
 
         type_encoder_params = network_params['type_encoder_params']
-        self.type_encoder = OneHotTypeEncoder(type_number=type_number, **type_encoder_params['init_args'])
+        self.type_encoder = IMPLEMENTED_CLASSES[type_encoder_params['name']](type_number=type_number, **type_encoder_params)
 
         input_projector_params = network_params['input_projector_params']
-        self.input_projector = Classifier(type_number=type_number, 
+        self.input_projector = IMPLEMENTED_CLASSES[input_projector_params['name']](type_number=type_number, 
                                             input_dim = self.encoder.get_representation_dim(), 
-                                            layers_parameters = input_projector_params['init_args'])
+                                            layers_parameters = input_projector_params)
 
     def forward(self, batch):
         batched_sentences, batched_attn_masks, batched_labels = batch

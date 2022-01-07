@@ -94,3 +94,12 @@ model:
     # parameters of the class that implements the loss
       class_path: entity_typing_framework.main_module.losses.BCELossForET
       # path to the class for the loss
+    logger_params:
+    # parameters of the class that implements the logger
+      class_path : entity_typing_framework.main_module.custom_logger.CustomLogger
+      # path to the class for the logger
+      init_args : 
+        project : entity_typing_framework
+        # wandb project name
+        entity : noonebug
+        # wandb entity name

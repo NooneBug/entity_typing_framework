@@ -20,7 +20,7 @@ class BaseDataset:
         
         partitions = {}
 
-        for partition_name, partition_path in self.dataset_paths['init_args'].items():
+        for partition_name, partition_path in self.dataset_paths.items():
             partitions[partition_name] = DatasetPartition(partition_path=partition_path)
 
         self.partitions = partitions
