@@ -40,16 +40,17 @@ class Layer(LightningModule):
 
 class Classifier(LightningModule):
 
-    def __init__(self, type_number, input_dim, layers_parameters):
+    def __init__(self, type_number, input_dim, parameters):
         super().__init__()
         self.type_number = type_number
         self.input_dim = input_dim
-        self.layers_parameters = layers_parameters
+        self.parameters = parameters
+        self.layers_parameters = self.parameters['layers_parameters']
 
         self.add_parameters()
         self.check_parameters()
         
-        self.layers = ModuleDict({layer_name: Layer(**layer_parameters) for layer_name, layer_parameters in layers_parameters.items()})
+        self.layers = ModuleDict({layer_name: Layer(**layer_parameters) for layer_name, layer_parameters in self.layers_parameters.items()})
     
     def forward(self, input_representation):
         for i in range(len(self.layers_parameters)):

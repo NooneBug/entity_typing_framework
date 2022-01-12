@@ -5,9 +5,10 @@ from tqdm import tqdm
 import torch
 
 class BaseBERTTokenizedDataset(Dataset):
-    def __init__(self, 
+    def __init__(self,
                 dataset : BaseDataset, 
                 type2id : dict,
+                name : str,
                 bertlike_model_name : str, 
                 max_mention_words : int = 5,
                 max_left_words : int = 10,

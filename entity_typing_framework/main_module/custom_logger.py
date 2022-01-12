@@ -20,4 +20,3 @@ class CustomLogger(WandbLogger, Callback):
     def log_all(self):
         wandb.log(self.to_log)
         self.to_log = {}
-

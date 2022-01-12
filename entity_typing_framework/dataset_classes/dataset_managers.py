@@ -4,7 +4,7 @@ from entity_typing_framework.dataset_classes.datasets import BaseDataset
 from entity_typing_framework.dataset_classes.datasets_for_dataloader import ET_Dataset
 from pytorch_lightning.core.datamodule import LightningDataModule
 from torch.utils.data.dataloader import DataLoader
-from entity_typing_framework.utils.implemented_classes import IMPLEMENTED_CLASSES
+from entity_typing_framework.utils.implemented_classes_lvl0 import IMPLEMENTED_CLASSES_LVL0
 
 class DatasetManager(LightningDataModule):
     def __init__(self, dataset_paths, tokenizer_params, dataloader_params) -> None:
@@ -20,7 +20,7 @@ class DatasetManager(LightningDataModule):
         self.create_type2id({partition_name : partition.labels for partition_name, partition in self.datasets.partitions.items()})
         
     def prepare_data(self):
-        self.tokenized_datasets = {partition_name: IMPLEMENTED_CLASSES[self.tokenizer_params['name']](dataset,
+        self.tokenized_datasets = {partition_name: IMPLEMENTED_CLASSES_LVL0[self.tokenizer_params['name']](dataset,
                                                                             self.type2id,
                                                                             **self.tokenizer_params
                                                                             ) for partition_name, dataset in self.datasets.partitions.items()
