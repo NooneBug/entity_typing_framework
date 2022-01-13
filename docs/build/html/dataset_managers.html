@@ -82,17 +82,98 @@
 <p>List of implemented DatasetManagers</p>
 <dl class="class">
 <dt id="entity_typing_framework.dataset_classes.dataset_managers.DatasetManager">
-<em class="property">class </em><code class="descclassname">entity_typing_framework.dataset_classes.dataset_managers.</code><code class="descname">DatasetManager</code><span class="sig-paren">(</span><em>dataset_paths</em>, <em>tokenizer_params</em>, <em>dataloader_params</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.dataset_managers.DatasetManager" title="Permalink to this definition">¶</a></dt>
-<dd><p>This module manage the dataset acquisition, the dataset tokenization and the dataloader creation.
+<em class="property">class </em><code class="descclassname">entity_typing_framework.dataset_classes.dataset_managers.</code><code class="descname">DatasetManager</code><span class="sig-paren">(</span><em>dataset_paths: dict</em>, <em>dataset_reader_params: dict</em>, <em>tokenizer_params: dict</em>, <em>dataset_params: dict</em>, <em>dataloader_params: dict</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.dataset_managers.DatasetManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>This module manages the dataset acquisition, the dataset tokenization and the dataloader creation.
 This module is able to use the following submodules:</p>
 <dl class="docutils">
 <dt>dataset_reader</dt>
 <dd><a class="reference internal" href="dataset_readers.html#basedataset"><span class="std std-ref">entity_typing_framework.dataset_classes.datasets.BaseDataset</span></a></dd>
 <dt>dataset_tokenizer</dt>
-<dd>entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset</dd>
+<dd><a class="reference internal" href="dataset_tokenizers.html#baseberttokenizeddataset"><span class="std std-ref">entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset</span></a></dd>
 <dt>dataset</dt>
-<dd>entity_typing_framework.dataset_classes.datasets_for_dataloader.ET_Dataset</dd>
+<dd><a class="reference internal" href="datasets.html#et-dataset"><span class="std std-ref">entity_typing_framework.dataset_classes.datasets_for_dataloader.ET_Dataset</span></a></dd>
 </dl>
+<p>The <code class="code docutils literal notranslate"><span class="pre">__init__()</span></code> stores the parameters using <code class="code docutils literal notranslate"><span class="pre">self</span></code>, then calls <code class="code docutils literal notranslate"><span class="pre">read_datasets()</span></code> and then saves the return of <code class="code docutils literal notranslate"><span class="pre">get_type_number()</span></code> in type_number</p>
+<dl class="docutils">
+<dt>parameters</dt>
+<dd><dl class="first last docutils">
+<dt>dataset_paths</dt>
+<dd><p class="first">A dictionary defined in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file containing the dataset partititions names and paths, commonly in the format <code class="code docutils literal notranslate"><span class="pre">{name</span> <span class="pre">:</span> <span class="pre">path}</span></code>.</p>
+<p class="last">See the classes in <a class="reference internal" href="dataset_readers.html"><span class="doc">Dataset Readers</span></a> for more information about format of dataset_paths</p>
+</dd>
+<dt>tokenizer_params</dt>
+<dd><p class="first">A dictionary defined in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file used to instantiate the dataset_tokenizer submodule</p>
+<p class="last">See the classes in <a class="reference internal" href="dataset_tokenizers.html"><span class="doc">Dataset Tokenizers</span></a> for more information about the expected params</p>
+</dd>
+<dt>dataset_params</dt>
+<dd><p class="first">A dictionary defined in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file used to instantiate the dataset submodule</p>
+<p class="last">See the classes in <a class="reference internal" href="datasets.html"><span class="doc">Datasets</span></a> for more information about the expected params</p>
+</dd>
+<dt>dataloader_params</dt>
+<dd><p class="first">A dictionary defined in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file used to drive the instantiation of the <code class="code docutils literal notranslate"><span class="pre">torch.utils.data.dataloader.DataLoader</span></code></p>
+<p class="last">See the official torch documentation for <a class="reference external" href="https://pytorch.org/tutorials/beginner/basics/data_tutorial.html">DataLoaders</a> for more information about the expected params</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="entity_typing_framework.dataset_classes.dataset_managers.DatasetManager.create_type2id">
+<code class="descname">create_type2id</code><span class="sig-paren">(</span><em>types_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.dataset_managers.DatasetManager.create_type2id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates and store the translation dictionaries <code class="code docutils literal notranslate"><span class="pre">type2id</span></code> and <code class="code docutils literal notranslate"><span class="pre">id2type</span></code></p>
+<p>These dictionaries are used to translate from alphabetical version of a type to its token and vice versa</p>
+<p>These dictionaries are the only way to translate a type between alphabetical and token in all the framework</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="entity_typing_framework.dataset_classes.dataset_managers.DatasetManager.get_type_number">
+<code class="descname">get_type_number</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.dataset_managers.DatasetManager.get_type_number" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of the types in the whole dataset (all types in all partitions)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="entity_typing_framework.dataset_classes.dataset_managers.DatasetManager.prepare_data">
+<code class="descname">prepare_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.dataset_managers.DatasetManager.prepare_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override of <a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html#prepare-data">pytorch_lightning.core.datamodule.LightningDataModule.prepare_data</a></p>
+<p>Tokenize each partition of the dataset with a <a class="reference internal" href="dataset_tokenizers.html"><span class="doc">dataset_tokenizer</span></a> class, chosen following the configuration file value under the keys <code class="code docutils literal notranslate"><span class="pre">data</span> <span class="pre">-&gt;</span> <span class="pre">tokenizer_params</span> <span class="pre">-&gt;</span> <span class="pre">name</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="entity_typing_framework.dataset_classes.dataset_managers.DatasetManager.read_datasets">
+<code class="descname">read_datasets</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.dataset_managers.DatasetManager.read_datasets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instances a <a class="reference internal" href="dataset_readers.html"><span class="doc">dataset_reader</span></a> for each partition in <code class="code docutils literal notranslate"><span class="pre">dataset_path</span></code>, then calls <code class="code docutils literal notranslate"><span class="pre">create_type2id()</span></code></p>
+<p>The class for dataset reader is chosen following the configuration file value under the keys <code class="code docutils literal notranslate"><span class="pre">data</span> <span class="pre">-&gt;</span> <span class="pre">dataset_reader_params</span> <span class="pre">-&gt;</span> <span class="pre">name</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="entity_typing_framework.dataset_classes.dataset_managers.DatasetManager.setup">
+<code class="descname">setup</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.dataset_managers.DatasetManager.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override of <a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html#prepare-data">pytorch_lightning.core.datamodule.LightningDataModule.setup</a></p>
+<p>Instance the <a class="reference internal" href="datasets.html"><span class="doc">dataset</span></a> and the <a class="reference external" href="https://pytorch.org/tutorials/beginner/basics/data_tutorial.html">DataLoader</a> for each partition.</p>
+<p>The <a class="reference internal" href="datasets.html"><span class="doc">dataset</span></a> class is chosen following the configuration file value under the keys <code class="code docutils literal notranslate"><span class="pre">data</span> <span class="pre">-&gt;</span> <span class="pre">dataset_params</span> <span class="pre">-&gt;</span> <span class="pre">name</span></code></p>
+<p>The <a class="reference external" href="https://pytorch.org/tutorials/beginner/basics/data_tutorial.html">DataLoader</a> class is chosen following the configuration file value under the keys <code class="code docutils literal notranslate"><span class="pre">data</span> <span class="pre">-&gt;</span> <span class="pre">dataloader_params</span> <span class="pre">-&gt;</span> <span class="pre">name</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="entity_typing_framework.dataset_classes.dataset_managers.DatasetManager.test_dataloader">
+<code class="descname">test_dataloader</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.dataset_managers.DatasetManager.test_dataloader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override of <a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html#test-dataloader">pytorch_lightning.core.datamodule.LightningDataModule.test_dataloader</a></p>
+<p>Returns the dataset partition used to test a model</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="entity_typing_framework.dataset_classes.dataset_managers.DatasetManager.train_dataloader">
+<code class="descname">train_dataloader</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.dataset_managers.DatasetManager.train_dataloader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override of <a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html#train-dataloader">pytorch_lightning.core.datamodule.LightningDataModule.train_dataloader</a></p>
+<p>Returns the dataset partition used to train a model</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="entity_typing_framework.dataset_classes.dataset_managers.DatasetManager.val_dataloader">
+<code class="descname">val_dataloader</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.dataset_managers.DatasetManager.val_dataloader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override of <a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html#val-dataloader">pytorch_lightning.core.datamodule.LightningDataModule.val_dataloader</a></p>
+<p>Returns the dataset partition used to validate a model during training</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>

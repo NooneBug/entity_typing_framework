@@ -36,4 +36,6 @@ Implemented Submodules
 .. toctree::
     
     dataset_readers
+    dataset_tokenizers
+    datasets
 

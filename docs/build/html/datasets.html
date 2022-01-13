@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>API &mdash; entity_typing_framework 0.1 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <title>Datasets &mdash; entity_typing_framework 0.1 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
@@ -16,7 +16,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Datasets" href="datasets.html" /> 
+    <link rel="next" title="API" href="api.html" />
+    <link rel="prev" title="Dataset Tokenizers" href="dataset_tokenizers.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -39,10 +40,18 @@
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration_file.html">Configuration File</a></li>
 <li class="toctree-l1"><a class="reference internal" href="package_structure.html">Package Structure</a></li>
-<li class="toctree-l1"><a class="reference internal" href="modules_submodules.html">Modules and submodules</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">API</a><ul class="simple">
+<li class="toctree-l1 current"><a class="reference internal" href="modules_submodules.html">Modules and submodules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="modules_submodules.html#datasetmanager">DatasetManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules_submodules.html#implemented-modules">Implemented Modules</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="modules_submodules.html#implemented-submodules">Implemented Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="dataset_readers.html">Dataset Readers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dataset_tokenizers.html">Dataset Tokenizers</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Datasets</a></li>
 </ul>
 </li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
 </ul>
 
         </div>
@@ -59,9 +68,10 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>API</li>
+          <li><a href="modules_submodules.html">Modules and submodules</a> &raquo;</li>
+      <li>Datasets</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="_sources/api.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/datasets.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -69,26 +79,22 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="section" id="api">
-<h1>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h1>
-<table border="1" class="longtable docutils">
-<colgroup>
-<col width="10%" />
-<col width="90%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">entity_typing_framework</span></code></td>
-<td>Top-level package for entity_typing_framework.</td>
-</tr>
-</tbody>
-</table>
+  <div class="section" id="datasets">
+<h1>Datasets<a class="headerlink" href="#datasets" title="Permalink to this headline">¶</a></h1>
+<p>List of implemented dataset_reader classes, submodule of <a class="reference internal" href="modules_submodules.html#datasetmanager"><span class="std std-ref">DatasetManager</span></a></p>
+<span class="target" id="et-dataset"></span><dl class="class">
+<dt id="entity_typing_framework.dataset_classes.datasets_for_dataloader.ET_Dataset">
+<em class="property">class </em><code class="descclassname">entity_typing_framework.dataset_classes.datasets_for_dataloader.</code><code class="descname">ET_Dataset</code><span class="sig-paren">(</span><em>tokenized_dataset</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.datasets_for_dataloader.ET_Dataset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </div>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="datasets.html" class="btn btn-neutral float-left" title="Datasets" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="dataset_tokenizers.html" class="btn btn-neutral float-left" title="Dataset Tokenizers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api.html" class="btn btn-neutral float-right" title="API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

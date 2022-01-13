@@ -16,7 +16,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="API" href="api.html" />
+    <link rel="next" title="Dataset Tokenizers" href="dataset_tokenizers.html" />
     <link rel="prev" title="Dataset Managers" href="dataset_managers.html" /> 
 </head>
 
@@ -45,6 +45,8 @@
 <li class="toctree-l2"><a class="reference internal" href="modules_submodules.html#implemented-modules">Implemented Modules</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="modules_submodules.html#implemented-submodules">Implemented Submodules</a><ul class="current">
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Dataset Readers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dataset_tokenizers.html">Dataset Tokenizers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="datasets.html">Datasets</a></li>
 </ul>
 </li>
 </ul>
@@ -80,10 +82,65 @@
   <div class="section" id="dataset-readers">
 <h1>Dataset Readers<a class="headerlink" href="#dataset-readers" title="Permalink to this headline">¶</a></h1>
 <p>List of implemented dataset_reader classes, submodule of <a class="reference internal" href="modules_submodules.html#datasetmanager"><span class="std std-ref">DatasetManager</span></a></p>
+<span class="target" id="datasetpartition"></span><dl class="class">
+<dt id="entity_typing_framework.dataset_classes.datasets.DatasetPartition">
+<em class="property">class </em><code class="descclassname">entity_typing_framework.dataset_classes.datasets.</code><code class="descname">DatasetPartition</code><span class="sig-paren">(</span><em>partition_path</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.datasets.DatasetPartition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Manages a dataset partition, saved in a json file</p>
+<dl class="docutils">
+<dt>Parameters</dt>
+<dd><dl class="first last docutils">
+<dt>partition_path:</dt>
+<dd>a path in which is stored a json dataset</dd>
+</dl>
+</dd>
+</dl>
+<p>The <code class="code docutils literal notranslate"><span class="pre">__init__</span></code> method calls <code class="code docutils literal notranslate"><span class="pre">acquire_data()</span></code></p>
+<dl class="method">
+<dt id="entity_typing_framework.dataset_classes.datasets.DatasetPartition.acquire_data">
+<code class="descname">acquire_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.datasets.DatasetPartition.acquire_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Acquires data from a dataset stored in a txt file in which each line is a json with keys:</p>
+<dl class="docutils">
+<dt>mention_span:</dt>
+<dd>a string defining the entity mention</dd>
+<dt>left_context_token:</dt>
+<dd>a list of strings definining the left context of the entity mention</dd>
+<dt>right_context_token:</dt>
+<dd>a list of strings definining the right context of the entity mention</dd>
+<dt>y_str:</dt>
+<dd>a list of strings defining the types which the entity mention in this context belongs to</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="entity_typing_framework.dataset_classes.datasets.DatasetPartition.get_elements_number">
+<code class="descname">get_elements_number</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.datasets.DatasetPartition.get_elements_number" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of elements found in the dataset file</p>
+</dd></dl>
+
+</dd></dl>
+
 <span class="target" id="basedataset"></span><dl class="class">
 <dt id="entity_typing_framework.dataset_classes.datasets.BaseDataset">
 <em class="property">class </em><code class="descclassname">entity_typing_framework.dataset_classes.datasets.</code><code class="descname">BaseDataset</code><span class="sig-paren">(</span><em>dataset_paths</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.datasets.BaseDataset" title="Permalink to this definition">¶</a></dt>
-<dd><p>this class manages an entire dataset, partitioned in train, dev and test.</p>
+<dd><p>This class manages an entire dataset, commonly partitioned in train, dev and test.</p>
+<p>The initialization expects all partitions (e.g., train, dev and test) paths organized in a dictionary</p>
+<dl class="docutils">
+<dt>Parameters</dt>
+<dd><dl class="first last docutils">
+<dt>dataset_paths <span class="classifier-delimiter">:</span> <span class="classifier"></span></dt>
+<dd><p class="first">a dictionary with keys the partition names (e.g., train, dev, test) and with values the paths to the partitions</p>
+<p class="last">The values are taken from the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file following the keys <code class="code docutils literal notranslate"><span class="pre">data</span> <span class="pre">-&gt;</span> <span class="pre">dataset_paths</span></code></p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>the <code class="code docutils literal notranslate"><span class="pre">__init__</span></code> saves the parameters and automatica calls <code class="code docutils literal notranslate"><span class="pre">read_dataset_partitions()</span></code></p>
+<dl class="method">
+<dt id="entity_typing_framework.dataset_classes.datasets.BaseDataset.read_dataset_partitions">
+<code class="descname">read_dataset_partitions</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.datasets.BaseDataset.read_dataset_partitions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instances a <code class="code docutils literal notranslate"><span class="pre">DatasetPartition</span></code> for each partition found in <code class="code docutils literal notranslate"><span class="pre">dataset_paths</span></code></p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -93,7 +150,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="dataset_managers.html" class="btn btn-neutral float-left" title="Dataset Managers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="api.html" class="btn btn-neutral float-right" title="API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="dataset_tokenizers.html" class="btn btn-neutral float-right" title="Dataset Tokenizers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
