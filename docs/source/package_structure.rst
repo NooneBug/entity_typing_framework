@@ -4,4 +4,4 @@ Package Structure
 Folder Structure
 ----------------
 
-The folder structure in the package reflects the modularity described in the :ref:`introduction <introduction>`
+The folder structure in the package reflects the modularity described in the :doc:`introduction <introduction>`

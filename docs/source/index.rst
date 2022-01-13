@@ -7,7 +7,7 @@ Welcome to entity_typing_framework's documentation!
 ===================================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
 Check out the :doc:`usage` section for further information, including how to :ref:`install <installation>` the project.

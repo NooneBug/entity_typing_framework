@@ -7,6 +7,17 @@ from torch.utils.data.dataloader import DataLoader
 from entity_typing_framework.utils.implemented_classes_lvl0 import IMPLEMENTED_CLASSES_LVL0
 
 class DatasetManager(LightningDataModule):
+    '''
+    This module manage the dataset acquisition, the dataset tokenization and the dataloader creation.
+    This module is able to use the following submodules:
+    
+    dataset_reader
+        :ref:`entity_typing_framework.dataset_classes.datasets.BaseDataset <BaseDataset>`
+    dataset_tokenizer
+        entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset
+    dataset
+        entity_typing_framework.dataset_classes.datasets_for_dataloader.ET_Dataset
+    '''
     def __init__(self, dataset_paths, tokenizer_params, dataloader_params) -> None:
         self.dataset_paths = dataset_paths
         self.tokenizer_params = tokenizer_params

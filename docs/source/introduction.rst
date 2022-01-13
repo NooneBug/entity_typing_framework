@@ -18,7 +18,7 @@ Expected Modules
 -----------------
 The modules expected to appear in each entity typing project are the following:
 
-DatasetManager
+:ref:`DatasetManager <DatasetManager>`
     A module that read a dataset and tokenize it, according to the expected format of data of the other modules (in particular the Encoder, the Type Encoder and the Loss).
     
     This module is expected to produce a :code:`torch.utils.data.Dataset` for each dataset partition, and return a `torch.utils.dataloader.data.Dataloader` foe each dataset partition
