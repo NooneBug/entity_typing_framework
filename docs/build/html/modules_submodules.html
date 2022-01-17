@@ -87,8 +87,8 @@
 <div class="section" id="datasetmanager">
 <span id="id1"></span><h2>DatasetManager<a class="headerlink" href="#datasetmanager" title="Permalink to this headline">¶</a></h2>
 <p>Implemented dataset managers are expected to manage the dataset acquisition, the tokenization and the formatting of a partitioned dataset.</p>
-<p>Commonly a dataset is partitioned in <code class="code docutils literal notranslate"><span class="pre">train</span></code>, <code class="code docutils literal notranslate"><span class="pre">dev</span></code> and <code class="code docutils literal notranslate"><span class="pre">test</span></code></p>
-<p>A dataset managers is expected to have submodules:</p>
+<p>Commonly a dataset is partitioned in <code class="code docutils literal notranslate"><span class="pre">train</span></code>, <code class="code docutils literal notranslate"><span class="pre">validation</span></code> and <code class="code docutils literal notranslate"><span class="pre">test</span></code></p>
+<p>A dataset managers is expected to have the following submodules:</p>
 <dl class="docutils">
 <dt>dataset_reader:</dt>
 <dd>a module that read the dataset from the actual dataset file</dd>

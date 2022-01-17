@@ -19,20 +19,28 @@ class DatasetManager(LightningDataModule):
         dataset_paths
             A dictionary defined in the :code:`yaml` config file containing the dataset partititions names and paths, commonly in the format :code:`{name : path}`.
 
+            The dataset paths are expected to be in the :code:`yaml` config file under the key : :code:`data -> dataset_paths`
+
             See the classes in :doc:`Dataset Readers<dataset_readers>` for more information about format of dataset_paths
         
         tokenizer_params
             A dictionary defined in the :code:`yaml` config file used to instantiate the dataset_tokenizer submodule
+
+            The tokenizer parameters are expected to be in the :code:`yaml` config file under the key : :code:`data -> tokenizer_params`
 
             See the classes in :doc:`Dataset Tokenizers<dataset_tokenizers>` for more information about the expected params
         
         dataset_params
             A dictionary defined in the :code:`yaml` config file used to instantiate the dataset submodule
 
+            The dataset parameters are expected to be in the :code:`yaml` config file under the key : :code:`data -> dataset_params`
+
             See the classes in :doc:`Datasets<datasets>` for more information about the expected params
 
         dataloader_params
             A dictionary defined in the :code:`yaml` config file used to drive the instantiation of the :code:`torch.utils.data.dataloader.DataLoader`
+
+            The dataloader parameters are expected to be in the :code:`yaml` config file under the key : :code:`data -> dataloader_params`
 
             See the official torch documentation for `DataLoaders <https://pytorch.org/tutorials/beginner/basics/data_tutorial.html>`_ for more information about the expected params
     '''

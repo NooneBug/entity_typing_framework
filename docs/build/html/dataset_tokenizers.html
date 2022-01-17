@@ -85,7 +85,198 @@
 <span class="target" id="baseberttokenizeddataset"></span><dl class="class">
 <dt id="entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset">
 <em class="property">class </em><code class="descclassname">entity_typing_framework.dataset_classes.tokenized_datasets.</code><code class="descname">BaseBERTTokenizedDataset</code><span class="sig-paren">(</span><em>dataset: entity_typing_framework.dataset_classes.datasets.BaseDataset</em>, <em>type2id: dict</em>, <em>name: str</em>, <em>bertlike_model_name: str</em>, <em>max_mention_words: int = 5</em>, <em>max_left_words: int = 10</em>, <em>max_right_words: int = 10</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Tokenizes a dataset using <a class="reference external" href="https://huggingface.co/docs/transformers/v4.15.0/en/model_doc/auto#transformers.AutoTokenizer">huggingface AutoTokenizer</a></p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>dataset:</dt>
+<dd><p class="first">the dataset loaded by a <a class="reference internal" href="dataset_readers.html"><span class="doc">Dataset Reader</span></a> to be tokenized</p>
+<p class="last">Note : the format of the loaded dataset by the <a class="reference internal" href="dataset_readers.html"><span class="doc">Dataset Reader</span></a> has to be in accord with the one expected by <code class="code docutils literal notranslate"><span class="pre">create_sentences_from_dataset()</span></code></p>
+</dd>
+<dt>type2id:</dt>
+<dd>the <code class="code docutils literal notranslate"><span class="pre">type2id</span></code> dictionary created by the <a class="reference internal" href="dataset_managers.html"><span class="doc">Dataset Manager</span></a></dd>
+<dt>name:</dt>
+<dd><p class="first">the name of the submodule, has to be specified in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file with key <code class="code docutils literal notranslate"><span class="pre">data</span> <span class="pre">-&gt;</span> <span class="pre">tokenizer_params</span> <span class="pre">-&gt;</span> <span class="pre">name</span></code></p>
+<p class="last">this param is used by the <a class="reference internal" href="dataset_managers.html"><span class="doc">Dataset Manager</span></a> to instance the correct submodule</p>
+</dd>
+<dt>bertlike_model_name:</dt>
+<dd><p class="first">required param, used to instance a <a class="reference external" href="https://huggingface.co/docs/transformers/v4.15.0/en/model_doc/auto#transformers.AutoTokenizer">huggingface AutoTokenizer</a>.</p>
+<p class="last">this param drives the tokenizer used by the model. The value of this param has to be equal to the param <code class="code docutils literal notranslate"><span class="pre">model</span> <span class="pre">-&gt;</span> <span class="pre">network_params</span> <span class="pre">-&gt;</span> <span class="pre">encoder_params</span> <span class="pre">-&gt;</span> <span class="pre">bertlike_model_name</span></code>.</p>
+</dd>
+<dt>(optional) max_mention_words:</dt>
+<dd><p class="first">this param ensures that only the first <code class="code docutils literal notranslate"><span class="pre">max_mention_words</span></code> of each <cite>entity mention</cite> in the sentence are tokenized, the other words are discarded.</p>
+<p class="last">accepted values are integers and the string <code class="code docutils literal notranslate"><span class="pre">&quot;max&quot;</span></code> to avoid the word discard</p>
+</dd>
+<dt>(optional) max_left_words:</dt>
+<dd><p class="first">this param ensures that only the last <code class="code docutils literal notranslate"><span class="pre">max_left_words</span></code> in each <cite>left context</cite> in a sentence are tokenized, the other words are discarded.</p>
+<p class="last">accepted values are integers and the string <code class="code docutils literal notranslate"><span class="pre">&quot;max&quot;</span></code> to avoid the word discard</p>
+</dd>
+<dt>(optional) max_right words:</dt>
+<dd><p class="first">this param ensures that only the first <code class="code docutils literal notranslate"><span class="pre">max_right_words</span></code> in each <cite>right context</cite> in a sentence are tokenized, the other words are discarded.</p>
+<p class="last">accepted values are integers and the string <code class="code docutils literal notranslate"><span class="pre">&quot;max&quot;</span></code> to avoid the word discard</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset.compute_max_length">
+<code class="descname">compute_max_length</code><span class="sig-paren">(</span><em>sent</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset.compute_max_length" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute the maximum number of tokens in the dataset. This method is used to set the <code class="code docutils literal notranslate"><span class="pre">max_length</span></code> parameters when calling the tokenizer.</p>
+<dl class="docutils">
+<dt>params:</dt>
+<dd><dl class="first last docutils">
+<dt>sent:</dt>
+<dd>see <code class="code docutils literal notranslate"><span class="pre">tokenize.sentences</span></code></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset.create_sentence">
+<code class="descname">create_sentence</code><span class="sig-paren">(</span><em>sent_dict</em>, <em>max_mention_words</em>, <em>max_left_words</em>, <em>max_right_words</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset.create_sentence" title="Permalink to this definition">¶</a></dt>
+<dd><p>composes a sentence in the dataset in the format <code class="code docutils literal notranslate"><span class="pre">&quot;mention</span> <span class="pre">[SEP]</span> <span class="pre">left_context_tokens</span> <span class="pre">[SEP]</span> <span class="pre">right_context_tokens&quot;</span></code>. This method uses <code class="code docutils literal notranslate"><span class="pre">max_mention_words,</span> <span class="pre">max_left_words</span></code> and <code class="code docutils literal notranslate"><span class="pre">max_right_words</span></code> to discard words (using <code class="code docutils literal notranslate"><span class="pre">split_and_cut_mention</span></code> and <code class="code docutils literal notranslate"><span class="pre">cut_context</span></code>).</p>
+<dl class="docutils">
+<dt>parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>sent_dict:</dt>
+<dd>a single dictionary extracted by <code class="code docutils literal notranslate"><span class="pre">extract_sentences_from_dataset</span></code></dd>
+<dt>max_mention_words:</dt>
+<dd>see class parameter <code class="code docutils literal notranslate"><span class="pre">max_mention_words</span></code></dd>
+<dt>max_left_words:</dt>
+<dd>see class parameter <code class="code docutils literal notranslate"><span class="pre">max_left_words</span></code></dd>
+<dt>max_right_words:</dt>
+<dd>see class parameter <code class="code docutils literal notranslate"><span class="pre">max_right_words</span></code></dd>
+</dl>
+</dd>
+<dt>return :</dt>
+<dd>a sentence in the format <code class="code docutils literal notranslate"><span class="pre">&quot;mention</span> <span class="pre">[SEP]</span> <span class="pre">left_context_tokens</span> <span class="pre">[SEP]</span> <span class="pre">right_context_tokens&quot;</span></code></dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset.cut_context">
+<code class="descname">cut_context</code><span class="sig-paren">(</span><em>context</em>, <em>limit</em>, <em>first</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset.cut_context" title="Permalink to this definition">¶</a></dt>
+<dd><p>cut the left or the right context (depending on the value of <code class="code docutils literal notranslate"><span class="pre">first</span></code>)</p>
+<dl class="docutils">
+<dt>parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>context:</dt>
+<dd>the string to be cutted</dd>
+<dt>limit:</dt>
+<dd><p class="first">how many words maintain in <code class="code docutils literal notranslate"><span class="pre">context</span></code>. (commonly <code class="code docutils literal notranslate"><span class="pre">max_left_words</span></code> or <code class="code docutils literal notranslate"><span class="pre">max_right_words</span></code>)</p>
+<p class="last">if the value <code class="code docutils literal notranslate"><span class="pre">&quot;max&quot;</span></code> is passed, the entire <code class="code docutils literal notranslate"><span class="pre">context</span></code> is maintained</p>
+</dd>
+<dt>first:</dt>
+<dd>if <code class="code docutils literal notranslate"><span class="pre">True</span></code>, maintain the first <code class="code docutils literal notranslate"><span class="pre">limit</span></code> words. if <code class="code docutils literal notranslate"><span class="pre">False</span></code> maintain the last <code class="code docutils literal notranslate"><span class="pre">limit</span></code> words</dd>
+</dl>
+</dd>
+<dt>return:</dt>
+<dd>a string containing the context</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset.extract_sentences_from_dataset">
+<code class="descname">extract_sentences_from_dataset</code><span class="sig-paren">(</span><em>dataset</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset.extract_sentences_from_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>organizes the each sentence in a dictionary <code class="code docutils literal notranslate"><span class="pre">{mention_span</span> <span class="pre">:</span> <span class="pre">mention,</span> <span class="pre">left_context_token</span> <span class="pre">:</span> <span class="pre">list_of_left_context_tokens,</span> <span class="pre">right_context_token</span> <span class="pre">:</span> <span class="pre">list_of_right_context_tokens}</span></code> picking the attributed of <code class="code docutils literal notranslate"><span class="pre">dataset</span></code></p>
+<dl class="docutils">
+<dt>parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>dataset:</dt>
+<dd>see the class parameters <code class="code docutils literal notranslate"><span class="pre">dataset</span></code></dd>
+</dl>
+</dd>
+<dt>return:</dt>
+<dd>a list of dictionaries, one dictionary for each sentence in the dataset</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset.instance_tokenizer">
+<code class="descname">instance_tokenizer</code><span class="sig-paren">(</span><em>bertlike_model_name</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset.instance_tokenizer" title="Permalink to this definition">¶</a></dt>
+<dd><p>instance a tokenizer with <a class="reference external" href="https://huggingface.co/docs/transformers/v4.15.0/en/model_doc/auto#transformers.AutoTokenizer">huggingface AutoTokenizer</a></p>
+<dl class="docutils">
+<dt>parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>bertlike_model_name:</dt>
+<dd>see <code class="code docutils literal notranslate"><span class="pre">bertlike_model_name</span></code> in the documentation of the entire class</dd>
+</dl>
+</dd>
+<dt>return:</dt>
+<dd>an instance of <a class="reference external" href="https://huggingface.co/docs/transformers/v4.15.0/en/model_doc/auto#transformers.AutoTokenizer">huggingface AutoTokenizer</a></dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset.split_and_cut_mention">
+<code class="descname">split_and_cut_mention</code><span class="sig-paren">(</span><em>mention</em>, <em>max_mention_words</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset.split_and_cut_mention" title="Permalink to this definition">¶</a></dt>
+<dd><p>split and cut the mention following the <code class="code docutils literal notranslate"><span class="pre">max_mention_words</span></code> limit</p>
+<dl class="docutils">
+<dt>parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>mention:</dt>
+<dd>the string to be cutted</dd>
+<dt>max_mention_words:</dt>
+<dd>see class parameter <code class="code docutils literal notranslate"><span class="pre">max_mention_words</span></code>. if the value <code class="code docutils literal notranslate"><span class="pre">&quot;max&quot;</span></code> is passed, the entire <code class="code docutils literal notranslate"><span class="pre">mention</span></code> is maintained</dd>
+</dl>
+</dd>
+<dt>return:</dt>
+<dd>a string containing the mention</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset.tokenize">
+<code class="descname">tokenize</code><span class="sig-paren">(</span><em>sentences</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset.tokenize" title="Permalink to this definition">¶</a></dt>
+<dd><p>tokenizes all sentences using the tokenizer instantiate by <code class="code docutils literal notranslate"><span class="pre">instance_tokenizer</span></code></p>
+<dl class="docutils">
+<dt>parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>sentences:</dt>
+<dd>a list of sentences obtained by <code class="code docutils literal notranslate"><span class="pre">create_sentence</span></code> (repeatedly called)</dd>
+</dl>
+</dd>
+<dt>return:</dt>
+<dd>see <a class="reference external" href="https://huggingface.co/docs/transformers/v4.15.0/en/main_classes/tokenizer#transformers.BatchEncoding">BatchEncoding</a></dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset.tokenize_types">
+<code class="descname">tokenize_types</code><span class="sig-paren">(</span><em>dataset</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset.tokenize_types" title="Permalink to this definition">¶</a></dt>
+<dd><p>tokenize alphanumerical types using ids in <code class="code docutils literal notranslate"><span class="pre">type2id</span></code></p>
+<dl class="docutils">
+<dt>parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>dataset:</dt>
+<dd>see the class parameters <code class="code docutils literal notranslate"><span class="pre">dataset</span></code></dd>
+</dl>
+</dd>
+<dt>return:</dt>
+<dd>a list of list of ids corresponding to the true types of each example in the dataset</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset.types2onehot">
+<code class="descname">types2onehot</code><span class="sig-paren">(</span><em>num_types</em>, <em>types</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset.types2onehot" title="Permalink to this definition">¶</a></dt>
+<dd><p>tokenize id of types with one hot encoding</p>
+<dl class="docutils">
+<dt>parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>num_types:</dt>
+<dd>the number of types in the dataset; automatically extracted by the <a class="reference internal" href="dataset_managers.html"><span class="doc">Dataset Manager</span></a></dd>
+<dt>types:</dt>
+<dd>the list of types of each example in the dataset (not the list of all types, but the list of true types for each example in the dataset); automatically extracted by the <a class="reference internal" href="dataset_readers.html"><span class="doc">Dataset Reader</span></a></dd>
+</dl>
+</dd>
+<dt>return:</dt>
+<dd>a torch.tensor with shape <code class="code docutils literal notranslate"><span class="pre">len(types),</span> <span class="pre">num_types</span></code> containing one-hot encodings of types of each example in the dataset</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
 
 </div>
 

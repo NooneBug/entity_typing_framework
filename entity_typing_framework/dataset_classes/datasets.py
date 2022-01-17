@@ -13,7 +13,7 @@ class BaseDataset:
 
             The values are taken from the :code:`yaml` config file following the keys :code:`data -> dataset_paths` 
 
-    the :code:`__init__` saves the parameters and automatica calls :code:`read_dataset_partitions()`
+    the :code:`__init__` saves the parameters and automatic calls :code:`read_dataset_partitions()`
     '''
     def __init__(self, dataset_paths):
         self.dataset_paths = dataset_paths

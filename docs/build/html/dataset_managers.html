@@ -99,18 +99,22 @@ This module is able to use the following submodules:</p>
 <dd><dl class="first last docutils">
 <dt>dataset_paths</dt>
 <dd><p class="first">A dictionary defined in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file containing the dataset partititions names and paths, commonly in the format <code class="code docutils literal notranslate"><span class="pre">{name</span> <span class="pre">:</span> <span class="pre">path}</span></code>.</p>
+<p>The dataset paths are expected to be in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file under the key : <code class="code docutils literal notranslate"><span class="pre">data</span> <span class="pre">-&gt;</span> <span class="pre">dataset_paths</span></code></p>
 <p class="last">See the classes in <a class="reference internal" href="dataset_readers.html"><span class="doc">Dataset Readers</span></a> for more information about format of dataset_paths</p>
 </dd>
 <dt>tokenizer_params</dt>
 <dd><p class="first">A dictionary defined in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file used to instantiate the dataset_tokenizer submodule</p>
+<p>The tokenizer parameters are expected to be in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file under the key : <code class="code docutils literal notranslate"><span class="pre">data</span> <span class="pre">-&gt;</span> <span class="pre">tokenizer_params</span></code></p>
 <p class="last">See the classes in <a class="reference internal" href="dataset_tokenizers.html"><span class="doc">Dataset Tokenizers</span></a> for more information about the expected params</p>
 </dd>
 <dt>dataset_params</dt>
 <dd><p class="first">A dictionary defined in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file used to instantiate the dataset submodule</p>
+<p>The dataset parameters are expected to be in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file under the key : <code class="code docutils literal notranslate"><span class="pre">data</span> <span class="pre">-&gt;</span> <span class="pre">dataset_params</span></code></p>
 <p class="last">See the classes in <a class="reference internal" href="datasets.html"><span class="doc">Datasets</span></a> for more information about the expected params</p>
 </dd>
 <dt>dataloader_params</dt>
 <dd><p class="first">A dictionary defined in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file used to drive the instantiation of the <code class="code docutils literal notranslate"><span class="pre">torch.utils.data.dataloader.DataLoader</span></code></p>
+<p>The dataloader parameters are expected to be in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file under the key : <code class="code docutils literal notranslate"><span class="pre">data</span> <span class="pre">-&gt;</span> <span class="pre">dataloader_params</span></code></p>
 <p class="last">See the official torch documentation for <a class="reference external" href="https://pytorch.org/tutorials/beginner/basics/data_tutorial.html">DataLoaders</a> for more information about the expected params</p>
 </dd>
 </dl>

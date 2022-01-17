@@ -10,9 +10,9 @@ DatasetManager
 
 Implemented dataset managers are expected to manage the dataset acquisition, the tokenization and the formatting of a partitioned dataset. 
 
-Commonly a dataset is partitioned in :code:`train`, :code:`dev` and :code:`test`
+Commonly a dataset is partitioned in :code:`train`, :code:`validation` and :code:`test`
 
-A dataset managers is expected to have submodules:
+A dataset managers is expected to have the following submodules:
 
 dataset_reader:
     a module that read the dataset from the actual dataset file
