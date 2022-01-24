@@ -25,6 +25,14 @@ dataset_tokenizer:
 dataset:
     a module that is a subclass of :code:`torch.utils.data.Dataset` and has to prepare the tokenized dataset to be used in a :code:`torch.utils.data.Dataloader`
 
+
+.. _Encoder:
+
+Encoder
+-------
+
+
+
 Implemented Modules
 -------------------
 

@@ -27,7 +27,7 @@ The modules expected to appear in each entity typing project are the following:
     
     This module is expected to produce a :code:`torch.utils.data.Dataset` for each dataset partition, and return a `torch.utils.dataloader.data.Dataloader` foe each dataset partition
 
-Encoder
+:ref:`Encoder <Encoder>
     A module that encodes the input sentences formatted by the DatasetManager. 
     
     This module is expected to produce a :code:`torch.Tensor`
