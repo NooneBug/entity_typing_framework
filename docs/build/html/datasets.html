@@ -81,11 +81,33 @@
              
   <div class="section" id="datasets">
 <h1>Datasets<a class="headerlink" href="#datasets" title="Permalink to this headline">¶</a></h1>
-<p>List of implemented dataset_reader classes, submodule of <a class="reference internal" href="modules_submodules.html#datasetmanager"><span class="std std-ref">DatasetManager</span></a></p>
+<p>List of implemented dataset classes, submodule of <a class="reference internal" href="modules_submodules.html#datasetmanager"><span class="std std-ref">DatasetManager</span></a></p>
+<p>The Datasets submodules have to be a subclass of <code class="code docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code> and have to prepare the <a class="reference internal" href="modules_submodules.html#dataset-tokenizer"><span class="std std-ref">tokenized dataset</span></a> to be used in a <code class="code docutils literal notranslate"><span class="pre">torch.utils.data.Dataloader</span></code></p>
+<p>Each submodule defines the <code class="code docutils literal notranslate"><span class="pre">batch</span></code> composition through the method <code class="code docutils literal notranslate"><span class="pre">__get_item__</span></code></p>
 <span class="target" id="et-dataset"></span><dl class="class">
 <dt id="entity_typing_framework.dataset_classes.datasets_for_dataloader.ET_Dataset">
 <em class="property">class </em><code class="descclassname">entity_typing_framework.dataset_classes.datasets_for_dataloader.</code><code class="descname">ET_Dataset</code><span class="sig-paren">(</span><em>tokenized_dataset</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.datasets_for_dataloader.ET_Dataset" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>This classes organizes the tokenized data inside a <a class="reference internal" href="dataset_tokenizers.html"><span class="doc">dataset_tokenizer</span></a> into tensors in order to be ready to fed a <a class="reference external" href="https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader">Dataloader</a></p>
+<p>This dataset saves tokenized_sentences in a single tensor, so it is adapt to be used with Bert-based tokenizers/encoders</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>tokenized_dataset:</dt>
+<dd>an instance of a <a class="reference internal" href="dataset_tokenizers.html"><span class="doc">Dataset Tokenizer</span></a></dd>
+</dl>
+</dd>
+<dt>Attributes:</dt>
+<dd><dl class="first last docutils">
+<dt>tokenized_sentences:</dt>
+<dd>numpy array of tokenized sentences extracted from <code class="code docutils literal notranslate"><span class="pre">tokenized_dataset</span></code></dd>
+<dt>attn_masks:</dt>
+<dd>numpy array of attention masks extracted from <code class="code docutils literal notranslate"><span class="pre">tokenized_dataset</span></code></dd>
+<dt>one_hot_types:</dt>
+<dd>numpy array of one hot encoding of types extracted from <code class="code docutils literal notranslate"><span class="pre">tokenized_dataset</span></code></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
 </div>
 

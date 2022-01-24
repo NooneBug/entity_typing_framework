@@ -17,6 +17,8 @@ A dataset managers is expected to have the following submodules:
 dataset_reader:
     a module that read the dataset from the actual dataset file
 
+.. _dataset_tokenizer:
+
 dataset_tokenizer:
     a module that tokenize the acquired dataset
 
