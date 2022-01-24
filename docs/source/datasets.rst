@@ -1,7 +1,7 @@
 Datasets
 ========
 
-List of implemented dataset classes, submodule of :ref:`DatasetManager <DatasetManager>`
+List of implemented :ref:`dataset <dataset>` classes, submodule of :ref:`DatasetManager <DatasetManager>`
 
 The Datasets submodules have to be a subclass of :code:`torch.utils.data.Dataset` and have to prepare the :ref:`tokenized dataset <dataset_tokenizer>` to be used in a :code:`torch.utils.data.Dataloader`
 

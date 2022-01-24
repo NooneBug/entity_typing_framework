@@ -1,9 +1,11 @@
-from os import EX_SOFTWARE
 from transformers import AutoModel
 from pytorch_lightning.core.lightning import LightningModule
 from transformers import PfeifferConfig, HoulsbyConfig
 
 class BaseBERTLikeEncoder(LightningModule):
+    '''
+    Base BERT-based encoder, instances a BERT-like model using `AutoModel <https://huggingface.co/docs/transformers/v4.15.0/en/model_doc/auto#transformers.AutoModel>`_
+    '''
     def __init__(self, name: str, bertlike_model_name : str, freeze_encoder : bool = False) -> None:
         super().__init__()
         self.bertlike_model_name = bertlike_model_name

@@ -30,4 +30,5 @@ Content
    configuration_file
    package_structure
    modules_submodules
+   module_dictionary
    api

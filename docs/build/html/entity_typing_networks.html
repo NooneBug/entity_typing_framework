@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Entity Typing Networks &mdash; entity_typing_framework 0.1 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Dataset Readers" href="dataset_readers.html" />
+    <link rel="prev" title="Dataset Managers" href="dataset_managers.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> entity_typing_framework
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_file.html">Configuration File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="package_structure.html">Package Structure</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules_submodules.html">Modules and submodules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="modules_submodules.html#datasetmanager">DatasetManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules_submodules.html#entity-typing-network">Entity Typing Network</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="modules_submodules.html#implemented-modules">Implemented Modules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="dataset_managers.html">Dataset Managers</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Entity Typing Networks</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="modules_submodules.html#implemented-submodules">Implemented Submodules</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="module_dictionary.html">Module Dictionary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">entity_typing_framework</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="modules_submodules.html">Modules and submodules</a> &raquo;</li>
+      <li>Entity Typing Networks</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/entity_typing_networks.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="entity-typing-networks">
+<h1>Entity Typing Networks<a class="headerlink" href="#entity-typing-networks" title="Permalink to this headline">¶</a></h1>
+<p>List of implemented <a class="reference internal" href="modules_submodules.html#entitytypingnetwork"><span class="std std-ref">EntityTypingNetwork</span></a></p>
+<dl class="class">
+<dt id="entity_typing_framework.EntityTypingNetwork_classes.base_network.BaseEntityTypingNetwork">
+<em class="property">class </em><code class="descclassname">entity_typing_framework.EntityTypingNetwork_classes.base_network.</code><code class="descname">BaseEntityTypingNetwork</code><span class="sig-paren">(</span><em>name</em>, <em>network_params</em>, <em>type_number</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.base_network.BaseEntityTypingNetwork" title="Permalink to this definition">¶</a></dt>
+<dd><p>Basic <a class="reference internal" href="modules_submodules.html#entitytypingnetwork"><span class="std std-ref">EntityTypingNetwork</span></a>. This module is able to use the following submodules:</p>
+<dl class="docutils">
+<dt><a class="reference internal" href="modules_submodules.html#encoder"><span class="std std-ref">encoder</span></a>:</dt>
+<dd><p class="first"><a class="reference internal" href="encoders.html#distilbertencoder"><span class="std std-ref">entity_typing_framework.EntityTypingNetwork_classes.input_encoders.DistilBERTEncoder</span></a></p>
+<p class="last"><a class="reference internal" href="encoders.html#adapterdistilbertencoder"><span class="std std-ref">entity_typing_framework.EntityTypingNetwork_classes.input_encoders.AdapterDistilBERTEncoder</span></a></p>
+</dd>
+<dt><a class="reference internal" href="modules_submodules.html#type-encoder"><span class="std std-ref">type_encoder</span></a>:</dt>
+<dd><a class="reference internal" href="type_encoders.html#onehottypeencoder"><span class="std std-ref">entity_typing_framework.EntityTypingNetwork_classes.type_encoders.OneHotTypeEncoder</span></a></dd>
+<dt><a class="reference internal" href="modules_submodules.html#input-projector"><span class="std std-ref">input_projector</span></a>:</dt>
+<dd><a class="reference internal" href="input_projectors.html#classifier"><span class="std std-ref">entity_typing_framework.EntityTypingNetwork_classes.type_encoders.Classifier</span></a></dd>
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>name:</dt>
+<dd>the name of the module, specified in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file under the key <code class="code docutils literal notranslate"><span class="pre">model</span> <span class="pre">-&gt;</span> <span class="pre">ET_Network_params</span> <span class="pre">-&gt;</span> <span class="pre">name</span></code>. Has to be declared in the <a class="reference internal" href="module_dictionary.html"><span class="doc">Module Dictionary</span></a></dd>
+<dt>network_params:</dt>
+<dd><p class="first">parameters for the module and for the submodules, specified in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file under the key <code class="code docutils literal notranslate"><span class="pre">model</span> <span class="pre">-&gt;</span> <span class="pre">ET_Network_params</span> <span class="pre">-&gt;</span> <span class="pre">network_params</span></code></p>
+<p class="last">expected keys in network_params are: <code class="code docutils literal notranslate"><span class="pre">model</span> <span class="pre">-&gt;</span> <span class="pre">ET_Network_params</span> <span class="pre">-&gt;</span> <span class="pre">network_params</span> <span class="pre">-&gt;</span> <span class="pre">encoder_params</span></code>, <code class="code docutils literal notranslate"><span class="pre">model</span> <span class="pre">-&gt;</span> <span class="pre">ET_Network_params</span> <span class="pre">-&gt;</span> <span class="pre">network_params</span> <span class="pre">-&gt;</span> <span class="pre">type_encoder_params</span></code>, and <code class="code docutils literal notranslate"><span class="pre">model</span> <span class="pre">-&gt;</span> <span class="pre">ET_Network_params</span> <span class="pre">-&gt;</span> <span class="pre">network_params</span> <span class="pre">-&gt;</span> <span class="pre">input_projector_params</span></code></p>
+</dd>
+<dt>type_number:</dt>
+<dd>number of types for this run. Automatic managed through <a class="reference internal" href="modules_submodules.html#datasetmanager"><span class="std std-ref">DatasetManager</span></a></dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="entity_typing_framework.EntityTypingNetwork_classes.base_network.BaseEntityTypingNetwork.forward">
+<code class="descname">forward</code><span class="sig-paren">(</span><em>batch</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.base_network.BaseEntityTypingNetwork.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>override of :code:pytorch_lightning.LightningModule.forward (<a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html">ref</a>)</p>
+<dl class="docutils">
+<dt>parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>batch:</dt>
+<dd>the batch returned by the <a class="reference internal" href="modules_submodules.html#dataset"><span class="std std-ref">Dataset</span></a></dd>
+</dl>
+</dd>
+<dt>return:</dt>
+<dd><dl class="first last docutils">
+<dt>projected_input:</dt>
+<dd>output of the <a class="reference internal" href="modules_submodules.html#input-projector"><span class="std std-ref">input_projector</span></a>. Commonly the <a class="reference internal" href="modules_submodules.html#input-projector"><span class="std std-ref">input_projector</span></a> takes in input the output of the <a class="reference internal" href="modules_submodules.html#encoder"><span class="std std-ref">encoder</span></a></dd>
+<dt>encoded_types:</dt>
+<dd>output of the <a class="reference internal" href="modules_submodules.html#type-encoder"><span class="std std-ref">type_encoder</span></a>.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="dataset_managers.html" class="btn btn-neutral float-left" title="Dataset Managers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="dataset_readers.html" class="btn btn-neutral float-right" title="Dataset Readers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Manuel Vimercati.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

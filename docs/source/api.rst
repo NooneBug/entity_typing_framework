@@ -4,4 +4,4 @@ API
 .. autosummary::
    :toctree: generated
 
-   entity_typing_framework
+   .. entity_typing_framework
