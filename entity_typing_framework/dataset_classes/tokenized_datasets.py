@@ -18,14 +18,16 @@ class BaseBERTTokenizedDataset(Dataset):
             the :code:`type2id` dictionary created by the :doc:`Dataset Manager <dataset_managers>`
     
         name:
-            the name of the submodule, has to be specified in the :code:`yaml` configuration file with key :code:`data -> tokenizer_params -> name`
+            the name of the submodule, has to be specified in the :code:`yaml` configuration file with key :code:`data.tokenizer_params.name`
 
             this param is used by the :doc:`Dataset Manager <dataset_managers>` to instance the correct submodule
         
         bertlike_model_name:
             required param, used to instance a `huggingface AutoTokenizer <https://huggingface.co/docs/transformers/v4.15.0/en/model_doc/auto#transformers.AutoTokenizer>`_.
+            
+            this param drives the tokenizer used by the model. 
 
-            this param drives the tokenizer used by the model. The value of this param has to be equal to the param :code:`model -> network_params -> encoder_params -> bertlike_model_name`.
+            this param has to be specified in the :code:`yaml` configuration file with key :code:`data.tokenizer_params.bertlike_model_name`. The value of this param has to be equal to the param :code:`model.network_params.encoder_params.bertlike_model_name`.
         
         (optional) max_mention_words:
             this param ensures that only the first :code:`max_mention_words` of each `entity mention` in the sentence are tokenized, the other words are discarded.

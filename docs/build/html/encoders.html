@@ -91,16 +91,54 @@
 <dt id="entity_typing_framework.EntityTypingNetwork_classes.input_encoders.BaseBERTLikeEncoder">
 <em class="property">class </em><code class="descclassname">entity_typing_framework.EntityTypingNetwork_classes.input_encoders.</code><code class="descname">BaseBERTLikeEncoder</code><span class="sig-paren">(</span><em>name: str</em>, <em>bertlike_model_name: str</em>, <em>freeze_encoder: bool = False</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.input_encoders.BaseBERTLikeEncoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Base BERT-based encoder, instances a BERT-like model using <a class="reference external" href="https://huggingface.co/docs/transformers/v4.15.0/en/model_doc/auto#transformers.AutoModel">AutoModel</a></p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>name: </dt>
+<dd><p class="first">the name of the submodule, has to be specified in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file with key <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.encoder_params.name</span></code></p>
+<p class="last">this param is used by the <a class="reference internal" href="modules_submodules.html#entitytypingnetwork"><span class="std std-ref">EntityTypingNetwork</span></a> to instance the correct submodule</p>
+</dd>
+<dt>bertlike_model_name:</dt>
+<dd><p class="first">required param, used to instance a <a class="reference external" href="https://huggingface.co/docs/transformers/v4.15.0/en/model_doc/auto#transformers.AutoModel">huggingface AutoModelr</a>.</p>
+<p>this param has to be specified in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file with key <code class="code docutils literal notranslate"><span class="pre">model.network_params.encoder_params.bertlike_model_name</span></code>.</p>
+<p class="last">this param drives the encoder used by the model. The value of this param has to be equal to the param <code class="code docutils literal notranslate"><span class="pre">data.tokenizer_params.bertlike_model_name</span></code>.</p>
+</dd>
+<dt>freeze_encoder:</dt>
+<dd><p class="first">optional param, if setted to True freeze the encoder specified in <code class="code docutils literal notranslate"><span class="pre">bertlike_model_name</span></code></p>
+<p class="last">this param has to be specified in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file with key <code class="code docutils literal notranslate"><span class="pre">model.network_params.encoder_params.freeze_encoder</span></code></p>
+</dd>
+</dl>
+</dd>
+</dl>
 <dl class="method">
 <dt id="entity_typing_framework.EntityTypingNetwork_classes.input_encoders.BaseBERTLikeEncoder.forward">
 <code class="descname">forward</code><span class="sig-paren">(</span><em>batched_tokenized_sentence</em>, <em>batched_attn_masks</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.input_encoders.BaseBERTLikeEncoder.forward" title="Permalink to this definition">¶</a></dt>
-<dd><p>Same as <code class="xref py py-meth docutils literal notranslate"><span class="pre">torch.nn.Module.forward()</span></code>.</p>
+<dd><p>define the forward pass of the encoder; by default is not implemented and raises an exception</p>
 <dl class="docutils">
-<dt>Args:</dt>
-<dd><a href="#id1"><span class="problematic" id="id2">*</span></a>args: Whatever you decide to pass into the forward method.
-<a href="#id3"><span class="problematic" id="id4">**</span></a>kwargs: Keyword arguments are also possible.</dd>
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>batched_tokenized_sentence:</dt>
+<dd>one of the batch elements returned by the <a class="reference internal" href="datasets.html"><span class="doc">dataset</span></a> (<code class="code docutils literal notranslate"><span class="pre">__getitem__</span></code> method). It contains tokenized sentences extracted from <a class="reference internal" href="dataset_tokenizers.html"><span class="doc">Dataset Tokenizer</span></a></dd>
+<dt>batched_attn_masks:</dt>
+<dd>one of the batch elements returned by the <a class="reference internal" href="datasets.html"><span class="doc">dataset</span></a> (<code class="code docutils literal notranslate"><span class="pre">__getitem__</span></code> method). It contains attention masks on the input sentence extracted from <a class="reference internal" href="dataset_tokenizers.html"><span class="doc">Dataset Tokenizer</span></a></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="entity_typing_framework.EntityTypingNetwork_classes.input_encoders.BaseBERTLikeEncoder.freeze_encoder">
+<code class="descname">freeze_encoder</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.input_encoders.BaseBERTLikeEncoder.freeze_encoder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method used to freeze the encoder instanced with <code class="code docutils literal notranslate"><span class="pre">bertlike_model_name</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="entity_typing_framework.EntityTypingNetwork_classes.input_encoders.BaseBERTLikeEncoder.get_representation_dim">
+<code class="descname">get_representation_dim</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.input_encoders.BaseBERTLikeEncoder.get_representation_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the output dim of the encoder</p>
+<dl class="docutils">
 <dt>Return:</dt>
-<dd>Your model’s output</dd>
+<dd>output_dim: dimension of the encoded input (e.g. 768 on DistilBERT)</dd>
 </dl>
 </dd></dl>
 
@@ -110,15 +148,36 @@
 <dt id="entity_typing_framework.EntityTypingNetwork_classes.input_encoders.DistilBERTEncoder">
 <em class="property">class </em><code class="descclassname">entity_typing_framework.EntityTypingNetwork_classes.input_encoders.</code><code class="descname">DistilBERTEncoder</code><span class="sig-paren">(</span><em>bertlike_model_name: str = 'distilbert-base-uncased'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.input_encoders.DistilBERTEncoder" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
+<dt id="entity_typing_framework.EntityTypingNetwork_classes.input_encoders.DistilBERTEncoder.aggregate_function">
+<code class="descname">aggregate_function</code><span class="sig-paren">(</span><em>encoder_output</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.input_encoders.DistilBERTEncoder.aggregate_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>aggregates the output of DistilBERT by picking the CLS encoding</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>encoder_output:</dt>
+<dd>output of DistilBERT, commonly shaped as [batch_size, token_number, 768]</dd>
+</dl>
+</dd>
+<dt>Return:</dt>
+<dd>cls_encoding: encoding of the first output token (CLS token), commonly shaper as [batch_size, 768]</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="entity_typing_framework.EntityTypingNetwork_classes.input_encoders.DistilBERTEncoder.forward">
 <code class="descname">forward</code><span class="sig-paren">(</span><em>batched_tokenized_sentence</em>, <em>batched_attn_masks</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.input_encoders.DistilBERTEncoder.forward" title="Permalink to this definition">¶</a></dt>
-<dd><p>Same as <code class="xref py py-meth docutils literal notranslate"><span class="pre">torch.nn.Module.forward()</span></code>.</p>
+<dd><p>defines the forward pass of the encoder. In the forward the <code class="code docutils literal notranslate"><span class="pre">batched_tokenized_sentence</span></code> is processed by DistilBERT and is returned using the method <code class="code docutils literal notranslate"><span class="pre">aggregate_function</span></code></p>
 <dl class="docutils">
-<dt>Args:</dt>
-<dd><a href="#id5"><span class="problematic" id="id6">*</span></a>args: Whatever you decide to pass into the forward method.
-<a href="#id7"><span class="problematic" id="id8">**</span></a>kwargs: Keyword arguments are also possible.</dd>
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>batched_tokenized_sentence:</dt>
+<dd>see <code class="code docutils literal notranslate"><span class="pre">batched_tokenized_sentence</span></code> in <code class="code docutils literal notranslate"><span class="pre">BaseBERTLikeEncoder</span></code></dd>
+<dt>batched_attn_masks:</dt>
+<dd>see <code class="code docutils literal notranslate"><span class="pre">batched_attn_masks</span></code> in <code class="code docutils literal notranslate"><span class="pre">BaseBERTLikeEncoder</span></code></dd>
+</dl>
+</dd>
 <dt>Return:</dt>
-<dd>Your model’s output</dd>
+<dd>encoder_output: parameters processed by DistilBERT and aggregated by the method <code class="code docutils literal notranslate"><span class="pre">aggregate_function</span></code></dd>
 </dl>
 </dd></dl>
 
@@ -127,7 +186,25 @@
 <span class="target" id="adapterdistilbertencoder"></span><dl class="class">
 <dt id="entity_typing_framework.EntityTypingNetwork_classes.input_encoders.AdapterDistilBERTEncoder">
 <em class="property">class </em><code class="descclassname">entity_typing_framework.EntityTypingNetwork_classes.input_encoders.</code><code class="descname">AdapterDistilBERTEncoder</code><span class="sig-paren">(</span><em>bertlike_model_name: str = 'distilbert-base-uncased'</em>, <em>adapter_arch='Pfeiffer'</em>, <em>reduction_factor=16</em>, <em>adapter_name='ET_adapter'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.input_encoders.AdapterDistilBERTEncoder" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Class to instance DistilBERT with Adapters; Subclass of DistilBERTEncoder.</p>
+<p>to instance this encoder insert the string <code class="code docutils literal notranslate"><span class="pre">AdapterDistilBERTEncoder</span></code> in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file under the key : <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.encoder_params.name</span></code></p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>bertlike_model_name:</dt>
+<dd>see <code class="code docutils literal notranslate"><span class="pre">bertlike_model_name</span></code> in <code class="code docutils literal notranslate"><span class="pre">DistilBERTEncoder</span></code>.</dd>
+<dt>adapter_arch:</dt>
+<dd><p class="first">adapter architecture from the original paper on adapters, accepted values are <code class="code docutils literal notranslate"><span class="pre">Pfeiffer</span></code> or <code class="code docutils literal notranslate"><span class="pre">Houlsby</span></code>. Other values will raise an exception</p>
+<p class="last">this param can be specified in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file with key <code class="code docutils literal notranslate"><span class="pre">model.network_params.encoder_params.adapter_arch</span></code>.</p>
+</dd>
+<dt>reduction_factor:</dt>
+<dd>reduction factor from the original paper on adapters. Is an integer number used to setup the autoencoder-like architecture: the hidden units of the autoencoder are computed as <code class="code docutils literal notranslate"><span class="pre">transformer_size/reduction_factor</span></code></dd>
+<dt>adapter_name:</dt>
+<dd>a name useful when multiple adapters are used.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
 </div>
 

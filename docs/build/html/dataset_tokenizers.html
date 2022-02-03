@@ -101,12 +101,13 @@
 <dt>type2id:</dt>
 <dd>the <code class="code docutils literal notranslate"><span class="pre">type2id</span></code> dictionary created by the <a class="reference internal" href="dataset_managers.html"><span class="doc">Dataset Manager</span></a></dd>
 <dt>name:</dt>
-<dd><p class="first">the name of the submodule, has to be specified in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file with key <code class="code docutils literal notranslate"><span class="pre">data</span> <span class="pre">-&gt;</span> <span class="pre">tokenizer_params</span> <span class="pre">-&gt;</span> <span class="pre">name</span></code></p>
+<dd><p class="first">the name of the submodule, has to be specified in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file with key <code class="code docutils literal notranslate"><span class="pre">data.tokenizer_params.name</span></code></p>
 <p class="last">this param is used by the <a class="reference internal" href="dataset_managers.html"><span class="doc">Dataset Manager</span></a> to instance the correct submodule</p>
 </dd>
 <dt>bertlike_model_name:</dt>
 <dd><p class="first">required param, used to instance a <a class="reference external" href="https://huggingface.co/docs/transformers/v4.15.0/en/model_doc/auto#transformers.AutoTokenizer">huggingface AutoTokenizer</a>.</p>
-<p class="last">this param drives the tokenizer used by the model. The value of this param has to be equal to the param <code class="code docutils literal notranslate"><span class="pre">model</span> <span class="pre">-&gt;</span> <span class="pre">network_params</span> <span class="pre">-&gt;</span> <span class="pre">encoder_params</span> <span class="pre">-&gt;</span> <span class="pre">bertlike_model_name</span></code>.</p>
+<p>this param drives the tokenizer used by the model.</p>
+<p class="last">this param has to be specified in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file with key <code class="code docutils literal notranslate"><span class="pre">data.tokenizer_params.bertlike_model_name</span></code>. The value of this param has to be equal to the param <code class="code docutils literal notranslate"><span class="pre">model.network_params.encoder_params.bertlike_model_name</span></code>.</p>
 </dd>
 <dt>(optional) max_mention_words:</dt>
 <dd><p class="first">this param ensures that only the first <code class="code docutils literal notranslate"><span class="pre">max_mention_words</span></code> of each <cite>entity mention</cite> in the sentence are tokenized, the other words are discarded.</p>

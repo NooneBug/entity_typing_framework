@@ -102,22 +102,22 @@ This module is able to use the following submodules:</p>
 <dd><dl class="first last docutils">
 <dt>dataset_paths</dt>
 <dd><p class="first">A dictionary defined in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file containing the dataset partititions names and paths, commonly in the format <code class="code docutils literal notranslate"><span class="pre">{name</span> <span class="pre">:</span> <span class="pre">path}</span></code>.</p>
-<p>The dataset paths are expected to be in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file under the key : <code class="code docutils literal notranslate"><span class="pre">data</span> <span class="pre">-&gt;</span> <span class="pre">dataset_paths</span></code></p>
+<p>The dataset paths are expected to be in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file under the key : <code class="code docutils literal notranslate"><span class="pre">data.dataset_paths</span></code></p>
 <p class="last">See the classes in <a class="reference internal" href="dataset_readers.html"><span class="doc">Dataset Readers</span></a> for more information about format of dataset_paths</p>
 </dd>
 <dt>tokenizer_params</dt>
 <dd><p class="first">A dictionary defined in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file used to instantiate the dataset_tokenizer submodule</p>
-<p>The tokenizer parameters are expected to be in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file under the key : <code class="code docutils literal notranslate"><span class="pre">data</span> <span class="pre">-&gt;</span> <span class="pre">tokenizer_params</span></code></p>
+<p>The tokenizer parameters are expected to be in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file under the key : <code class="code docutils literal notranslate"><span class="pre">data.tokenizer_params</span></code></p>
 <p class="last">See the classes in <a class="reference internal" href="dataset_tokenizers.html"><span class="doc">Dataset Tokenizers</span></a> for more information about the expected params</p>
 </dd>
 <dt>dataset_params</dt>
 <dd><p class="first">A dictionary defined in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file used to instantiate the dataset submodule</p>
-<p>The dataset parameters are expected to be in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file under the key : <code class="code docutils literal notranslate"><span class="pre">data</span> <span class="pre">-&gt;</span> <span class="pre">dataset_params</span></code></p>
+<p>The dataset parameters are expected to be in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file under the key : <code class="code docutils literal notranslate"><span class="pre">data.dataset_params</span></code></p>
 <p class="last">See the classes in <a class="reference internal" href="datasets.html"><span class="doc">Datasets</span></a> for more information about the expected params</p>
 </dd>
 <dt>dataloader_params</dt>
 <dd><p class="first">A dictionary defined in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file used to drive the instantiation of the <code class="code docutils literal notranslate"><span class="pre">torch.utils.data.dataloader.DataLoader</span></code></p>
-<p>The dataloader parameters are expected to be in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file under the key : <code class="code docutils literal notranslate"><span class="pre">data</span> <span class="pre">-&gt;</span> <span class="pre">dataloader_params</span></code></p>
+<p>The dataloader parameters are expected to be in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file under the key : <code class="code docutils literal notranslate"><span class="pre">data.dataloader_params</span></code></p>
 <p class="last">See the official torch documentation for <a class="reference external" href="https://pytorch.org/tutorials/beginner/basics/data_tutorial.html">DataLoaders</a> for more information about the expected params</p>
 </dd>
 </dl>
@@ -141,14 +141,14 @@ This module is able to use the following submodules:</p>
 <dt id="entity_typing_framework.dataset_classes.dataset_managers.DatasetManager.prepare_data">
 <code class="descname">prepare_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.dataset_managers.DatasetManager.prepare_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Override of <a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html#prepare-data">pytorch_lightning.core.datamodule.LightningDataModule.prepare_data</a></p>
-<p>Tokenize each partition of the dataset with a <a class="reference internal" href="dataset_tokenizers.html"><span class="doc">dataset_tokenizer</span></a> class, chosen following the configuration file value under the keys <code class="code docutils literal notranslate"><span class="pre">data</span> <span class="pre">-&gt;</span> <span class="pre">tokenizer_params</span> <span class="pre">-&gt;</span> <span class="pre">name</span></code></p>
+<p>Tokenize each partition of the dataset with a <a class="reference internal" href="dataset_tokenizers.html"><span class="doc">dataset_tokenizer</span></a> class, chosen following the configuration file value under the key <code class="code docutils literal notranslate"><span class="pre">data.tokenizer_params.name</span></code></p>
 </dd></dl>
 
 <dl class="method">
 <dt id="entity_typing_framework.dataset_classes.dataset_managers.DatasetManager.read_datasets">
 <code class="descname">read_datasets</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.dataset_managers.DatasetManager.read_datasets" title="Permalink to this definition">¶</a></dt>
 <dd><p>Instances a <a class="reference internal" href="dataset_readers.html"><span class="doc">dataset_reader</span></a> for each partition in <code class="code docutils literal notranslate"><span class="pre">dataset_path</span></code>, then calls <code class="code docutils literal notranslate"><span class="pre">create_type2id()</span></code></p>
-<p>The class for dataset reader is chosen following the configuration file value under the keys <code class="code docutils literal notranslate"><span class="pre">data</span> <span class="pre">-&gt;</span> <span class="pre">dataset_reader_params</span> <span class="pre">-&gt;</span> <span class="pre">name</span></code></p>
+<p>The class for dataset reader is chosen following the configuration file value under the key <code class="code docutils literal notranslate"><span class="pre">data.dataset_reader_params.name</span></code></p>
 </dd></dl>
 
 <dl class="method">
@@ -156,8 +156,8 @@ This module is able to use the following submodules:</p>
 <code class="descname">setup</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.dataset_classes.dataset_managers.DatasetManager.setup" title="Permalink to this definition">¶</a></dt>
 <dd><p>Override of <a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html#prepare-data">pytorch_lightning.core.datamodule.LightningDataModule.setup</a></p>
 <p>Instance the <a class="reference internal" href="datasets.html"><span class="doc">dataset</span></a> and the <a class="reference external" href="https://pytorch.org/tutorials/beginner/basics/data_tutorial.html">DataLoader</a> for each partition.</p>
-<p>The <a class="reference internal" href="datasets.html"><span class="doc">dataset</span></a> class is chosen following the configuration file value under the keys <code class="code docutils literal notranslate"><span class="pre">data</span> <span class="pre">-&gt;</span> <span class="pre">dataset_params</span> <span class="pre">-&gt;</span> <span class="pre">name</span></code></p>
-<p>The <a class="reference external" href="https://pytorch.org/tutorials/beginner/basics/data_tutorial.html">DataLoader</a> class is chosen following the configuration file value under the keys <code class="code docutils literal notranslate"><span class="pre">data</span> <span class="pre">-&gt;</span> <span class="pre">dataloader_params</span> <span class="pre">-&gt;</span> <span class="pre">name</span></code></p>
+<p>The <a class="reference internal" href="datasets.html"><span class="doc">dataset</span></a> class is chosen following the configuration file value under the key <code class="code docutils literal notranslate"><span class="pre">data.dataset_params.name</span></code></p>
+<p>The <a class="reference external" href="https://pytorch.org/tutorials/beginner/basics/data_tutorial.html">DataLoader</a> class is chosen following the configuration file value under the key <code class="code docutils literal notranslate"><span class="pre">data.dataloader_params.name</span></code></p>
 </dd></dl>
 
 <dl class="method">

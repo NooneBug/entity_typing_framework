@@ -11,7 +11,7 @@ class BaseDataset:
         dataset_paths : 
             a dictionary with keys the partition names (e.g., train, dev, test) and with values the paths to the partitions
 
-            The values are taken from the :code:`yaml` config file following the keys :code:`data -> dataset_paths` 
+            The values are taken from the :code:`yaml` config file following the key :code:`data.dataset_paths` 
 
     the :code:`__init__` saves the parameters and automatic calls :code:`read_dataset_partitions()`
     '''

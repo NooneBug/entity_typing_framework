@@ -130,7 +130,7 @@
 <dt><a class="reference internal" href="input_projectors.html"><span class="doc">input projector</span></a>:</dt>
 <dd><p class="first">A module that projects the encoded input in a common space, where types are placed.</p>
 <p>The input projector is needed since the encoder has not to be aware of the type representation space (we assume an encoder encodes a sentence in a space with fixed dimension, e.g., 768 for <code class="code docutils literal notranslate"><span class="pre">BertBase</span></code>). We think that this solution helps in building simple encoder modules</p>
-<p class="last">Commonly a input projector takes in input the encoded input (returned from the <a class="reference internal" href="#encoder"><span class="std std-ref">encode submodule</span></a>) and project it in the type representation space (defined by the <a class="reference internal" href="#type-encoder"><span class="std std-ref">type encoder</span></a>)</p>
+<p class="last">Commonly a input projector takes in input the encoded input (returned from the <a class="reference internal" href="#encoder"><span class="std std-ref">encoder submodule</span></a>) and project it in the type representation space (defined by the <a class="reference internal" href="#type-encoder"><span class="std std-ref">type encoder</span></a>)</p>
 </dd>
 </dl>
 </div>

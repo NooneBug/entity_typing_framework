@@ -19,12 +19,12 @@ class BaseEntityTypingNetwork(LightningModule):
 
     Parameters:
         name:
-            the name of the module, specified in the :code:`yaml` configuration file under the key :code:`model -> ET_Network_params -> name`. Has to be declared in the :doc:`module_dictionary`
+            the name of the module, specified in the :code:`yaml` configuration file under the key :code:`model.ET_Network_params.name`. Has to be declared in the :doc:`module_dictionary`
         
         network_params:
-            parameters for the module and for the submodules, specified in the :code:`yaml` configuration file under the key :code:`model -> ET_Network_params -> network_params`
+            parameters for the module and for the submodules, specified in the :code:`yaml` configuration file under the key :code:`model.ET_Network_params.network_params`
 
-            expected keys in network_params are: :code:`model -> ET_Network_params -> network_params -> encoder_params`, :code:`model -> ET_Network_params -> network_params -> type_encoder_params`, and :code:`model -> ET_Network_params -> network_params -> input_projector_params`
+            expected keys in network_params are: :code:`model.ET_Network_params.network_params.encoder_params`, :code:`model.ET_Network_params.network_params.type_encoder_params`, and :code:`model.ET_Network_params.network_params.input_projector_params`
 
         type_number:
             number of types for this run. Automatic managed through :ref:`DatasetManager <DatasetManager>`

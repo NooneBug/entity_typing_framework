@@ -19,28 +19,28 @@ class DatasetManager(LightningDataModule):
         dataset_paths
             A dictionary defined in the :code:`yaml` config file containing the dataset partititions names and paths, commonly in the format :code:`{name : path}`.
 
-            The dataset paths are expected to be in the :code:`yaml` config file under the key : :code:`data -> dataset_paths`
+            The dataset paths are expected to be in the :code:`yaml` config file under the key : :code:`data.dataset_paths`
 
             See the classes in :doc:`Dataset Readers<dataset_readers>` for more information about format of dataset_paths
         
         tokenizer_params
             A dictionary defined in the :code:`yaml` config file used to instantiate the dataset_tokenizer submodule
 
-            The tokenizer parameters are expected to be in the :code:`yaml` config file under the key : :code:`data -> tokenizer_params`
+            The tokenizer parameters are expected to be in the :code:`yaml` config file under the key : :code:`data.tokenizer_params`
 
             See the classes in :doc:`Dataset Tokenizers<dataset_tokenizers>` for more information about the expected params
         
         dataset_params
             A dictionary defined in the :code:`yaml` config file used to instantiate the dataset submodule
 
-            The dataset parameters are expected to be in the :code:`yaml` config file under the key : :code:`data -> dataset_params`
+            The dataset parameters are expected to be in the :code:`yaml` config file under the key : :code:`data.dataset_params`
 
             See the classes in :doc:`Datasets<datasets>` for more information about the expected params
 
         dataloader_params
             A dictionary defined in the :code:`yaml` config file used to drive the instantiation of the :code:`torch.utils.data.dataloader.DataLoader`
 
-            The dataloader parameters are expected to be in the :code:`yaml` config file under the key : :code:`data -> dataloader_params`
+            The dataloader parameters are expected to be in the :code:`yaml` config file under the key : :code:`data.dataloader_params`
 
             See the official torch documentation for `DataLoaders <https://pytorch.org/tutorials/beginner/basics/data_tutorial.html>`_ for more information about the expected params
     '''
@@ -57,7 +57,7 @@ class DatasetManager(LightningDataModule):
         '''
         Instances a :doc:`dataset_reader <dataset_readers>` for each partition in :code:`dataset_path`, then calls :code:`create_type2id()`
 
-        The class for dataset reader is chosen following the configuration file value under the keys :code:`data -> dataset_reader_params -> name`
+        The class for dataset reader is chosen following the configuration file value under the key :code:`data.dataset_reader_params.name`
         '''
         self.datasets = IMPLEMENTED_CLASSES_LVL0[self.dataset_reader_params['name']](dataset_paths = self.dataset_paths)
         
@@ -67,7 +67,7 @@ class DatasetManager(LightningDataModule):
         '''
         Override of `pytorch_lightning.core.datamodule.LightningDataModule.prepare_data <https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html#prepare-data>`_
 
-        Tokenize each partition of the dataset with a :doc:`dataset_tokenizer <dataset_tokenizers>` class, chosen following the configuration file value under the keys :code:`data -> tokenizer_params -> name`
+        Tokenize each partition of the dataset with a :doc:`dataset_tokenizer <dataset_tokenizers>` class, chosen following the configuration file value under the key :code:`data.tokenizer_params.name`
         '''
         self.tokenized_datasets = {partition_name: IMPLEMENTED_CLASSES_LVL0[self.tokenizer_params['name']](dataset,
                                                                             self.type2id,
@@ -81,9 +81,9 @@ class DatasetManager(LightningDataModule):
 
         Instance the :doc:`dataset <datasets>` and the `DataLoader <https://pytorch.org/tutorials/beginner/basics/data_tutorial.html>`_ for each partition.
 
-        The :doc:`dataset <datasets>` class is chosen following the configuration file value under the keys :code:`data -> dataset_params -> name`
+        The :doc:`dataset <datasets>` class is chosen following the configuration file value under the key :code:`data.dataset_params.name`
 
-        The `DataLoader <https://pytorch.org/tutorials/beginner/basics/data_tutorial.html>`_ class is chosen following the configuration file value under the keys :code:`data -> dataloader_params -> name`
+        The `DataLoader <https://pytorch.org/tutorials/beginner/basics/data_tutorial.html>`_ class is chosen following the configuration file value under the key :code:`data.dataloader_params.name`
 
         '''
         dataloader_ready_datasets = {partition_name : IMPLEMENTED_CLASSES_LVL0[self.datasets_params['name']](tokenized_dataset = t) for partition_name, t in self.tokenized_datasets.items()}

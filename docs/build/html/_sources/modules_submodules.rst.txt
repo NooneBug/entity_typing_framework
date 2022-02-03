@@ -64,7 +64,7 @@ An Entity Typing Network is expected to have the following submodules:
     
     The input projector is needed since the encoder has not to be aware of the type representation space (we assume an encoder encodes a sentence in a space with fixed dimension, e.g., 768 for :code:`BertBase`). We think that this solution helps in building simple encoder modules
 
-    Commonly a input projector takes in input the encoded input (returned from the :ref:`encode submodule <encoder>`) and project it in the type representation space (defined by the :ref:`type encoder <type_encoder>`)
+    Commonly a input projector takes in input the encoded input (returned from the :ref:`encoder submodule <encoder>`) and project it in the type representation space (defined by the :ref:`type encoder <type_encoder>`)
 
 Implemented Modules
 -------------------
