@@ -62,16 +62,16 @@ class BaseBERTLikeEncoder(LightningModule):
         return self.encoder.config.dim
 
 class DistilBERTEncoder(BaseBERTLikeEncoder):
+    '''
+    Default class to instantiate DistilBERT as encoder; subclass of BaseBERTLikeEncoder.
+    
+    to instance this encoder insert the string :code:`DistilBERTEncoder` in the :code:`yaml` configuration file under the key : :code:`model.ET_Network_params.encoder_params.name`
+    
+    Parameters:
+        bertlike_model_name:
+            see :code:`bertlike_model_name` in :code:`BaseBERTLikeEncoder`. In this class the default value is :code:`distilbert-base-uncased`
+    '''
     def __init__(self, bertlike_model_name: str = 'distilbert-base-uncased', **kwargs) -> None:
-        '''
-        Default class to instantiate DistilBERT as encoder; subclass of BaseBERTLikeEncoder.
-        
-        to instance this encoder insert the string :code:`DistilBERTEncoder` in the :code:`yaml` configuration file under the key : :code:`model.ET_Network_params.encoder_params.name`
-        
-        Parameters:
-            bertlike_model_name:
-                see :code:`bertlike_model_name` in :code:`BaseBERTLikeEncoder`. In this class the default value is :code:`distilbert-base-uncased`
-        '''
         super().__init__(bertlike_model_name=bertlike_model_name, **kwargs)
     
     def forward(self, batched_tokenized_sentence, batched_attn_masks):
