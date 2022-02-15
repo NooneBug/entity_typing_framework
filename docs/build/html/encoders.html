@@ -147,7 +147,7 @@
 <span class="target" id="distilbertencoder"></span><dl class="class">
 <dt id="entity_typing_framework.EntityTypingNetwork_classes.input_encoders.DistilBERTEncoder">
 <em class="property">class </em><code class="descclassname">entity_typing_framework.EntityTypingNetwork_classes.input_encoders.</code><code class="descname">DistilBERTEncoder</code><span class="sig-paren">(</span><em>bertlike_model_name: str = 'distilbert-base-uncased'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.input_encoders.DistilBERTEncoder" title="Permalink to this definition">¶</a></dt>
-<dd><p>Default class to instantiate DistilBERT as encoder; subclass of BaseBERTLikeEncoder.</p>
+<dd><p>Default class to instantiate DistilBERT as encoder; subclass of <code class="code docutils literal notranslate"><span class="pre">BaseBERTLikeEncoder</span></code>.</p>
 <p>to instance this encoder insert the string <code class="code docutils literal notranslate"><span class="pre">DistilBERTEncoder</span></code> in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file under the key : <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.encoder_params.name</span></code></p>
 <dl class="docutils">
 <dt>Parameters:</dt>
@@ -196,7 +196,7 @@
 <span class="target" id="adapterdistilbertencoder"></span><dl class="class">
 <dt id="entity_typing_framework.EntityTypingNetwork_classes.input_encoders.AdapterDistilBERTEncoder">
 <em class="property">class </em><code class="descclassname">entity_typing_framework.EntityTypingNetwork_classes.input_encoders.</code><code class="descname">AdapterDistilBERTEncoder</code><span class="sig-paren">(</span><em>bertlike_model_name: str = 'distilbert-base-uncased'</em>, <em>adapter_arch='Pfeiffer'</em>, <em>reduction_factor=16</em>, <em>adapter_name='ET_adapter'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.input_encoders.AdapterDistilBERTEncoder" title="Permalink to this definition">¶</a></dt>
-<dd><p>Class to instance DistilBERT with Adapters; Subclass of DistilBERTEncoder.</p>
+<dd><p>Class to instance DistilBERT with Adapters; Subclass of <code class="code docutils literal notranslate"><span class="pre">DistilBERTEncoder</span></code>.</p>
 <p>to instance this encoder insert the string <code class="code docutils literal notranslate"><span class="pre">AdapterDistilBERTEncoder</span></code> in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file under the key : <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.encoder_params.name</span></code></p>
 <dl class="docutils">
 <dt>Parameters:</dt>

@@ -89,17 +89,118 @@
 <p>List of implemented <a class="reference internal" href="modules_submodules.html#input-projector"><span class="std std-ref">input_projectors</span></a> classes, submodule of <a class="reference internal" href="modules_submodules.html#entitytypingnetwork"><span class="std std-ref">EntityTypingNetwork</span></a></p>
 <span class="target" id="classifier"></span><dl class="class">
 <dt id="entity_typing_framework.EntityTypingNetwork_classes.projectors.Classifier">
-<em class="property">class </em><code class="descclassname">entity_typing_framework.EntityTypingNetwork_classes.projectors.</code><code class="descname">Classifier</code><span class="sig-paren">(</span><em>type_number</em>, <em>input_dim</em>, <em>parameters</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.projectors.Classifier" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<em class="property">class </em><code class="descclassname">entity_typing_framework.EntityTypingNetwork_classes.projectors.</code><code class="descname">Classifier</code><span class="sig-paren">(</span><em>name</em>, <em>type_number</em>, <em>input_dim</em>, <em>parameters</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.projectors.Classifier" title="Permalink to this definition">¶</a></dt>
+<dd><p>Projector used as classification layer after the <a class="reference internal" href="modules_submodules.html#encoder"><span class="std std-ref">Encoder</span></a>. Predicts a vector with shape <code class="code docutils literal notranslate"><span class="pre">(type_number)</span></code> with values between 0 and 1.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>name:</dt>
+<dd><p class="first">the name of the submodule, has to be specified in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file with key <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.input_projector_params.name</span></code></p>
+<p>to instance this projector insert the string <code class="code docutils literal notranslate"><span class="pre">Classifier</span></code> in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file with key <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.input_projector_params.name</span></code></p>
+<p class="last">this param is used by the <a class="reference internal" href="modules_submodules.html#entitytypingnetwork"><span class="std std-ref">Entity Typing Network</span></a> to instance the correct submodule</p>
+</dd>
+<dt>type_number:</dt>
+<dd>number of types in the dataset for this run, it is automatically extracted by the <a class="reference internal" href="dataset_managers.html"><span class="doc">DatasetManager</span></a> and automatically given in input to the Classifier by the <a class="reference internal" href="modules_submodules.html#entitytypingnetwork"><span class="std std-ref">Entity Typing Network</span></a></dd>
+<dt>input_dim:</dt>
+<dd>dimension of the vector inputed for the forward, it is automatically extracted from the <a class="reference internal" href="encoders.html"><span class="doc">Encoder</span></a> by the <a class="reference internal" href="modules_submodules.html#entitytypingnetwork"><span class="std std-ref">Entity Typing Network</span></a></dd>
+<dt>parameters:</dt>
+<dd><p class="first">dictionary of parameters to instantiate different <code class="code docutils literal notranslate"><span class="pre">Layer</span></code> objects.</p>
+<p>the values for this parameter have to be specified in a <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> dictionary in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file with key <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.input_projector_params.layers_parameters</span></code></p>
+<p class="last">see the documentation of <code class="code docutils literal notranslate"><span class="pre">Layer</span></code> for the format of these parameters</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="entity_typing_framework.EntityTypingNetwork_classes.projectors.Classifier.add_parameters">
+<code class="descname">add_parameters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.projectors.Classifier.add_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>adds the default parameters if are not specified into the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file under the key <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.input_projector_params.layers_parameters</span></code></p>
+<dl class="docutils">
+<dt>The default values are: </dt>
+<dd><ul class="first last simple">
+<li>if input features of the 0th projection layer are not specified or it is specified the string <code class="code docutils literal notranslate"><span class="pre">encoder_dim</span></code>, the value <code class="code docutils literal notranslate"><span class="pre">input_dim</span></code> is inserted by default</li>
+<li>if output features of the last proection layer are not specificied or it is specified the string <code class="code docutils literal notranslate"><span class="pre">type_number</span></code>: the value <code class="code docutils literal notranslate"><span class="pre">type_number</span></code> is inserted by default</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="entity_typing_framework.EntityTypingNetwork_classes.projectors.Classifier.check_parameters">
+<code class="descname">check_parameters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.projectors.Classifier.check_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check the parameters values and raises exceptions. Ensure that a classic classification can be obtained.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="entity_typing_framework.EntityTypingNetwork_classes.projectors.Classifier.forward">
 <code class="descname">forward</code><span class="sig-paren">(</span><em>input_representation</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.projectors.Classifier.forward" title="Permalink to this definition">¶</a></dt>
-<dd><p>Same as <code class="xref py py-meth docutils literal notranslate"><span class="pre">torch.nn.Module.forward()</span></code>.</p>
+<dd><p>operates the forward pass of this submodule, proecting the encoded input in a vector of confidence values (one for each type in the dataset)</p>
 <dl class="docutils">
-<dt>Args:</dt>
-<dd><a href="#id1"><span class="problematic" id="id2">*</span></a>args: Whatever you decide to pass into the forward method.
-<a href="#id3"><span class="problematic" id="id4">**</span></a>kwargs: Keyword arguments are also possible.</dd>
-<dt>Return:</dt>
-<dd>Your model’s output</dd>
+<dt>parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>input_representation:</dt>
+<dd>output of the <a class="reference internal" href="encoders.html"><span class="doc">Input Encoder</span></a> with shape <code class="code docutils literal notranslate"><span class="pre">[input_dim,</span> <span class="pre">batch_size]</span></code></dd>
+</dl>
+</dd>
+<dt>output:</dt>
+<dd>classification vector with shape <code class="code docutils literal notranslate"><span class="pre">[type_number,</span> <span class="pre">batch_size]</span></code></dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="entity_typing_framework.EntityTypingNetwork_classes.projectors.Layer">
+<em class="property">class </em><code class="descclassname">entity_typing_framework.EntityTypingNetwork_classes.projectors.</code><code class="descname">Layer</code><span class="sig-paren">(</span><em>in_features</em>, <em>out_features</em>, <em>activation='relu'</em>, <em>use_dropout=True</em>, <em>dropout_p=0.1</em>, <em>use_batch_norm=False</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.projectors.Layer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fully Connected Layer with activation function, with parametrization managed through the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file under the key <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.input_projector_params.layer_id</span></code></p>
+<p>Each layer has an incremental id specified in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file, which works as index in the dictionary (see the example configuration files)</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>in_features:</dt>
+<dd>dimension of the input features of the fully connected layer</dd>
+<dt>out_features:</dt>
+<dd>dimension of the output features of the fully connected layer</dd>
+<dt>activation:</dt>
+<dd>the activation function to use; supported activations are <code class="code docutils literal notranslate"><span class="pre">relu</span></code> and <code class="code docutils literal notranslate"><span class="pre">sigmoid</span></code></dd>
+<dt>use_dropout:</dt>
+<dd>if use the dropout or not</dd>
+<dt>dropout_p:</dt>
+<dd>probability of dropout</dd>
+<dt>use_batch_norm:</dt>
+<dd>if use the batch normalization or not</dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="entity_typing_framework.EntityTypingNetwork_classes.projectors.Layer.forward">
+<code class="descname">forward</code><span class="sig-paren">(</span><em>hidden_representation</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.projectors.Layer.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs the forward pass for the fully connected layer.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>hidden representation: </dt>
+<dd>a tensor with shape <code class="code docutils literal notranslate"><span class="pre">[in_features,</span> <span class="pre">batch_size]</span></code></dd>
+</dl>
+</dd>
+<dt>Output:</dt>
+<dd>output of the forward pass and the activation with shape <code class="code docutils literal notranslate"><span class="pre">[out_features,</span> <span class="pre">batch_size]</span></code></dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="entity_typing_framework.EntityTypingNetwork_classes.projectors.Layer.instance_activation">
+<code class="descname">instance_activation</code><span class="sig-paren">(</span><em>activation_name</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.projectors.Layer.instance_activation" title="Permalink to this definition">¶</a></dt>
+<dd><p>instances the activation function. This procedure is driven by the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file</p>
+<dl class="docutils">
+<dt>parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>activation name:</dt>
+<dd><p class="first">name of the activation function to use, specified in the key: <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.input_projector_params.layer_id.activation</span></code> of the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file</p>
+<p class="last">supported value : <code class="code docutils literal notranslate"><span class="pre">['relu',</span> <span class="pre">'sigmoid']</span></code></p>
+</dd>
+</dl>
+</dd>
 </dl>
 </dd></dl>
 

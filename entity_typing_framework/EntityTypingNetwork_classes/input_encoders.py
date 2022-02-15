@@ -63,7 +63,7 @@ class BaseBERTLikeEncoder(LightningModule):
 
 class DistilBERTEncoder(BaseBERTLikeEncoder):
     '''
-    Default class to instantiate DistilBERT as encoder; subclass of BaseBERTLikeEncoder.
+    Default class to instantiate DistilBERT as encoder; subclass of :code:`BaseBERTLikeEncoder`.
     
     to instance this encoder insert the string :code:`DistilBERTEncoder` in the :code:`yaml` configuration file under the key : :code:`model.ET_Network_params.encoder_params.name`
     
@@ -106,7 +106,7 @@ class DistilBERTEncoder(BaseBERTLikeEncoder):
 
 class AdapterDistilBERTEncoder(DistilBERTEncoder):
     '''
-    Class to instance DistilBERT with Adapters; Subclass of DistilBERTEncoder.
+    Class to instance DistilBERT with Adapters; Subclass of :code:`DistilBERTEncoder`.
 
     to instance this encoder insert the string :code:`AdapterDistilBERTEncoder` in the :code:`yaml` configuration file under the key : :code:`model.ET_Network_params.encoder_params.name`
 

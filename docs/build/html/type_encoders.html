@@ -89,18 +89,32 @@
 <p>List of implemented <a class="reference internal" href="modules_submodules.html#type-encoder"><span class="std std-ref">type_encoder</span></a> classes, submodule of <a class="reference internal" href="modules_submodules.html#entitytypingnetwork"><span class="std std-ref">EntityTypingNetwork</span></a></p>
 <span class="target" id="onehottypeencoder"></span><dl class="class">
 <dt id="entity_typing_framework.EntityTypingNetwork_classes.type_encoders.OneHotTypeEncoder">
-<em class="property">class </em><code class="descclassname">entity_typing_framework.EntityTypingNetwork_classes.type_encoders.</code><code class="descname">OneHotTypeEncoder</code><span class="sig-paren">(</span><em>name</em>, <em>type_number</em>, <em>trainable=False</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.type_encoders.OneHotTypeEncoder" title="Permalink to this definition">¶</a></dt>
-<dd><p>since the datasetmanager represent true labels as one hot, this is a fake module, only returns the already correct labels</p>
+<em class="property">class </em><code class="descclassname">entity_typing_framework.EntityTypingNetwork_classes.type_encoders.</code><code class="descname">OneHotTypeEncoder</code><span class="sig-paren">(</span><em>name</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.type_encoders.OneHotTypeEncoder" title="Permalink to this definition">¶</a></dt>
+<dd><p>since the DatasetManager commonly represents true labels as one hot, this is a dummy module, only returns the already correct labels</p>
+<dl class="docutils">
+<dt>parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>name:</dt>
+<dd><p class="first">the name of the submodule, has to be specified in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file with key <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.type_encoder_params.name</span></code></p>
+<p>to instance this type encoder insert the string <code class="code docutils literal notranslate"><span class="pre">OneHotTypeEncoder</span></code> in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file with key <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.type_encoder_params.name</span></code></p>
+<p class="last">this param is used by the <a class="reference internal" href="modules_submodules.html#entitytypingnetwork"><span class="std std-ref">Entity Typing Network</span></a> to instance the correct submodule</p>
+</dd>
+</dl>
+</dd>
+</dl>
 <dl class="method">
 <dt id="entity_typing_framework.EntityTypingNetwork_classes.type_encoders.OneHotTypeEncoder.forward">
 <code class="descname">forward</code><span class="sig-paren">(</span><em>batched_labels</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.type_encoders.OneHotTypeEncoder.forward" title="Permalink to this definition">¶</a></dt>
-<dd><p>Same as <code class="xref py py-meth docutils literal notranslate"><span class="pre">torch.nn.Module.forward()</span></code>.</p>
+<dd><p>defines the forward pass of the type encoder. In the forwar the <code class="code docutils literal notranslate"><span class="pre">batched_labels</span></code> is returned as is since this is a dummy module</p>
 <dl class="docutils">
-<dt>Args:</dt>
-<dd><a href="#id1"><span class="problematic" id="id2">*</span></a>args: Whatever you decide to pass into the forward method.
-<a href="#id3"><span class="problematic" id="id4">**</span></a>kwargs: Keyword arguments are also possible.</dd>
-<dt>Return:</dt>
-<dd>Your model’s output</dd>
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>batched_labels:</dt>
+<dd><p class="first">one of the batch elements returned by the <a class="reference internal" href="datasets.html"><span class="doc">dataset</span></a> (<code class="code docutils literal notranslate"><span class="pre">__getitem__</span></code> method). It contains one hot labels extracted from <a class="reference internal" href="dataset_tokenizers.html"><span class="doc">Dataset Tokenizer</span></a></p>
+<p class="last">the expected format of the one hot labels is a vector [label_number] with values 1 for each <code class="code docutils literal notranslate"><span class="pre">True</span></code> label, 0 for each <code class="code docutils literal notranslate"><span class="pre">False</span></code> label based on the <code class="code docutils literal notranslate"><span class="pre">type2id</span></code> dictionary into the <a class="reference internal" href="dataset_managers.html"><span class="doc">Dataset Manager</span></a></p>
+</dd>
+</dl>
+</dd>
 </dl>
 </dd></dl>
 
