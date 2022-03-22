@@ -20,7 +20,7 @@ A framework to perform entity typing task in different setup and with different 
 
 
 * Free software: MIT license
-* Documentation: https://noonebug.github.io/entity_typing_framework/build/html/index.html.
+* Documentation: https://noonebug.github.io/entity_typing_framework.
 
 
 Features
