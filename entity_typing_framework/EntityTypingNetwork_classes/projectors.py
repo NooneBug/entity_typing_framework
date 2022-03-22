@@ -99,12 +99,11 @@ class Classifier(LightningModule):
             see the documentation of :code:`Layer` for the format of these parameters 
     '''
 
-    def __init__(self, name, type_number, input_dim, parameters):
+    def __init__(self, name, type_number, input_dim, layers_parameters):
         super().__init__()
         self.type_number = type_number
         self.input_dim = input_dim
-        self.parameters = parameters
-        self.layers_parameters = self.parameters['layers_parameters']
+        self.layers_parameters = layers_parameters
 
         self.add_parameters()
         self.check_parameters()

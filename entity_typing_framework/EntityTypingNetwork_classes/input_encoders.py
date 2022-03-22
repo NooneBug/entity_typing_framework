@@ -59,8 +59,60 @@ class BaseBERTLikeEncoder(LightningModule):
         Return:
             output_dim: dimension of the encoded input (e.g. 768 on DistilBERT)
         '''
-        return self.encoder.config.dim
+        raise Exception("Implement this function")
 
+class BERTEncoder(BaseBERTLikeEncoder):
+    '''
+    Default class to instantiate BERT as encoder; subclass of :code:`BaseBERTLikeEncoder`.
+    
+    to instance this encoder insert the string :code:`BERTEncoder` in the :code:`yaml` configuration file under the key : :code:`model.ET_Network_params.encoder_params.name`
+    
+    Parameters:
+        bertlike_model_name:
+            see :code:`bertlike_model_name` in :code:`BaseBERTLikeEncoder`. In this class the default value is :code:`bert-base-uncased`
+    '''
+    def __init__(self, bertlike_model_name: str = 'bert-base-uncased', **kwargs) -> None:
+        super().__init__(bertlike_model_name=bertlike_model_name, **kwargs)
+    
+    def forward(self, batched_tokenized_sentence, batched_attn_masks):
+        '''
+        defines the forward pass of the encoder. In the forward the :code:`batched_tokenized_sentence` is processed by DistilBERT and is returned using the method :code:`aggregate_function`
+        
+        Parameters:
+            batched_tokenized_sentence:
+                see :code:`batched_tokenized_sentence` in :code:`BaseBERTLikeEncoder`
+
+            batched_attn_masks:
+                see :code:`batched_attn_masks` in :code:`BaseBERTLikeEncoder`
+        
+        Return:
+            encoder_output: parameters processed by DistilBERT and aggregated by the method :code:`aggregate_function`
+        '''
+        return self.aggregate_function(self.encoder(batched_tokenized_sentence, batched_attn_masks))
+
+    def aggregate_function(self, encoder_output):
+        '''
+        aggregates the output of BERT by picking the CLS encoding
+
+        Parameters:
+            encoder_output:
+                output of BERT, commonly shaped as [batch_size, token_number, 768]
+        
+        Return:
+            cls_encoding: encoding of the first output token (CLS token), commonly shaped as [batch_size, 768] 
+
+        '''
+        return encoder_output['last_hidden_state'][:, 0, :]
+    
+    def get_representation_dim(self):
+        '''
+        returns the output dim of the encoder
+
+        Return:
+            output_dim: dimension of the encoded input (e.g. 768 on DistilBERT)
+        '''
+        return self.encoder.config.hidden_size
+    
 class DistilBERTEncoder(BaseBERTLikeEncoder):
     '''
     Default class to instantiate DistilBERT as encoder; subclass of :code:`BaseBERTLikeEncoder`.
@@ -99,10 +151,20 @@ class DistilBERTEncoder(BaseBERTLikeEncoder):
                 output of DistilBERT, commonly shaped as [batch_size, token_number, 768]
         
         Return:
-            cls_encoding: encoding of the first output token (CLS token), commonly shaper as [batch_size, 768] 
+            cls_encoding: encoding of the first output token (CLS token), commonly shaped as [batch_size, 768] 
 
         '''
         return encoder_output['last_hidden_state'][:, 0, :]
+    
+    def get_representation_dim(self):
+        '''
+        returns the output dim of the encoder
+
+        Return:
+            output_dim: dimension of the encoded input (e.g. 768 on DistilBERT)
+        '''
+        return self.encoder.config.dim
+
 
 class AdapterDistilBERTEncoder(DistilBERTEncoder):
     '''

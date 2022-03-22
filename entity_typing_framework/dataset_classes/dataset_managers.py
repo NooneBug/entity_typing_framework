@@ -88,7 +88,7 @@ class DatasetManager(LightningDataModule):
         '''
         dataloader_ready_datasets = {partition_name : IMPLEMENTED_CLASSES_LVL0[self.datasets_params['name']](tokenized_dataset = t) for partition_name, t in self.tokenized_datasets.items()}
 
-        self.dataloaders = {partition_name: IMPLEMENTED_CLASSES_LVL0[self.datasets_params['name']](dataset_obj,
+        self.dataloaders = {partition_name: IMPLEMENTED_CLASSES_LVL0[self.dataloader_params['name']](dataset_obj,
                                                     **self.dataloader_params[partition_name])                        
                         for partition_name, dataset_obj in dataloader_ready_datasets.items()}
     

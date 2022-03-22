@@ -44,7 +44,7 @@ class BaseEntityTypingNetwork(LightningModule):
         input_projector_params = network_params['input_projector_params']
         self.input_projector = IMPLEMENTED_CLASSES_LVL1[input_projector_params['name']](type_number=type_number, 
                                             input_dim = self.encoder.get_representation_dim(), 
-                                            parameters = input_projector_params)
+                                            **input_projector_params)
 
     def forward(self, batch):
         '''
