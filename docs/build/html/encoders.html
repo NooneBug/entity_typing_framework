@@ -169,7 +169,7 @@
 </dl>
 </dd>
 <dt>Return:</dt>
-<dd>cls_encoding: encoding of the first output token (CLS token), commonly shaper as [batch_size, 768]</dd>
+<dd>cls_encoding: encoding of the first output token (CLS token), commonly shaped as [batch_size, 768]</dd>
 </dl>
 </dd></dl>
 
@@ -188,6 +188,16 @@
 </dd>
 <dt>Return:</dt>
 <dd>encoder_output: parameters processed by DistilBERT and aggregated by the method <code class="code docutils literal notranslate"><span class="pre">aggregate_function</span></code></dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="entity_typing_framework.EntityTypingNetwork_classes.input_encoders.DistilBERTEncoder.get_representation_dim">
+<code class="descname">get_representation_dim</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.input_encoders.DistilBERTEncoder.get_representation_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the output dim of the encoder</p>
+<dl class="docutils">
+<dt>Return:</dt>
+<dd>output_dim: dimension of the encoded input (e.g. 768 on DistilBERT)</dd>
 </dl>
 </dd></dl>
 
