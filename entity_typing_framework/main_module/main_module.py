@@ -30,18 +30,25 @@ class MainModule(LightningModule):
         loss = self.loss.compute_loss(network_output, type_representations)
         return loss
 
+    def training_epoch_end(self, out):
+        losses = [v for elem in out for k, v in elem.items()]
+        self.logger_module.log_loss(name = 'train_loss', value = torch.mean(torch.tensor(losses)))
+
     def validation_step(self, batch, batch_step):
         _, _, true_types = batch
         network_output, type_representations = self.ET_Network(batch)
         loss = self.loss.compute_loss(network_output, type_representations)
         inferred_types = self.inference_manager.infer_types(network_output)
         self.metric_manager.update(inferred_types, true_types)
+        self.log("val_loss", loss)
 
         return loss
     
     def validation_epoch_end(self, out):
         metrics = self.metric_manager.compute()
         self.logger_module.log_all_metrics(metrics)
+        self.logger_module.log_loss(name = 'val_loss', value = torch.mean(torch.tensor(out)))
+        self.logger_module.log_all()
         
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)

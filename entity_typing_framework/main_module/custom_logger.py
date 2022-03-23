@@ -12,7 +12,9 @@ class CustomLogger(WandbLogger, Callback):
     def log_all_metrics(self, metrics):
         for key, value in metrics.items():
             self.add(key, value)
-        self.log_all()
+
+    def log_loss(self, name, value):
+        self.add(key=name, value=value)
 
     def add(self, key, value):
         self.to_log[key] = value
