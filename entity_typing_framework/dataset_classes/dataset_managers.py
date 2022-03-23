@@ -59,7 +59,7 @@ class DatasetManager(LightningDataModule):
 
         The class for dataset reader is chosen following the configuration file value under the key :code:`data.dataset_reader_params.name`
         '''
-        self.datasets = IMPLEMENTED_CLASSES_LVL0[self.dataset_reader_params['name']](dataset_paths = self.dataset_paths)
+        self.datasets = IMPLEMENTED_CLASSES_LVL0[self.dataset_reader_params['name']](dataset_paths = self.dataset_paths, **self.dataset_reader_params)
         
         self.create_type2id({partition_name : partition.labels for partition_name, partition in self.datasets.partitions.items()})
         
