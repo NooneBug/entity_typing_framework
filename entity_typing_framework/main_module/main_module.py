@@ -9,14 +9,18 @@ class MainModule(LightningModule):
     def __init__(self, 
     ET_Network_params : dict,
     type_number : int,
-    logger
+    logger,
+    checkpoint_to_load : str = None,
     ):
 
         super().__init__()
         self.type_number = type_number
         self.logger_module = logger
 
-        self.ET_Network = IMPLEMENTED_CLASSES_LVL0[ET_Network_params['name']](**ET_Network_params, type_number = self.type_number)
+        if not checkpoint_to_load:
+            self.ET_Network = IMPLEMENTED_CLASSES_LVL0[ET_Network_params['name']](**ET_Network_params, type_number = self.type_number)
+        else:
+            self.ET_Network = IMPLEMENTED_CLASSES_LVL0[ET_Network_params['name']].load_from_checkpoint(checkpoint_to_load, **ET_Network_params)
         self.metric_manager = MetricManager(num_classes=self.type_number, device=self.device)
         self.inference_manager = InferenceManager()
         self.loss = BCELossForET()

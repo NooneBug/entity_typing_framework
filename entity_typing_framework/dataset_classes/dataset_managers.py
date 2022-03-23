@@ -101,7 +101,7 @@ class DatasetManager(LightningDataModule):
         These dictionaries are the only way to translate a type between alphabetical and token in all the framework
         '''
         partition_unique_types = {partition_name : set.union(*[set(t) for t in types]) for partition_name, types in types_dict.items()}
-        dataset_unique_types = set.union(*list(partition_unique_types.values()))
+        dataset_unique_types = sorted(set.union(*list(partition_unique_types.values())))
 
         self.type2id = {t: id for id, t in enumerate(dataset_unique_types)}
         self.id2type = {id: t for t, id in self.type2id.items()}
