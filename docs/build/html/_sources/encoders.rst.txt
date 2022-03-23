@@ -8,7 +8,7 @@ List of implemented :ref:`encoder <encoder>` classes, submodule of :ref:`EntityT
     :members:
 
 .. _BERTEncoder:
-.. autoclass:: entity_typing_framework.EntityTypingNetwork_classes.input_encoders.DistilBERTEncoder
+.. autoclass:: entity_typing_framework.EntityTypingNetwork_classes.input_encoders.BERTEncoder
     :members: 
 
 .. _DistilBERTEncoder:
