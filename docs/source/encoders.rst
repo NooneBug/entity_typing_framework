@@ -6,7 +6,11 @@ List of implemented :ref:`encoder <encoder>` classes, submodule of :ref:`EntityT
 .. _BaseBERTLikeEncoder:
 .. autoclass:: entity_typing_framework.EntityTypingNetwork_classes.input_encoders.BaseBERTLikeEncoder
     :members:
-    
+
+.. _BERTEncoder:
+.. autoclass:: entity_typing_framework.EntityTypingNetwork_classes.input_encoders.DistilBERTEncoder
+    :members: 
+
 .. _DistilBERTEncoder:
 .. autoclass:: entity_typing_framework.EntityTypingNetwork_classes.input_encoders.DistilBERTEncoder
     :members: 

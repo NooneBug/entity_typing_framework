@@ -144,7 +144,7 @@
 
 </dd></dl>
 
-<span class="target" id="distilbertencoder"></span><dl class="class">
+<span class="target" id="bertencoder"></span><dl class="class">
 <dt id="entity_typing_framework.EntityTypingNetwork_classes.input_encoders.DistilBERTEncoder">
 <em class="property">class </em><code class="descclassname">entity_typing_framework.EntityTypingNetwork_classes.input_encoders.</code><code class="descname">DistilBERTEncoder</code><span class="sig-paren">(</span><em>bertlike_model_name: str = 'distilbert-base-uncased'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.input_encoders.DistilBERTEncoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Default class to instantiate DistilBERT as encoder; subclass of <code class="code docutils literal notranslate"><span class="pre">BaseBERTLikeEncoder</span></code>.</p>
@@ -194,6 +194,65 @@
 <dl class="method">
 <dt id="entity_typing_framework.EntityTypingNetwork_classes.input_encoders.DistilBERTEncoder.get_representation_dim">
 <code class="descname">get_representation_dim</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.input_encoders.DistilBERTEncoder.get_representation_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the output dim of the encoder</p>
+<dl class="docutils">
+<dt>Return:</dt>
+<dd>output_dim: dimension of the encoded input (e.g. 768 on DistilBERT)</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="distilbertencoder"></span><dl class="class">
+<dt>
+<em class="property">class </em><code class="descclassname">entity_typing_framework.EntityTypingNetwork_classes.input_encoders.</code><code class="descname">DistilBERTEncoder</code><span class="sig-paren">(</span><em>bertlike_model_name: str = 'distilbert-base-uncased'</em>, <em>**kwargs</em><span class="sig-paren">)</span></dt>
+<dd><p>Default class to instantiate DistilBERT as encoder; subclass of <code class="code docutils literal notranslate"><span class="pre">BaseBERTLikeEncoder</span></code>.</p>
+<p>to instance this encoder insert the string <code class="code docutils literal notranslate"><span class="pre">DistilBERTEncoder</span></code> in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file under the key : <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.encoder_params.name</span></code></p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>bertlike_model_name:</dt>
+<dd>see <code class="code docutils literal notranslate"><span class="pre">bertlike_model_name</span></code> in <code class="code docutils literal notranslate"><span class="pre">BaseBERTLikeEncoder</span></code>. In this class the default value is <code class="code docutils literal notranslate"><span class="pre">distilbert-base-uncased</span></code></dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt>
+<code class="descname">aggregate_function</code><span class="sig-paren">(</span><em>encoder_output</em><span class="sig-paren">)</span></dt>
+<dd><p>aggregates the output of DistilBERT by picking the CLS encoding</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>encoder_output:</dt>
+<dd>output of DistilBERT, commonly shaped as [batch_size, token_number, 768]</dd>
+</dl>
+</dd>
+<dt>Return:</dt>
+<dd>cls_encoding: encoding of the first output token (CLS token), commonly shaped as [batch_size, 768]</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">forward</code><span class="sig-paren">(</span><em>batched_tokenized_sentence</em>, <em>batched_attn_masks</em><span class="sig-paren">)</span></dt>
+<dd><p>defines the forward pass of the encoder. In the forward the <code class="code docutils literal notranslate"><span class="pre">batched_tokenized_sentence</span></code> is processed by DistilBERT and is returned using the method <code class="code docutils literal notranslate"><span class="pre">aggregate_function</span></code></p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>batched_tokenized_sentence:</dt>
+<dd>see <code class="code docutils literal notranslate"><span class="pre">batched_tokenized_sentence</span></code> in <code class="code docutils literal notranslate"><span class="pre">BaseBERTLikeEncoder</span></code></dd>
+<dt>batched_attn_masks:</dt>
+<dd>see <code class="code docutils literal notranslate"><span class="pre">batched_attn_masks</span></code> in <code class="code docutils literal notranslate"><span class="pre">BaseBERTLikeEncoder</span></code></dd>
+</dl>
+</dd>
+<dt>Return:</dt>
+<dd>encoder_output: parameters processed by DistilBERT and aggregated by the method <code class="code docutils literal notranslate"><span class="pre">aggregate_function</span></code></dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">get_representation_dim</code><span class="sig-paren">(</span><span class="sig-paren">)</span></dt>
 <dd><p>returns the output dim of the encoder</p>
 <dl class="docutils">
 <dt>Return:</dt>
