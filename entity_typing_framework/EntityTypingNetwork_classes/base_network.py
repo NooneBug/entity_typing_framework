@@ -68,5 +68,3 @@ class BaseEntityTypingNetwork(LightningModule):
         encoded_types = self.type_encoder(batched_labels)
         
         return projected_input, encoded_types
-
-    # def load_from_checkpoint()

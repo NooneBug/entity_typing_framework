@@ -47,7 +47,10 @@ class Layer(LightningModule):
             output of the forward pass and the activation with shape :code:`[out_features, batch_size]`
         '''
         
-        h = self.activation(self.linear(hidden_representation))
+        h = self.linear(hidden_representation)
+
+        if self.activation:
+            h = self.activation(h)
 
         if self.use_batch_norm:
             h = self.batch_norm(h)
@@ -72,6 +75,8 @@ class Layer(LightningModule):
             return ReLU()
         elif activation_name == 'sigmoid':
             return Sigmoid()
+        elif activation_name == 'none':
+            return None
         else:
             raise Exception('An unknown name (\'{}\')is given for activation, check the yaml or implement an activation that correspond to that name'.format(activation_name))
 

@@ -10,7 +10,7 @@ class Loss(LightningModule):
         raise Exception('Implement this function')
 
 class BCELossForET(Loss):
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, name, **kwargs) -> None:
         super().__init__()
         self.loss = BCELoss(**kwargs)
     

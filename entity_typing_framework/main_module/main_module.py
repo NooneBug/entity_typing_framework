@@ -10,6 +10,7 @@ class MainModule(LightningModule):
     ET_Network_params : dict,
     type_number : int,
     logger,
+    loss_params,
     checkpoint_to_load : str = None,
     ):
 
@@ -23,7 +24,7 @@ class MainModule(LightningModule):
             self.ET_Network = IMPLEMENTED_CLASSES_LVL0[ET_Network_params['name']].load_from_checkpoint(checkpoint_to_load, **ET_Network_params)
         self.metric_manager = MetricManager(num_classes=self.type_number, device=self.device)
         self.inference_manager = InferenceManager()
-        self.loss = BCELossForET()
+        self.loss = IMPLEMENTED_CLASSES_LVL0[loss_params['name']](**loss_params)
         self.save_hyperparameters()
     
     def on_fit_start(self):
@@ -57,3 +58,13 @@ class MainModule(LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
         return optimizer
+
+class KENNMainModule(MainModule):
+    def validation_step(self, batch, batch_step):
+        r_, _, true_types = batch
+        network_output, type_representations = self.ET_Network(batch)
+        loss = self.loss.compute_loss(network_output, type_representations)
+        # pick postkenn predictions
+        inferred_types = self.inference_manager.infer_types(network_output[1])
+        self.metric_manager.update(inferred_types, true_types)
+        self.log("val_loss", loss)

@@ -15,7 +15,7 @@ class BaseDataset:
 
     the :code:`__init__` saves the parameters and automatic calls :code:`read_dataset_partitions()`
     '''
-    def __init__(self, dataset_paths):
+    def __init__(self, name, dataset_paths):
         self.dataset_paths = dataset_paths
 
         self.read_dataset_partitions()

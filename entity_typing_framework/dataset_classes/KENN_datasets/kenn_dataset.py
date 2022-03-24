@@ -39,7 +39,7 @@ def create_tree(filepath, label2pred = False):
 class KENNDataset(BaseDataset):
 
     def __init__(self, name, dataset_paths, types_file_path, clause_output_path, learnable_clause_weight, clause_weight, kb_mode):
-        super().__init__(dataset_paths)
+        super().__init__(name = name, dataset_paths = dataset_paths)
         self.automatic_build_clauses(types_file_path, clause_output_path, learnable_clause_weight, clause_weight, kb_mode)
 
     def automatic_build_clauses(self, types_file_path, clause_output_path, learnable_clause_weight = False, clause_weight = 0.5, kb_mode = 'top_down'):
