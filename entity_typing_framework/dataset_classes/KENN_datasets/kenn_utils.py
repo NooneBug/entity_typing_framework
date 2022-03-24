@@ -4,7 +4,7 @@ import os
 
 ### KENN CONSTRAINTS ###
 # mode in ['bottom_up','top_down','hybrid','hybrid_in','hybrid_out','bottom_up_skip', 'top_down_skip']
-def generate_constraints(tree, mode, filepath, weight='_'):
+def generate_constraints(tree, mode, filepath = None, weight='_'):
     # generate predicate list
     predicates = generate_predicates(tree)
     # generate constraints
@@ -46,13 +46,14 @@ def generate_constraints(tree, mode, filepath, weight='_'):
     print(clauses.count('\n'), 'clauses created')
     # create kb
     kb = predicates + '\n\n' + clauses
-    
-    folder_path = '/'.join(filepath.split('/')[:-1])
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-    with open(filepath, 'w') as f:
-        f.write(kb)
-    return kb
+
+    if filepath:
+        folder_path = '/'.join(filepath.split('/')[:-1])
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+        with open(filepath, 'w') as f:
+            f.write(kb)
+        return kb
 
 def generate_predicates(tree):
     predicates = []
