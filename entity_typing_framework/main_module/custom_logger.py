@@ -3,10 +3,9 @@ import wandb
 from pytorch_lightning.loggers.wandb import WandbLogger
 
 class CustomLogger(WandbLogger, Callback):
-    def __init__(self, entity, **kwargs):
-        project = kwargs['project']
-        wandb.init(project=project, entity=entity)
-        super().__init__(**kwargs)
+    def __init__(self, project, entity, name):
+        wandb.init(project=project, entity=entity, name = name)
+        super().__init__(project=project, entity=entity, name=name)
         self.to_log = {}
     
     def log_all_metrics(self, metrics):
