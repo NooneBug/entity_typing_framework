@@ -1,5 +1,7 @@
 from pytorch_lightning.core.datamodule import LightningDataModule
 from entity_typing_framework.utils.implemented_classes_lvl0 import IMPLEMENTED_CLASSES_LVL0
+from pytorch_lightning.trainer.supporters import CombinedLoader
+from transformers import AutoTokenizer
 
 class DatasetManager(LightningDataModule):
     '''
@@ -69,12 +71,30 @@ class DatasetManager(LightningDataModule):
 
         Tokenize each partition of the dataset with a :doc:`dataset_tokenizer <dataset_tokenizers>` class, chosen following the configuration file value under the key :code:`data.tokenizer_params.name`
         '''
+
+        tokenizer = self.instance_tokenizer(bertlike_model_name = self.tokenizer_params['bertlike_model_name'])
         self.tokenized_datasets = {partition_name: IMPLEMENTED_CLASSES_LVL0[self.tokenizer_params['name']](dataset,
                                                                             self.type2id,
+                                                                            tokenizer,
                                                                             **self.tokenizer_params
                                                                             ) for partition_name, dataset in self.datasets.partitions.items()
                             }
     
+    def instance_tokenizer(self, bertlike_model_name):
+        '''
+        instance a tokenizer with `huggingface AutoTokenizer <https://huggingface.co/docs/transformers/v4.15.0/en/model_doc/auto#transformers.AutoTokenizer>`_
+
+        parameters:
+            bertlike_model_name:
+                see :code:`bertlike_model_name` in the documentation of the entire class
+        
+        return:
+            an instance of `huggingface AutoTokenizer <https://huggingface.co/docs/transformers/v4.15.0/en/model_doc/auto#transformers.AutoTokenizer>`_
+
+        '''
+        return AutoTokenizer.from_pretrained(bertlike_model_name)
+
+
     def setup(self, **kwargs):
         '''
         Override of `pytorch_lightning.core.datamodule.LightningDataModule.setup <https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html#prepare-data>`_
@@ -138,4 +158,60 @@ class DatasetManager(LightningDataModule):
         
         return self.dataloaders['test']
     
+
+class IncrementalTrainingDatasetManager(DatasetManager):
+    def create_type2id(self, types_dict):
+        '''
+        Creates and store the translation dictionaries :code:`type2id` and :code:`id2type`
+
+        These dictionaries are used to translate from alphabetical version of a type to its token and vice versa
+
+        These dictionaries are the only way to translate a type between alphabetical and token in all the framework
+        '''
+        partition_unique_types = {partition_name : set.union(*[set(t) for t in types]) for partition_name, types in types_dict.items()}
+        
+        dataset_unique_types = {}
+        for name in ['pretraining', 'incremental']:
+            dataset_unique_types[name] = set()
+            for k, v in partition_unique_types.items():
+                if name in k:
+                    dataset_unique_types[name].update(v)
+        dataset_unique_types = {k: sorted(v) for k, v in dataset_unique_types.items()}
+
+        self.type2id = {t: id for id, t in enumerate(dataset_unique_types['pretraining'])}
+        for k in dataset_unique_types['incremental']:
+            if k not in self.type2id:
+                self.type2id[k] = len(self.type2id)
     
+        self.id2type = {id: t for t, id in self.type2id.items()}
+
+    def train_dataloader(self):
+        '''
+        Override of `pytorch_lightning.core.datamodule.LightningDataModule.train_dataloader <https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html#train-dataloader>`_
+
+        Returns the dataset partition used to train a model
+        '''
+        loaders = {'pretraining': self.dataloaders['pretraining_train'], 'incremental': self.dataloaders['incremental_train']}
+        return CombinedLoader(loaders, mode='min_size')
+    
+    def val_dataloader(self):
+        '''
+        Override of `pytorch_lightning.core.datamodule.LightningDataModule.val_dataloader <https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html#val-dataloader>`_
+
+        Returns the dataset partition used to validate a model during training
+        '''
+        loaders = {'pretraining': self.dataloaders['pretraining_dev'], 'incremental': self.dataloaders['incremental_dev']}
+        return CombinedLoader(loaders, mode='min_size')
+    
+
+    def test_dataloader(self):
+        '''
+        Override of `pytorch_lightning.core.datamodule.LightningDataModule.val_dataloader <https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html#val-dataloader>`_
+
+        Returns the dataset partition used to validate a model during training
+        '''
+        loaders = {'pretraining': self.dataloaders['pretraining_test'], 'incremental': self.dataloaders['incremental_test']}
+        return CombinedLoader(loaders, mode='min_size')
+    
+    def predict_dataloader(self):
+        return self.test_dataloader

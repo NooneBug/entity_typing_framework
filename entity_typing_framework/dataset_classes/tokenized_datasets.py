@@ -1,6 +1,5 @@
 from entity_typing_framework.dataset_classes.datasets import BaseDataset
 from torch.utils.data import Dataset
-from transformers import AutoTokenizer
 from tqdm import tqdm
 import torch
 
@@ -48,8 +47,9 @@ class BaseBERTTokenizedDataset(Dataset):
     def __init__(self,
                 dataset : BaseDataset, 
                 type2id : dict,
+                tokenizer, 
                 name : str,
-                bertlike_model_name : str, 
+                bertlike_model_name : str,
                 max_mention_words : int = 5,
                 max_left_words : int = 10,
                 max_right_words : int = 10) -> None:
@@ -61,7 +61,7 @@ class BaseBERTTokenizedDataset(Dataset):
         self.max_left_words = max_left_words
         self.max_right_words = max_right_words
         
-        self.tokenizer = self.instance_tokenizer(bertlike_model_name=bertlike_model_name)
+        self.tokenizer = tokenizer
 
         sentences = self.extract_sentences_from_dataset(dataset)
 
@@ -74,20 +74,7 @@ class BaseBERTTokenizedDataset(Dataset):
         self.tokenized_types = self.tokenize_types(dataset)
         self.one_hot_types = self.types2onehot(num_types = len(self.type2id), types = self.tokenized_types)
 
-    def instance_tokenizer(self, bertlike_model_name):
-        '''
-        instance a tokenizer with `huggingface AutoTokenizer <https://huggingface.co/docs/transformers/v4.15.0/en/model_doc/auto#transformers.AutoTokenizer>`_
-
-        parameters:
-            bertlike_model_name:
-                see :code:`bertlike_model_name` in the documentation of the entire class
-        
-        return:
-            an instance of `huggingface AutoTokenizer <https://huggingface.co/docs/transformers/v4.15.0/en/model_doc/auto#transformers.AutoTokenizer>`_
-
-        '''
-        return AutoTokenizer.from_pretrained(bertlike_model_name)
-
+    
     def types2onehot(self, num_types, types):
         '''
         tokenize id of types with one hot encoding

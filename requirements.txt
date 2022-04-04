@@ -2,3 +2,4 @@ pytorch-lightning==1.5.7
 adapter-transformers==2.2.0
 treelib==1.6.1
 wandb
+jsonargparse[signatures]==4.5.0

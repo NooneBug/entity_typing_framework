@@ -1,5 +1,6 @@
 from pytorch_lightning.core.lightning import LightningModule
 from entity_typing_framework.utils.implemented_classes_lvl1 import IMPLEMENTED_CLASSES_LVL1
+import torch 
 
 class BaseEntityTypingNetwork(LightningModule):
     '''
@@ -68,3 +69,38 @@ class BaseEntityTypingNetwork(LightningModule):
         encoded_types = self.type_encoder(batched_labels)
         
         return projected_input, encoded_types
+
+    def load_from_checkpoint(self, checkpoint_to_load, strict, **kwargs):
+        state_dict = torch.load(checkpoint_to_load)
+        new_state_dict = {k.replace('ET_Network.', ''): v for k, v in state_dict['state_dict'].items()}
+        self.load_state_dict(new_state_dict, strict=strict)
+        return self
+
+
+class EntityTypingNetworkForIncrementalTraining(BaseEntityTypingNetwork):
+    def setup_incremental_training(self, new_type_number, network_params):
+        input_projector_params = network_params['input_projector_params']
+
+        ## extract last classifier layer and manually insert the out_features number
+        single_layers = sorted(input_projector_params['layers_parameters'].items())
+        single_layers[-1][1]['out_features'] = new_type_number
+        input_projector_params['layers_parameters'] = {k: v for k, v in single_layers}
+        
+        self.freeze()
+
+        self.additional_input_projector = IMPLEMENTED_CLASSES_LVL1[input_projector_params['name']](type_number=new_type_number, 
+                                            input_dim = self.encoder.get_representation_dim(), 
+                                            **input_projector_params)
+    
+    def forward(self, batch):
+        batched_sentences, batched_attn_masks, batched_labels = batch
+        
+        encoded_input = self.encoder(batched_sentences, batched_attn_masks)
+
+        projected_input = self.input_projector(encoded_input)
+        additional_projected_input = self.additional_input_projector(encoded_input)
+        network_output = torch.concat((projected_input, additional_projected_input), dim = 1)
+
+        encoded_types = self.type_encoder(batched_labels)
+        
+        return network_output, encoded_types

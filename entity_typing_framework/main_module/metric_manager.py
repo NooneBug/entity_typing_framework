@@ -2,7 +2,9 @@ from torchmetrics import Precision, Recall
 
 class MetricManager():
 
-    def __init__(self, num_classes, device):
+    def __init__(self, num_classes, device, prefix = ''):
+        self.prefix = prefix
+
         self.micro_p = Precision(num_classes=num_classes, average='micro', mdmc_average='global').to(device=device)
         self.micro_r = Recall(num_classes=num_classes, average='micro', mdmc_average='global').to(device=device)
         
@@ -50,15 +52,15 @@ class MetricManager():
         return self.compose_return(micro_p, micro_r, micro_f1, macro_p_ex, macro_r_ex, macro_f1_ex, macro_p_t, macro_r_t, macro_f1_t)
 
     def compose_return(self, micro_p, micro_r, micro_f1, macro_p_ex, macro_r_ex, macro_f1_ex, macro_p_t, macro_r_t, macro_f1_t):
-        return {'micro/micro_precision' : micro_p,
-                'micro/micro_recall' : micro_r,
-                'micro/micro_f1' : micro_f1,
-                'macro_example/macro_precision_example' :  macro_p_ex,
-                'macro_example/macro_recall_example': macro_r_ex,
-                'macro_example/macro_f1_example': macro_f1_ex,
-                'macro_types/macro_precision_types' : macro_p_t,
-                'macro_types/macro_recall_types': macro_r_t,
-                'macro_types/macro_f1_types': macro_f1_t}
+        return {'micro/{}micro_precision'.format(self.prefix) : micro_p,
+                'micro/{}micro_recall'.format(self.prefix) : micro_r,
+                'micro/{}micro_f1'.format(self.prefix) : micro_f1,
+                'macro_example/{}macro_precision_example'.format(self.prefix) :  macro_p_ex,
+                'macro_example/{}macro_recall_example'.format(self.prefix) : macro_r_ex,
+                'macro_example/{}macro_f1_example'.format(self.prefix) : macro_f1_ex,
+                'macro_types/{}macro_precision_types'.format(self.prefix) : macro_p_t,
+                'macro_types/{}macro_recall_types'.format(self.prefix) : macro_r_t,
+                'macro_types/{}macro_f1_types'.format(self.prefix) : macro_f1_t}
 
     def compute_f1(self, p, r):
         return (2 * p * r) / (p + r)
