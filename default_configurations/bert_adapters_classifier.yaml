@@ -1,0 +1,60 @@
+seed_everything : 1
+
+model:
+  ET_Network_params:
+    name : BaseEntityTypingNetwork
+    network_params:
+      encoder_params:
+        name : AdapterBERTEncoder
+        bertlike_model_name: bert-base-uncased
+        adapter_arch : Pfeiffer
+        reduction_factor : 16
+      type_encoder_params:
+        name : OneHotTypeEncoder
+        trainable: False
+      input_projector_params:
+        name : Classifier
+        layers_parameters: 
+          '0':
+            in_features : encoder_dim
+            out_features: 512
+            use_dropout: True
+          '1':
+            in_features: 512
+            out_features : type_number
+            use_dropout: False
+            activation: sigmoid
+
+trainer:
+  gpus: 1
+  limit_train_batches: .1
+  max_epochs : 5
+
+data:
+  dataset_paths:
+    train: datasets/toy_datasets/toy_bbn_train.json
+    dev: datasets/toy_datasets/toy_bbn_dev.json
+    test: datasets/toy_datasets/toy_bbn_test.json
+  dataset_reader_params:
+    name : BaseDataset
+  tokenizer_params:
+    name : BaseBERTTokenizedDataset
+    bertlike_model_name: bert-base-uncased
+    max_mention_words: 1
+    max_right_words: 2
+    max_left_words: 2
+  dataset_params:
+    name: ET_Dataset
+  dataloader_params:
+    name: torch.DataLoader
+    train:
+      batch_size: 64
+      shuffle: True
+    dev:
+      batch_size: 8
+    test:
+      batch_size: 8
+
+logger:
+  project : entity_typing_framework_prove
+  entity : noonebug
