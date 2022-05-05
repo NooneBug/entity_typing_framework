@@ -195,7 +195,11 @@ class IncrementalMainModule(MainModule):
 
         
 
-class KENNMainModule(MainModule):    
+class KENNMainModule(MainModule):
+    pass    
+
+
+class KENNMultilossMainModule(KENNMainModule):
     def validation_step(self, batch, batch_step):
         _, _, true_types = batch
         network_output, type_representations = self.ET_Network(batch)
