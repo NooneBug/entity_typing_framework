@@ -38,10 +38,15 @@ class BaseBERTTokenizedDataset(Dataset):
 
             accepted values are integers and the string :code:`"max"` to avoid the word discard
 
-        (optional) max_right words:
+        (optional) max_right_words:
             this param ensures that only the first :code:`max_right_words` in each `right context` in a sentence are tokenized, the other words are discarded.
 
             accepted values are integers and the string :code:`"max"` to avoid the word discard
+
+        (optional) max_tokens:
+            this param ensures that only the first :code:`max_tokens` tokens in each tokenized sentence are kept, the other tokens are discarded.
+
+            accepted values are integers and the string :code:`"max"` to avoid the token discard
 
     '''
     def __init__(self,
@@ -52,7 +57,8 @@ class BaseBERTTokenizedDataset(Dataset):
                 bertlike_model_name : str,
                 max_mention_words : int = 5,
                 max_left_words : int = 10,
-                max_right_words : int = 10) -> None:
+                max_right_words : int = 10,
+                max_tokens : int = 80) -> None:
         super().__init__()
         
         self.dataset = dataset
@@ -60,6 +66,7 @@ class BaseBERTTokenizedDataset(Dataset):
         self.max_mention_words = max_mention_words
         self.max_left_words = max_left_words
         self.max_right_words = max_right_words
+        self.max_tokens = max_tokens
         
         self.tokenizer = tokenizer
 
@@ -67,7 +74,7 @@ class BaseBERTTokenizedDataset(Dataset):
 
         sentences = [self.create_sentence(s, self.max_mention_words, self.max_left_words, self.max_right_words) for s in sentences]
 
-        self.tokenized_sentences, self.max_length, self.avg_length = self.tokenize(sentences)
+        self.tokenized_sentences, self.max_length, self.avg_length = self.tokenize(sentences, self.max_tokens)
 
         self.type2id = type2id
         
@@ -206,39 +213,45 @@ class BaseBERTTokenizedDataset(Dataset):
         else:
             return ' '.join(string) 
 
-    def tokenize(self, sentences):
+    def tokenize(self, sentences, max_tokens=80):
         '''
         tokenizes all sentences using the tokenizer instantiate by :code:`instance_tokenizer`
 
         parameters:
             sentences:
                 a list of sentences obtained by :code:`create_sentence` (repeatedly called)
+            (optional) max_tokens:
+                this param ensures that only the first :code:`max_tokens` tokens in each tokenized sentence are kept, the other tokens are discarded.
+
+                accepted values are integers and the string :code:`"max"` to avoid the token discard
         
         return:
             see `BatchEncoding <https://huggingface.co/docs/transformers/v4.15.0/en/main_classes/tokenizer#transformers.BatchEncoding>`_
         '''
-        max_len, avg_len = self.compute_max_length(sentences)
+        max_len, avg_len = self.compute_max_length(sentences, max_tokens)
         return self.tokenizer(sentences, return_tensors='pt', max_length = max_len, padding = 'max_length', truncation=True), max_len, avg_len
     
-    def compute_max_length(self, sent):
+    def compute_max_length(self, sent, max_tokens=80):
         '''
         compute the maximum number of tokens in the dataset. This method is used to set the :code:`max_length` parameters when calling the tokenizer.
 
         params:
             sent:
                 see :code:`tokenize.sentences`
+            
+            (optional) max_tokens:
+                see :code:`tokenize.max_tokens`
         '''
 
         max_length = 0
         total_tokens = 0
         for s in tqdm(sent, desc="computing max length"):
-            tokens = len(self.tokenizer(s, return_tensors='pt')['input_ids'][0])
+            tokens = min(len(self.tokenizer(s, return_tensors='pt')['input_ids'][0]), max_tokens)
             total_tokens += tokens
             if tokens > max_length:
                 max_length = tokens
         avg_len = total_tokens/len(sent)
         print('\nmax length : {} (first and last tokens are [CLS] and [SEP])'.format(max_length))
         print('\navg length : {:.2f} (first and last tokens are [CLS] and [SEP])'.format(avg_len))
-
         return max_length, avg_len
         
