@@ -23,6 +23,9 @@ model:
             out_features : type_number
             use_dropout: False
             activation: sigmoid
+  inference_params:
+    name: BaseInference
+    threshold: 0.5
 
 trainer:
   gpus: 1

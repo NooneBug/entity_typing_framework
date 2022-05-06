@@ -1,6 +1,7 @@
 from entity_typing_framework.EntityTypingNetwork_classes.base_network import BaseEntityTypingNetwork, EntityTypingNetworkForIncrementalTraining
 from entity_typing_framework.dataset_classes.tokenized_datasets import BaseBERTTokenizedDataset
 from entity_typing_framework.main_module.KENN_losses.kenn_losses import KENNBCEMultiloss
+from entity_typing_framework.main_module.inference_manager import BaseInferenceManager, MaxInferenceManager
 from entity_typing_framework.main_module.losses import BCELossForET
 from torch.utils.data.dataloader import DataLoader
 from entity_typing_framework.dataset_classes.datasets_for_dataloader import ET_Dataset
@@ -16,5 +17,7 @@ IMPLEMENTED_CLASSES_LVL0 = {
     'ET_Dataset' : ET_Dataset,
     'BCELossForET' : BCELossForET,
     'KENNBCEMultiloss' : KENNBCEMultiloss,
-    'EntityTypingNetworkForIncrementalTraining': EntityTypingNetworkForIncrementalTraining
+    'EntityTypingNetworkForIncrementalTraining': EntityTypingNetworkForIncrementalTraining,
+    'BaseInference' : BaseInferenceManager,
+    'MaxInference' : MaxInferenceManager
     }

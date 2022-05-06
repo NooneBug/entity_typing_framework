@@ -1,5 +1,5 @@
 from typing import Any, Dict
-from entity_typing_framework.main_module.inference_manager import InferenceManager
+# from entity_typing_framework.main_module.inference_manager import BaseInferenceManager
 from entity_typing_framework.main_module.losses import BCELossForET
 from entity_typing_framework.main_module.metric_manager import MetricManager
 from entity_typing_framework.utils.implemented_classes_lvl0 import IMPLEMENTED_CLASSES_LVL0
@@ -12,6 +12,7 @@ class MainModule(LightningModule):
     type_number : int,
     logger,
     loss_params,
+    inference_params : dict,
     checkpoint_to_load : str = None,
     ):
 
@@ -26,7 +27,7 @@ class MainModule(LightningModule):
         self.metric_manager = MetricManager(num_classes=self.type_number, device=self.device)
         self.test_metric_manager = MetricManager(num_classes=self.type_number, device=self.device)
 
-        self.inference_manager = InferenceManager()
+        self.inference_manager = IMPLEMENTED_CLASSES_LVL0[inference_params['name']](**inference_params)
         self.loss = IMPLEMENTED_CLASSES_LVL0[loss_params['name']](**loss_params)
         self.save_hyperparameters()
     
