@@ -76,7 +76,8 @@ class MainModule(LightningModule):
         metrics = { k: v.item() for k,v in metrics.items()}
         print('TEST RESULTS:')
         print(metrics)
-        # TODO: save/log metrics
+        self.logger_module.log_all_metrics(metrics)
+        self.logger_module.log_all()
         return metrics
         
         
