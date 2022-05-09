@@ -228,7 +228,9 @@ class KENNMultilossMainModule(KENNMainModule):
         inferred_types = self.inference_manager.infer_types(network_output[1])
         self.metric_manager.update(inferred_types, true_types)
         self.log("val_loss", loss)
-    
+
+        return loss
+        
     def test_step(self, batch, batch_step):
         _, _, true_types = batch
         network_output, _ = self.ET_Network(batch)
