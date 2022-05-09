@@ -19,11 +19,12 @@ class MainModule(LightningModule):
         super().__init__()
         self.type_number = type_number
         self.logger_module = logger
+        self.ET_Network_params = ET_Network_params
 
         if not checkpoint_to_load:
-            self.ET_Network = IMPLEMENTED_CLASSES_LVL0[ET_Network_params['name']](**ET_Network_params, type_number = self.type_number)
+            self.ET_Network = IMPLEMENTED_CLASSES_LVL0[self.ET_Network_params['name']](**self.ET_Network_params, type_number = self.type_number)
         else:
-            self.ET_Network = self.load_from_checkpoint(ET_Network_params=ET_Network_params, checkpoint_to_load=checkpoint_to_load)
+            self.ET_Network = self.load_from_checkpoint(ET_Network_params=self.ET_Network_params, checkpoint_to_load=checkpoint_to_load)
         self.metric_manager = MetricManager(num_classes=self.type_number, device=self.device)
         self.test_metric_manager = MetricManager(num_classes=self.type_number, device=self.device)
 
