@@ -23,7 +23,7 @@ class BaseInferenceManager():
         discrete_pred = torch.where(mask, ones, zeros)
         return discrete_pred
 
-class MaxInferenceManager(BaseInferenceManager):
+class ThresholdOrMaxInferenceManager(BaseInferenceManager):
     '''
     Inference manager to discretize the output of the network accordingly to a :code:`threshold`; subclass of :code:`BaseInferenceManager`.
     In addition, it avoids void predictions by assigning 1 to the max output of each row tensor in case of all zeros produced by the base inference.
