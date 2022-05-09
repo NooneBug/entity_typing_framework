@@ -34,6 +34,9 @@ class MainModule(LightningModule):
     def on_fit_start(self):
         self.metric_manager.set_device(self.device)
 
+    def on_test_start(self):
+        self.metric_manager.set_device(self.device)
+
     def training_step(self, batch, batch_step):
         network_output, type_representations = self.ET_Network(batch)
         loss = self.loss.compute_loss(network_output, type_representations)
@@ -61,6 +64,21 @@ class MainModule(LightningModule):
         self.logger_module.log_all()
         
         self.log("val_loss", val_loss)
+
+    def test_step(self, batch, batch_step):
+        _, _, true_types = batch
+        network_output, _ = self.ET_Network(batch)
+        inferred_types = self.inference_manager.infer_types(network_output)
+        self.metric_manager.update(inferred_types, true_types)
+    
+    def test_epoch_end(self, out):
+        metrics = self.metric_manager.compute()
+        metrics = { k: v.item() for k,v in metrics.items()}
+        print('TEST RESULTS:')
+        print(metrics)
+        # TODO: save/log metrics
+        return metrics
+        
         
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
@@ -209,13 +227,10 @@ class KENNMultilossMainModule(KENNMainModule):
         inferred_types = self.inference_manager.infer_types(network_output[1])
         self.metric_manager.update(inferred_types, true_types)
         self.log("val_loss", loss)
-
-class IncrementalKENNMainModule(IncrementalMainModule):
-    def validation_step(self, batch, batch_step):
+    
+    def test_step(self, batch, batch_step):
         _, _, true_types = batch
-        network_output, type_representations = self.ET_Network(batch)
-        loss = self.loss.compute_loss(network_output, type_representations)
+        network_output, _ = self.ET_Network(batch)
         # pick postkenn predictions
         inferred_types = self.inference_manager.infer_types(network_output[1])
         self.metric_manager.update(inferred_types, true_types)
-        self.log("val_loss", loss)
