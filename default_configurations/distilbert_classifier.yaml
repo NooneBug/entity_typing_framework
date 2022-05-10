@@ -1,6 +1,8 @@
 seed_everything : 1
 
 model:
+  loss_params:
+    name : BCELossForET
   ET_Network_params:
     name : BaseEntityTypingNetwork
     network_params:
@@ -29,8 +31,21 @@ model:
 
 trainer:
   gpus: 1
-  limit_train_batches: .1
+  limit_train_batches: .01
   max_epochs : 5
+  callbacks:
+    - class_path: pytorch_lightning.callbacks.ModelCheckpoint
+      init_args:
+        dirpath: trained_models/pretraining/
+        monitor: val_loss
+        filename: pretraining_location_official
+        save_weights_only: True
+    - class_path: pytorch_lightning.callbacks.EarlyStopping
+      init_args:
+        patience: 5
+        monitor: val_loss
+        mode: min
+        verbose: True
 
 data:
   dataset_paths:
@@ -61,3 +76,5 @@ data:
 logger:
   project : entity_typing_framework_prove
   entity : noonebug
+  name : prova_debug_metriche
+  config_file : entity_typing_framework/default_configurations/distilbert_classifier.yaml
