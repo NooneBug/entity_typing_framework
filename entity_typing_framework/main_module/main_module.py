@@ -24,6 +24,8 @@ class MainModule(LightningModule):
         else:
             self.ET_Network = self.load_from_checkpoint(ET_Network_params=ET_Network_params, checkpoint_to_load=checkpoint_to_load)
         self.metric_manager = MetricManager(num_classes=self.type_number, device=self.device)
+        self.test_metric_manager = MetricManager(num_classes=self.type_number, device=self.device)
+
         self.inference_manager = InferenceManager()
         self.loss = IMPLEMENTED_CLASSES_LVL0[loss_params['name']](**loss_params)
         self.save_hyperparameters()
@@ -74,6 +76,22 @@ class MainModule(LightningModule):
         checkpoint['state_dict'] = {k: v for k, v in checkpoint['state_dict'].items() if 'input_projector' in k}
         del checkpoint['hyper_parameters']['logger']
         return super().on_save_checkpoint(checkpoint)
+
+    def on_train_end(self) -> None:
+        self.predict_on_test()
+
+    def predict_on_test(self):
+        test_dataloader = self.trainer.datamodule.test_dataloader()
+        for batch in test_dataloader:
+            _, _, true_types = batch
+            network_output, type_representations = self.ET_Network(batch)
+            inferred_types = self.inference_manager.infer_types(network_output)
+            self.test_metric_manager.update(inferred_types, true_types)
+
+        test_metrics = self.test_metric_manager.compute()
+        self.logger_module.log_all_metrics(test_metrics)
+        self.logger_module.log_all()
+
 
 class IncrementalMainModule(MainModule):
 
@@ -157,25 +175,25 @@ class IncrementalMainModule(MainModule):
         test_dataloader = self.trainer.datamodule.test_dataloader()
         for batch in test_dataloader:
             pretraining_batch, incremental_batch = batch['pretraining'], batch['incremental']
-            pretraining_val_loss = 0
-            incremental_val_loss = 0
             for name, minibatch in zip(['pretraining', 'incremental'], [pretraining_batch, incremental_batch]): 
                 minibatch = [elem.cuda() for elem in minibatch]
                 _, _, true_types = minibatch
                 network_output, type_representations = self.ET_Network(minibatch)
                 loss = self.loss.compute_loss(network_output, type_representations)
                 inferred_types = self.inference_manager.infer_types(network_output)
-                x = 1
                 if name == 'pretraining':
                     self.test_metric_manager.update(inferred_types, true_types)
                 else:
                     self.test_incremental_metric_manager.update(inferred_types, true_types)
 
-                self.log("losses/{}_val_loss".format(name), loss)
-            val_loss = pretraining_val_loss + incremental_val_loss
-            # self.log("losses/val_loss".format(name), val_loss)
-            return val_loss, pretraining_val_loss, incremental_val_loss
+        test_metrics = self.test_metric_manager.compute()
+        self.logger_module.log_all_metrics(test_metrics)
+        test_incremental_metrics = self.test_incremental_metric_manager.compute()
+        self.logger_module.log_all_metrics(test_incremental_metrics)
+        self.logger_module.log_all()
 
+
+        
 
 class KENNMainModule(MainModule):    
     def validation_step(self, batch, batch_step):
@@ -186,4 +204,13 @@ class KENNMainModule(MainModule):
         inferred_types = self.inference_manager.infer_types(network_output[1])
         self.metric_manager.update(inferred_types, true_types)
         self.log("val_loss", loss)
-        
+
+class IncrementalKENNMainModule(IncrementalMainModule):
+    def validation_step(self, batch, batch_step):
+        _, _, true_types = batch
+        network_output, type_representations = self.ET_Network(batch)
+        loss = self.loss.compute_loss(network_output, type_representations)
+        # pick postkenn predictions
+        inferred_types = self.inference_manager.infer_types(network_output[1])
+        self.metric_manager.update(inferred_types, true_types)
+        self.log("val_loss", loss)

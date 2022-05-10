@@ -72,8 +72,31 @@ class BaseEntityTypingNetwork(LightningModule):
 
     def load_from_checkpoint(self, checkpoint_to_load, strict, **kwargs):
         state_dict = torch.load(checkpoint_to_load)
-        new_state_dict = {k.replace('ET_Network.', ''): v for k, v in state_dict['state_dict'].items()}
-        self.load_state_dict(new_state_dict, strict=strict)
+        renamed_state_dict = {k.replace('ET_Network.', ''): v for k, v in state_dict['state_dict'].items()}
+        
+        model_state_dict = self.state_dict()
+        is_changed = False
+        for k in renamed_state_dict:
+            if k in model_state_dict:
+                if renamed_state_dict[k].shape != model_state_dict[k].shape:
+                    print(f"Skip loading parameter: {k}, "
+                                f"required shape: {model_state_dict[k].shape}, "
+                                f"loaded shape: {renamed_state_dict[k].shape}")
+                    old_class_number = renamed_state_dict[k].shape[0]
+                    if len(renamed_state_dict[k].shape) == 2:
+                        model_state_dict[k][:old_class_number, :] = renamed_state_dict[k]
+                    elif len(renamed_state_dict[k].shape) == 1:
+                        model_state_dict[k][:old_class_number] = renamed_state_dict[k]
+
+                    is_changed = True
+            else:
+                print(f"Dropping parameter {k}")
+                is_changed = True
+
+        if is_changed:
+            state_dict.pop("optimizer_states", None)
+
+        # self.load_state_dict(new_state_dict, strict=strict)
         return self
 
 
