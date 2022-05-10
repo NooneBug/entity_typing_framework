@@ -7,22 +7,6 @@ import sys
 sys.path.append('./')
 from kenn.parsers import unary_parser
 
-def get_discrete_pred(pred, threshold=0.5, max_inference=False):
-    mask = pred > threshold
-
-    ones = torch.ones(mask.shape).cuda()
-    zeros = torch.zeros(mask.shape).cuda()
-
-    discrete_pred = torch.where(mask, ones, zeros)
-
-    if max_inference:
-      max_values_and_indices = torch.max(pred, dim = 1)
-
-      for dp, i in zip(discrete_pred, max_values_and_indices.indices):
-          dp[i] = 1
-    
-    return discrete_pred
-
 class KENNClassifier(Classifier):
   def __init__(self, clause_file_path, save_training_data=False, **kwargs):
     super().__init__(**kwargs)

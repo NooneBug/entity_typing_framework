@@ -20,10 +20,9 @@ class CustomLogger(WandbLogger, Callback):
                 print(exc)
         return parsed_yaml
 
-
     def log_all_metrics(self, metrics):
         for key, value in metrics.items():
-            self.add(key, value)
+            self.add(key=key, value=value)
 
     def log_loss(self, name, value):
         self.add(key=name, value=value)

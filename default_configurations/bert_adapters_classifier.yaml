@@ -5,9 +5,10 @@ model:
     name : BaseEntityTypingNetwork
     network_params:
       encoder_params:
-        name : DistilBERTEncoder
-        bertlike_model_name: distilbert-base-uncased
-        freeze_encoder : True
+        name : AdapterBERTEncoder
+        bertlike_model_name: bert-base-uncased
+        adapter_arch : Pfeiffer
+        reduction_factor : 16
       type_encoder_params:
         name : OneHotTypeEncoder
         trainable: False
@@ -34,14 +35,14 @@ trainer:
 
 data:
   dataset_paths:
-    train: datasets/ren_et_al/bbn/train.json
-    dev: datasets/ren_et_al/bbn/dev.json
-    test: datasets/ren_et_al/bbn/test-12k.json
+    train: datasets/toy_datasets/toy_bbn_train.json
+    dev: datasets/toy_datasets/toy_bbn_dev.json
+    test: datasets/toy_datasets/toy_bbn_test.json
   dataset_reader_params:
     name : BaseDataset
   tokenizer_params:
     name : BaseBERTTokenizedDataset
-    bertlike_model_name: distilbert-base-uncased
+    bertlike_model_name: bert-base-uncased
     max_mention_words: 1
     max_right_words: 2
     max_left_words: 2

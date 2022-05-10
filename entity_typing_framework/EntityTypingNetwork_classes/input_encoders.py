@@ -205,3 +205,44 @@ class AdapterDistilBERTEncoder(DistilBERTEncoder):
         
         self.encoder.add_adapter(adapter_name, conf(reduction_factor = reduction_factor))
         self.encoder.train_adapter(adapter_name)
+
+
+class AdapterBERTEncoder(BERTEncoder):
+    '''
+    Class to instance BERT with Adapters; Subclass of :code:`BERTEncoder`.
+
+    to instance this encoder insert the string :code:`AdapterBERTEncoder` in the :code:`yaml` configuration file under the key : :code:`model.ET_Network_params.encoder_params.name`
+
+    Parameters:
+        bertlike_model_name:
+            see :code:`bertlike_model_name` in :code:`BERTEncoder`.
+        
+        adapter_arch:
+            adapter architecture from the original paper on adapters, accepted values are :code:`Pfeiffer` or :code:`Houlsby`. Other values will raise an exception
+
+            this param can be specified in the :code:`yaml` configuration file with key :code:`model.network_params.encoder_params.adapter_arch`.
+        
+        reduction_factor:
+            reduction factor from the original paper on adapters. Is an integer number used to setup the autoencoder-like architecture: the hidden units of the autoencoder are computed as :code:`transformer_size/reduction_factor`
+        
+        adapter_name:
+            a name useful when multiple adapters are used.
+
+
+    '''
+    def __init__(self, bertlike_model_name: str = 'bert-base-uncased', 
+                        adapter_arch = 'Pfeiffer', 
+                        reduction_factor = 16, 
+                        adapter_name = 'ET_adapter', 
+                        **kwargs) -> None:
+        super().__init__(bertlike_model_name=bertlike_model_name, **kwargs)
+
+        if adapter_arch == 'Pfeiffer':
+            conf = PfeifferConfig
+        elif adapter_arch == 'Houlsby':
+            conf = HoulsbyConfig
+        else:
+            raise Exception('Please provide a valid conf_arch value. {} given, accepted : {} '.format(adapter_arch, ['Pfeiffer, Houlsby']))
+        
+        self.encoder.add_adapter(adapter_name, conf(reduction_factor = reduction_factor))
+        self.encoder.train_adapter(adapter_name)
