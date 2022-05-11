@@ -259,5 +259,6 @@ class BaseBERTTokenizedDataset(Dataset):
         '''
         delete :code:`dataset` and :code:`tokenizer` from the object, this method is useful to save the BaseBERTTokenizedDataset in a light manner, avoiding the original dataset and the tokenizer
         '''
+        
         self.dataset = None
         self.tokenizer = None

@@ -57,9 +57,10 @@ class DatasetManager(LightningDataModule):
             
             rw_options is a dictionary composed of the following keys:
                 :code:`modality` specifies the options for load and/or save the object: 
-                    :code:`Create` to create the tokenized version of the dataset, 
-                    :code:`CreateAndSave` to save it, 
-                    :code:`Load` to load it,
+                    
+                    #. :code:`Create` to create the tokenized version of the dataset, 
+                    #. :code:`CreateAndSave` to save it, 
+                    #. :code:`Load` to load it,
 
                 :code:`dirpath` defines the read/write directory from which read or write, 
                 

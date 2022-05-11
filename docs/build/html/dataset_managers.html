@@ -120,12 +120,14 @@ This module is able to use the following submodules:</p>
 <dt>rw_options</dt><dd><p>A dictionary defined in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file used to set the read/write options to load and save the tokenized datasets</p>
 <p>The read/write options are expected to be in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> config file under the key : <code class="code docutils literal notranslate"><span class="pre">data.rw_options</span></code></p>
 <dl>
-<dt>rw_options is a dictionary composed of the following keys:</dt><dd><dl class="simple">
-<dt><code class="code docutils literal notranslate"><span class="pre">modality</span></code> specifies the options for load and/or save the object: </dt><dd><p><code class="code docutils literal notranslate"><span class="pre">Create</span></code> to create the tokenized version of the dataset, 
-<code class="code docutils literal notranslate"><span class="pre">CreateAndSave</span></code> to save it, 
-<code class="code docutils literal notranslate"><span class="pre">Load</span></code> to load it,</p>
-</dd>
-</dl>
+<dt>rw_options is a dictionary composed of the following keys:</dt><dd><p><code class="code docutils literal notranslate"><span class="pre">modality</span></code> specifies the options for load and/or save the object:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p><code class="code docutils literal notranslate"><span class="pre">Create</span></code> to create the tokenized version of the dataset,</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">CreateAndSave</span></code> to save it,</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">Load</span></code> to load it,</p></li>
+</ol>
+</div></blockquote>
 <p><code class="code docutils literal notranslate"><span class="pre">dirpath</span></code> defines the read/write directory from which read or write,</p>
 <p><code class="code docutils literal notranslate"><span class="pre">light</span></code> enables the save/load of the tokenized dataset w/o the original data and tokenizer (see <code class="code docutils literal notranslate"><span class="pre">make_light</span></code> method in <a class="reference internal" href="dataset_tokenizers.html#baseberttokenizeddataset"><span class="std std-ref">entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset</span></a>)</p>
 </dd>
