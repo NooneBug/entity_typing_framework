@@ -139,8 +139,9 @@ class Classifier(LightningModule):
         adds the default parameters if are not specified into the :code:`yaml` configuration file under the key :code:`model.ET_Network_params.input_projector_params.layers_parameters`
 
         The default values are: 
-            - if input features of the 0th projection layer are not specified or it is specified the string :code:`encoder_dim`, the value :code:`input_dim` is inserted by default
-            - if output features of the last proection layer are not specificied or it is specified the string :code:`type_number`: the value :code:`type_number` is inserted by default
+            - if input features of the 0th projection layer are not specified or it is specified with the string :code:`encoder_dim`, the value :code:`input_dim` is inserted by default
+            - if input features of a projection layer is specified with the string :code:`previous_out_features` the value :code:`out_features` of the previous layer is inserted
+            - if output features of the last proection layer are not specificied or it is specified with the string :code:`type_number`: the value :code:`type_number` is inserted by default
         '''
         if 'in_features' not in self.layers_parameters['0']:
             self.layers_parameters['0']['in_features'] = self.input_dim
@@ -152,7 +153,16 @@ class Classifier(LightningModule):
             self.layers_parameters[str(len(self.layers_parameters) - 1)]['out_features'] = self.type_number        
         
         if self.layers_parameters[str(len(self.layers_parameters) - 1)]['out_features'] == 'type_number':
-            self.layers_parameters[str(len(self.layers_parameters) - 1)]['out_features'] = self.type_number        
+            self.layers_parameters[str(len(self.layers_parameters) - 1)]['out_features'] = self.type_number
+
+        previous_out_features = self.input_dim
+        for k in self.layers_parameters:
+            if self.layers_parameters[k]['out_features'] == 'in_features':
+                self.layers_parameters[k]['out_features'] = self.layers_parameters[k]['in_features']
+            if self.layers_parameters[k]['in_features'] == 'previous_out_features':
+                self.layers_parameters[k]['in_features'] = previous_out_features
+            previous_out_features = self.layers_parameters[k]['out_features']
+
 
 
     def check_parameters(self):
