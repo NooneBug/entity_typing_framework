@@ -49,7 +49,19 @@ class MetricManager():
         macro_r_t = self.macro_r_t.compute()
         macro_f1_t = self.compute_f1(macro_p_t, macro_r_t)
 
+        self.reset_metrics()
+
         return self.compose_return(micro_p, micro_r, micro_f1, macro_p_ex, macro_r_ex, macro_f1_ex, macro_p_t, macro_r_t, macro_f1_t)
+
+    def reset_metrics(self):
+        self.micro_p.reset()
+        self.micro_r.reset()
+        
+        self.macro_p_ex.reset()
+        self.macro_r_ex.reset()
+        
+        self.macro_p_t.reset()
+        self.macro_r_t.reset()
 
     def compose_return(self, micro_p, micro_r, micro_f1, macro_p_ex, macro_r_ex, macro_f1_ex, macro_p_t, macro_r_t, macro_f1_t):
         return {'micro/{}micro_precision'.format(self.prefix) : micro_p,
