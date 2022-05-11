@@ -49,13 +49,21 @@ class DatasetManager(LightningDataModule):
             The dataloader parameters are expected to be in the :code:`yaml` config file under the key : :code:`data.dataloader_params`
 
             See the official torch documentation for `DataLoaders <https://pytorch.org/tutorials/beginner/basics/data_tutorial.html>`_ for more information about the expected params
+        
         rw_options
             A dictionary defined in the :code:`yaml` config file used to set the read/write options to load and save the tokenized datasets
 
             The read/write options are expected to be in the :code:`yaml` config file under the key : :code:`data.rw_options`
+            
+            rw_options is a dictionary composed of the following keys:
+                :code:`modality` specifies the options for load and/or save the object: 
+                    :code:`Create` to create the tokenized version of the dataset, 
+                    :code:`CreateAndSave` to save it, 
+                    :code:`Load` to load it,
 
-            The options available are :code:`modality` ('Create' to create the tokenized version of the dataset, 'CreateAndSave' to save it, 'Load' to load it),
-            :code:`dirpath` to define the read/write directory, and the flag :code:`light` to enable the save/load of the tokenized dataset w/o the original data and tokenizer
+                :code:`dirpath` defines the read/write directory from which read or write, 
+                
+                :code:`light` enables the save/load of the tokenized dataset w/o the original data and tokenizer (see :code:`make_light` method in :ref:`entity_typing_framework.dataset_classes.tokenized_datasets.BaseBERTTokenizedDataset <BaseBERTTokenizedDataset>`)
 
 
     '''
@@ -91,7 +99,11 @@ class DatasetManager(LightningDataModule):
         '''
         Override of `pytorch_lightning.core.datamodule.LightningDataModule.prepare_data <https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html#prepare-data>`_
 
-        Tokenize each partition of the dataset with a :doc:`dataset_tokenizer <dataset_tokenizers>` class, chosen following the configuration file value under the key :code:`data.tokenizer_params.name`
+        If :code:`data.rw_options.modality is 'Create'` tokenize each partition of the dataset with a :doc:`dataset_tokenizer <dataset_tokenizers>` class, chosen following the configuration file value under the key :code:`data.tokenizer_params.name`
+        
+        If :code:`data.rw_options.modality is 'CreateAndSave'` has the same behavior of :code:`Create` but also saves each instance of :doc:`dataset_tokenizer <dataset_tokenizers>` following :code:`data.rw_options.dirpath` and :code:`data.rw_option.light`  
+        
+        If :code:`data.rw_options.modality is 'Load'` loads a previously saved instance of each :doc:`dataset_tokenizer <dataset_tokenizers>` following :code:`data.rw_options.dirpath` and :code:`data.rw_option.light`  
         '''
         if self.rw_options['modality'] == 'load': 
             self.load_tokenized_datasets()
@@ -113,6 +125,11 @@ class DatasetManager(LightningDataModule):
                 self.datasets = None
     
     def save_tokenized_datasets(self):
+        '''
+        saves a pickle object that contains the :code:`tokenized_dataset`, the :code:`tokenizer_params`, and the :code:`rw_options.light` parameters
+
+        the object is saved folowing the path composed by :code:`rw_options.dirpath` and the method :code:`get_tokenizer_config_name`
+        '''
         # delete tokenizer and dataset from tokenized_datasets
         if self.rw_options['light']:
             for _, tokenized_dataset in self.tokenized_datasets.items():
@@ -132,6 +149,9 @@ class DatasetManager(LightningDataModule):
             pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def load_tokenized_datasets(self):
+        '''
+        loads an object saved with :code:`save_tokenized_datasets`, the object is loaded following the path obtained by :code:`rw_options.dirpath` and the method :code:`get_tokenizer_config_name`
+        '''
         # load
         path_to_load = os.path.join(self.rw_options['dirpath'], f'{self.tokenizer_config_name}.pickle')
         with open(path_to_load, 'rb') as f:
@@ -145,7 +165,10 @@ class DatasetManager(LightningDataModule):
         self.tokenized_datasets = data['tokenized_datasets']
 
     def save_type2id(self):
-        path_to_save = os.path.join(self.rw_options['dirpath'], f'type2id.pickle')
+        '''
+        saves a pickle object that contains :code:`self.type2id` and :code:`self.id2type`, the file into save is obtained by :code:`rw_options.dirpath\\type2id.pickle` 
+        '''
+        path_to_save = os.path.join(self.rw_options['dirpath'], 'type2id.pickle')
         data = {
             'type2id' : self.type2id,
             'id2type' : self.id2type
@@ -154,6 +177,9 @@ class DatasetManager(LightningDataModule):
             pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def load_type2id(self):
+        '''
+        loads an object previously saved with :code:`self.save_type2id`
+        '''
         path_to_load = os.path.join(self.rw_options['dirpath'], 'type2id.pickle')
         with open(path_to_load, 'rb') as f:
             data = pickle.load(f)
@@ -161,6 +187,9 @@ class DatasetManager(LightningDataModule):
         self.id2type = data['id2type']
 
     def get_tokenizer_config_name(self):
+        '''
+        generates the name for the output file using :code:`self.tokenizer_params` and :code:`self.rw_option`
+        '''
         config_name = self.tokenizer_params['bertlike_model_name']
         config_name += '_'
         config_name += f"M{self.tokenizer_params['max_mention_words']}"
