@@ -1,18 +1,20 @@
 <!DOCTYPE html>
-<html class="writer-html4" lang="en" >
+<html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Type Encoders &mdash; entity_typing_framework 0.1 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <title>Type Encoders &mdash; entity_typing_framework 0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
-  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -84,34 +86,30 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="section" id="type-encoders">
-<h1>Type Encoders<a class="headerlink" href="#type-encoders" title="Permalink to this headline">¶</a></h1>
+  <section id="type-encoders">
+<h1>Type Encoders<a class="headerlink" href="#type-encoders" title="Permalink to this headline"></a></h1>
 <p>List of implemented <a class="reference internal" href="modules_submodules.html#type-encoder"><span class="std std-ref">type_encoder</span></a> classes, submodule of <a class="reference internal" href="modules_submodules.html#entitytypingnetwork"><span class="std std-ref">EntityTypingNetwork</span></a></p>
-<span class="target" id="onehottypeencoder"></span><dl class="class">
-<dt id="entity_typing_framework.EntityTypingNetwork_classes.type_encoders.OneHotTypeEncoder">
-<em class="property">class </em><code class="descclassname">entity_typing_framework.EntityTypingNetwork_classes.type_encoders.</code><code class="descname">OneHotTypeEncoder</code><span class="sig-paren">(</span><em>name</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.type_encoders.OneHotTypeEncoder" title="Permalink to this definition">¶</a></dt>
+<span class="target" id="onehottypeencoder"></span><dl class="py class">
+<dt class="sig sig-object py" id="entity_typing_framework.EntityTypingNetwork_classes.type_encoders.OneHotTypeEncoder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">entity_typing_framework.EntityTypingNetwork_classes.type_encoders.</span></span><span class="sig-name descname"><span class="pre">OneHotTypeEncoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.type_encoders.OneHotTypeEncoder" title="Permalink to this definition"></a></dt>
 <dd><p>since the DatasetManager commonly represents true labels as one hot, this is a dummy module, only returns the already correct labels</p>
-<dl class="docutils">
-<dt>parameters:</dt>
-<dd><dl class="first last docutils">
-<dt>name:</dt>
-<dd><p class="first">the name of the submodule, has to be specified in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file with key <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.type_encoder_params.name</span></code></p>
+<dl>
+<dt>parameters:</dt><dd><dl>
+<dt>name:</dt><dd><p>the name of the submodule, has to be specified in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file with key <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.type_encoder_params.name</span></code></p>
 <p>to instance this type encoder insert the string <code class="code docutils literal notranslate"><span class="pre">OneHotTypeEncoder</span></code> in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file with key <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.type_encoder_params.name</span></code></p>
-<p class="last">this param is used by the <a class="reference internal" href="modules_submodules.html#entitytypingnetwork"><span class="std std-ref">Entity Typing Network</span></a> to instance the correct submodule</p>
+<p>this param is used by the <a class="reference internal" href="modules_submodules.html#entitytypingnetwork"><span class="std std-ref">Entity Typing Network</span></a> to instance the correct submodule</p>
 </dd>
 </dl>
 </dd>
 </dl>
-<dl class="method">
-<dt id="entity_typing_framework.EntityTypingNetwork_classes.type_encoders.OneHotTypeEncoder.forward">
-<code class="descname">forward</code><span class="sig-paren">(</span><em>batched_labels</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.type_encoders.OneHotTypeEncoder.forward" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="entity_typing_framework.EntityTypingNetwork_classes.type_encoders.OneHotTypeEncoder.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batched_labels</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.type_encoders.OneHotTypeEncoder.forward" title="Permalink to this definition"></a></dt>
 <dd><p>defines the forward pass of the type encoder. In the forwar the <code class="code docutils literal notranslate"><span class="pre">batched_labels</span></code> is returned as is since this is a dummy module</p>
-<dl class="docutils">
-<dt>Parameters:</dt>
-<dd><dl class="first last docutils">
-<dt>batched_labels:</dt>
-<dd><p class="first">one of the batch elements returned by the <a class="reference internal" href="datasets.html"><span class="doc">dataset</span></a> (<code class="code docutils literal notranslate"><span class="pre">__getitem__</span></code> method). It contains one hot labels extracted from <a class="reference internal" href="dataset_tokenizers.html"><span class="doc">Dataset Tokenizer</span></a></p>
-<p class="last">the expected format of the one hot labels is a vector [label_number] with values 1 for each <code class="code docutils literal notranslate"><span class="pre">True</span></code> label, 0 for each <code class="code docutils literal notranslate"><span class="pre">False</span></code> label based on the <code class="code docutils literal notranslate"><span class="pre">type2id</span></code> dictionary into the <a class="reference internal" href="dataset_managers.html"><span class="doc">Dataset Manager</span></a></p>
+<dl>
+<dt>Parameters:</dt><dd><dl>
+<dt>batched_labels:</dt><dd><p>one of the batch elements returned by the <a class="reference internal" href="datasets.html"><span class="doc">dataset</span></a> (<code class="code docutils literal notranslate"><span class="pre">__getitem__</span></code> method). It contains one hot labels extracted from <a class="reference internal" href="dataset_tokenizers.html"><span class="doc">Dataset Tokenizer</span></a></p>
+<p>the expected format of the one hot labels is a vector [label_number] with values 1 for each <code class="code docutils literal notranslate"><span class="pre">True</span></code> label, 0 for each <code class="code docutils literal notranslate"><span class="pre">False</span></code> label based on the <code class="code docutils literal notranslate"><span class="pre">type2id</span></code> dictionary into the <a class="reference internal" href="dataset_managers.html"><span class="doc">Dataset Manager</span></a></p>
 </dd>
 </dl>
 </dd>
@@ -120,7 +118,7 @@
 
 </dd></dl>
 
-</div>
+</section>
 
 
            </div>

@@ -1,18 +1,20 @@
 <!DOCTYPE html>
-<html class="writer-html4" lang="en" >
+<html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Entity Typing Networks &mdash; entity_typing_framework 0.1 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <title>Entity Typing Networks &mdash; entity_typing_framework 0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
-  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -80,60 +82,127 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="section" id="entity-typing-networks">
-<h1>Entity Typing Networks<a class="headerlink" href="#entity-typing-networks" title="Permalink to this headline">¶</a></h1>
+  <section id="entity-typing-networks">
+<h1>Entity Typing Networks<a class="headerlink" href="#entity-typing-networks" title="Permalink to this headline"></a></h1>
 <p>List of implemented <a class="reference internal" href="modules_submodules.html#entitytypingnetwork"><span class="std std-ref">EntityTypingNetwork</span></a></p>
-<dl class="class">
-<dt id="entity_typing_framework.EntityTypingNetwork_classes.base_network.BaseEntityTypingNetwork">
-<em class="property">class </em><code class="descclassname">entity_typing_framework.EntityTypingNetwork_classes.base_network.</code><code class="descname">BaseEntityTypingNetwork</code><span class="sig-paren">(</span><em>name</em>, <em>network_params</em>, <em>type_number</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.base_network.BaseEntityTypingNetwork" title="Permalink to this definition">¶</a></dt>
+<dl class="py class">
+<dt class="sig sig-object py" id="entity_typing_framework.EntityTypingNetwork_classes.base_network.BaseEntityTypingNetwork">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">entity_typing_framework.EntityTypingNetwork_classes.base_network.</span></span><span class="sig-name descname"><span class="pre">BaseEntityTypingNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">network_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_number</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.base_network.BaseEntityTypingNetwork" title="Permalink to this definition"></a></dt>
 <dd><p>Basic <a class="reference internal" href="modules_submodules.html#entitytypingnetwork"><span class="std std-ref">EntityTypingNetwork</span></a>. This module is able to use the following submodules:</p>
-<dl class="docutils">
-<dt><a class="reference internal" href="modules_submodules.html#encoder"><span class="std std-ref">encoder</span></a>:</dt>
-<dd><p class="first"><a class="reference internal" href="encoders.html#distilbertencoder"><span class="std std-ref">entity_typing_framework.EntityTypingNetwork_classes.input_encoders.DistilBERTEncoder</span></a></p>
-<p class="last"><a class="reference internal" href="encoders.html#adapterdistilbertencoder"><span class="std std-ref">entity_typing_framework.EntityTypingNetwork_classes.input_encoders.AdapterDistilBERTEncoder</span></a></p>
+<dl>
+<dt><a class="reference internal" href="modules_submodules.html#encoder"><span class="std std-ref">encoder</span></a>:</dt><dd><p><a class="reference internal" href="encoders.html#distilbertencoder"><span class="std std-ref">entity_typing_framework.EntityTypingNetwork_classes.input_encoders.DistilBERTEncoder</span></a></p>
+<p><a class="reference internal" href="encoders.html#adapterdistilbertencoder"><span class="std std-ref">entity_typing_framework.EntityTypingNetwork_classes.input_encoders.AdapterDistilBERTEncoder</span></a></p>
 </dd>
-<dt><a class="reference internal" href="modules_submodules.html#type-encoder"><span class="std std-ref">type_encoder</span></a>:</dt>
-<dd><a class="reference internal" href="type_encoders.html#onehottypeencoder"><span class="std std-ref">entity_typing_framework.EntityTypingNetwork_classes.type_encoders.OneHotTypeEncoder</span></a></dd>
-<dt><a class="reference internal" href="modules_submodules.html#input-projector"><span class="std std-ref">input_projector</span></a>:</dt>
-<dd><a class="reference internal" href="input_projectors.html#classifier"><span class="std std-ref">entity_typing_framework.EntityTypingNetwork_classes.type_encoders.Classifier</span></a></dd>
-<dt>Parameters:</dt>
-<dd><dl class="first last docutils">
-<dt>name:</dt>
-<dd>the name of the module, specified in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file under the key <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.name</span></code>. Has to be declared in the <a class="reference internal" href="module_dictionary.html"><span class="doc">Module Dictionary</span></a></dd>
-<dt>network_params:</dt>
-<dd><p class="first">parameters for the module and for the submodules, specified in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file under the key <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.network_params</span></code></p>
-<p class="last">expected keys in network_params are: <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.network_params.encoder_params</span></code>, <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.network_params.type_encoder_params</span></code>, and <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.network_params.input_projector_params</span></code></p>
+<dt><a class="reference internal" href="modules_submodules.html#type-encoder"><span class="std std-ref">type_encoder</span></a>:</dt><dd><p><a class="reference internal" href="type_encoders.html#onehottypeencoder"><span class="std std-ref">entity_typing_framework.EntityTypingNetwork_classes.type_encoders.OneHotTypeEncoder</span></a></p>
 </dd>
-<dt>type_number:</dt>
-<dd>number of types for this run. Automatic managed through <a class="reference internal" href="modules_submodules.html#datasetmanager"><span class="std std-ref">DatasetManager</span></a></dd>
+<dt><a class="reference internal" href="modules_submodules.html#input-projector"><span class="std std-ref">input_projector</span></a>:</dt><dd><p><a class="reference internal" href="input_projectors.html#classifier"><span class="std std-ref">entity_typing_framework.EntityTypingNetwork_classes.type_encoders.Classifier</span></a></p>
+</dd>
+<dt>Parameters:</dt><dd><dl>
+<dt>name:</dt><dd><p>the name of the module, specified in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file under the key <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.name</span></code>. Has to be declared in the <a class="reference internal" href="module_dictionary.html"><span class="doc">Module Dictionary</span></a></p>
+</dd>
+<dt>network_params:</dt><dd><p>parameters for the module and for the submodules, specified in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file under the key <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.network_params</span></code></p>
+<p>expected keys in network_params are: <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.network_params.encoder_params</span></code>, <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.network_params.type_encoder_params</span></code>, and <code class="code docutils literal notranslate"><span class="pre">model.ET_Network_params.network_params.input_projector_params</span></code></p>
+</dd>
+<dt>type_number:</dt><dd><p>number of types for this run. Automatic managed through <a class="reference internal" href="modules_submodules.html#datasetmanager"><span class="std std-ref">DatasetManager</span></a></p>
+</dd>
 </dl>
 </dd>
 </dl>
-<dl class="method">
-<dt id="entity_typing_framework.EntityTypingNetwork_classes.base_network.BaseEntityTypingNetwork.forward">
-<code class="descname">forward</code><span class="sig-paren">(</span><em>batch</em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.base_network.BaseEntityTypingNetwork.forward" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="entity_typing_framework.EntityTypingNetwork_classes.base_network.BaseEntityTypingNetwork.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.base_network.BaseEntityTypingNetwork.forward" title="Permalink to this definition"></a></dt>
 <dd><p>override of :code:pytorch_lightning.LightningModule.forward (<a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html">ref</a>)</p>
-<dl class="docutils">
-<dt>parameters:</dt>
-<dd><dl class="first last docutils">
-<dt>batch:</dt>
-<dd>the batch returned by the <a class="reference internal" href="modules_submodules.html#dataset"><span class="std std-ref">Dataset</span></a></dd>
+<dl class="simple">
+<dt>parameters:</dt><dd><dl class="simple">
+<dt>batch:</dt><dd><p>the batch returned by the <a class="reference internal" href="modules_submodules.html#dataset"><span class="std std-ref">Dataset</span></a></p>
+</dd>
 </dl>
 </dd>
-<dt>return:</dt>
-<dd><dl class="first last docutils">
-<dt>projected_input:</dt>
-<dd>output of the <a class="reference internal" href="modules_submodules.html#input-projector"><span class="std std-ref">input_projector</span></a>. Commonly the <a class="reference internal" href="modules_submodules.html#input-projector"><span class="std std-ref">input_projector</span></a> takes in input the output of the <a class="reference internal" href="modules_submodules.html#encoder"><span class="std std-ref">encoder</span></a></dd>
-<dt>encoded_types:</dt>
-<dd>output of the <a class="reference internal" href="modules_submodules.html#type-encoder"><span class="std std-ref">type_encoder</span></a>.</dd>
+<dt>return:</dt><dd><dl class="simple">
+<dt>projected_input:</dt><dd><p>output of the <a class="reference internal" href="modules_submodules.html#input-projector"><span class="std std-ref">input_projector</span></a>. Commonly the <a class="reference internal" href="modules_submodules.html#input-projector"><span class="std std-ref">input_projector</span></a> takes in input the output of the <a class="reference internal" href="modules_submodules.html#encoder"><span class="std std-ref">encoder</span></a></p>
+</dd>
+<dt>encoded_types:</dt><dd><p>output of the <a class="reference internal" href="modules_submodules.html#type-encoder"><span class="std std-ref">type_encoder</span></a>.</p>
+</dd>
 </dl>
 </dd>
 </dl>
 </dd></dl>
 
-</dd></dl>
-
+<dl class="py method">
+<dt class="sig sig-object py" id="entity_typing_framework.EntityTypingNetwork_classes.base_network.BaseEntityTypingNetwork.load_from_checkpoint">
+<span class="sig-name descname"><span class="pre">load_from_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">checkpoint_to_load</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strict</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#entity_typing_framework.EntityTypingNetwork_classes.base_network.BaseEntityTypingNetwork.load_from_checkpoint" title="Permalink to this definition"></a></dt>
+<dd><p>Primary way of loading a model from a checkpoint. When Lightning saves a checkpoint
+it stores the arguments passed to <cite>__init__</cite>  in the checkpoint under <cite>hyper_parameters</cite></p>
+<p>Any arguments specified through *args and **kwargs will override args stored in <cite>hyper_parameters</cite>.</p>
+<dl>
+<dt>Args:</dt><dd><p>checkpoint_path: Path to checkpoint. This can also be a URL, or file-like object
+map_location:</p>
+<blockquote>
+<div><p>If your checkpoint saved a GPU model and you now load on CPUs
+or a different number of GPUs, use this to map to the new setup.
+The behaviour is the same as in <code class="xref py py-func docutils literal notranslate"><span class="pre">torch.load()</span></code>.</p>
+</div></blockquote>
+<dl>
+<dt>hparams_file: Optional path to a .yaml file with hierarchical structure</dt><dd><p>as in this example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">drop_prob</span><span class="p">:</span> <span class="mf">0.2</span>
+<span class="n">dataloader</span><span class="p">:</span>
+    <span class="n">batch_size</span><span class="p">:</span> <span class="mi">32</span>
+</pre></div>
 </div>
+<p>You most likely won’t need this since Lightning will always save the hyperparameters
+to the checkpoint.
+However, if your checkpoint weights don’t have the hyperparameters saved,
+use this method to pass in a .yaml file with the hparams you’d like to use.
+These will be converted into a <code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code> and passed into your
+<code class="xref py py-class docutils literal notranslate"><span class="pre">LightningModule</span></code> for use.</p>
+<p>If your model’s <cite>hparams</cite> argument is <code class="xref py py-class docutils literal notranslate"><span class="pre">Namespace</span></code>
+and .yaml file has hierarchical structure, you need to refactor your model to treat
+<cite>hparams</cite> as <code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>.</p>
+</dd>
+<dt>strict: Whether to strictly enforce that the keys in <code class="xref py py-attr docutils literal notranslate"><span class="pre">checkpoint_path</span></code> match the keys</dt><dd><p>returned by this module’s state dict. Default: <cite>True</cite>.</p>
+</dd>
+<dt>kwargs: Any extra keyword args needed to init the model. Can also be used to override saved</dt><dd><p>hyperparameter values.</p>
+</dd>
+</dl>
+</dd>
+<dt>Return:</dt><dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">LightningModule</span></code> with loaded weights and hyperparameters (if available).</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># load weights without mapping ...</span>
+<span class="n">MyLightningModule</span><span class="o">.</span><span class="n">load_from_checkpoint</span><span class="p">(</span><span class="s1">&#39;path/to/checkpoint.ckpt&#39;</span><span class="p">)</span>
+
+<span class="c1"># or load weights mapping all weights from GPU 1 to GPU 0 ...</span>
+<span class="n">map_location</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;cuda:1&#39;</span><span class="p">:</span><span class="s1">&#39;cuda:0&#39;</span><span class="p">}</span>
+<span class="n">MyLightningModule</span><span class="o">.</span><span class="n">load_from_checkpoint</span><span class="p">(</span>
+    <span class="s1">&#39;path/to/checkpoint.ckpt&#39;</span><span class="p">,</span>
+    <span class="n">map_location</span><span class="o">=</span><span class="n">map_location</span>
+<span class="p">)</span>
+
+<span class="c1"># or load weights and hyperparameters from separate files.</span>
+<span class="n">MyLightningModule</span><span class="o">.</span><span class="n">load_from_checkpoint</span><span class="p">(</span>
+    <span class="s1">&#39;path/to/checkpoint.ckpt&#39;</span><span class="p">,</span>
+    <span class="n">hparams_file</span><span class="o">=</span><span class="s1">&#39;/path/to/hparams_file.yaml&#39;</span>
+<span class="p">)</span>
+
+<span class="c1"># override some of the params with new values</span>
+<span class="n">MyLightningModule</span><span class="o">.</span><span class="n">load_from_checkpoint</span><span class="p">(</span>
+    <span class="n">PATH</span><span class="p">,</span>
+    <span class="n">num_layers</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+    <span class="n">pretrained_ckpt_path</span><span class="o">=</span><span class="n">NEW_PATH</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># predict</span>
+<span class="n">pretrained_model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<span class="n">pretrained_model</span><span class="o">.</span><span class="n">freeze</span><span class="p">()</span>
+<span class="n">y_hat</span> <span class="o">=</span> <span class="n">pretrained_model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
 
 
            </div>

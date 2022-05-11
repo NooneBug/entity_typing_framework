@@ -1,18 +1,20 @@
 <!DOCTYPE html>
-<html class="writer-html4" lang="en" >
+<html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Modules and submodules &mdash; entity_typing_framework 0.1 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <title>Modules and submodules &mdash; entity_typing_framework 0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
-  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -87,64 +89,61 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="section" id="modules-and-submodules">
-<h1>Modules and submodules<a class="headerlink" href="#modules-and-submodules" title="Permalink to this headline">¶</a></h1>
+  <section id="modules-and-submodules">
+<h1>Modules and submodules<a class="headerlink" href="#modules-and-submodules" title="Permalink to this headline"></a></h1>
 <p>Here is reported the list of each implemented module and submodule the relative documentation</p>
-<div class="section" id="datasetmanager">
-<span id="id1"></span><h2>DatasetManager<a class="headerlink" href="#datasetmanager" title="Permalink to this headline">¶</a></h2>
+<section id="datasetmanager">
+<span id="id1"></span><h2>DatasetManager<a class="headerlink" href="#datasetmanager" title="Permalink to this headline"></a></h2>
 <p>Implemented dataset managers are expected to manage the dataset acquisition, the tokenization and the formatting of a partitioned dataset.</p>
 <p>Commonly a dataset is partitioned in <code class="code docutils literal notranslate"><span class="pre">train</span></code>, <code class="code docutils literal notranslate"><span class="pre">validation</span></code> and <code class="code docutils literal notranslate"><span class="pre">test</span></code></p>
 <p>A dataset managers is expected to have the following submodules:</p>
-<dl class="docutils" id="dataset-reader">
-<dt><a class="reference internal" href="dataset_readers.html"><span class="doc">dataset_reader</span></a>:</dt>
-<dd>a module that read the dataset from the actual dataset file</dd>
+<dl class="simple" id="dataset-reader">
+<dt><a class="reference internal" href="dataset_readers.html"><span class="doc">dataset_reader</span></a>:</dt><dd><p>a module that read the dataset from the actual dataset file</p>
+</dd>
 </dl>
-<dl class="docutils" id="dataset-tokenizer">
-<dt><a class="reference internal" href="dataset_tokenizers.html"><span class="doc">dataset_tokenizer</span></a>:</dt>
-<dd>a module that tokenize the acquired dataset</dd>
+<dl class="simple" id="dataset-tokenizer">
+<dt><a class="reference internal" href="dataset_tokenizers.html"><span class="doc">dataset_tokenizer</span></a>:</dt><dd><p>a module that tokenize the acquired dataset</p>
+</dd>
 </dl>
-<dl class="docutils" id="dataset">
-<dt><a class="reference internal" href="datasets.html"><span class="doc">dataset</span></a>:</dt>
-<dd>a module that is a subclass of <code class="code docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code> and has to prepare the tokenized dataset to be used in a <code class="code docutils literal notranslate"><span class="pre">torch.utils.data.Dataloader</span></code> defining the <code class="code docutils literal notranslate"><span class="pre">batch</span></code></dd>
+<dl class="simple" id="dataset">
+<dt><a class="reference internal" href="datasets.html"><span class="doc">dataset</span></a>:</dt><dd><p>a module that is a subclass of <code class="code docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code> and has to prepare the tokenized dataset to be used in a <code class="code docutils literal notranslate"><span class="pre">torch.utils.data.Dataloader</span></code> defining the <code class="code docutils literal notranslate"><span class="pre">batch</span></code></p>
+</dd>
 </dl>
-</div>
-<div class="section" id="entity-typing-network">
-<span id="entitytypingnetwork"></span><h2>Entity Typing Network<a class="headerlink" href="#entity-typing-network" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="entity-typing-network">
+<span id="entitytypingnetwork"></span><h2>Entity Typing Network<a class="headerlink" href="#entity-typing-network" title="Permalink to this headline"></a></h2>
 <p>Implemented entity typing networks are expected to produce a logit for each type for each input sentence.</p>
 <p>An Entity Typing Network receives input sentences through a <code class="code docutils literal notranslate"><span class="pre">batch</span></code> generated by the <code class="code docutils literal notranslate"><span class="pre">dataset</span></code> submodule</p>
 <p>To be instantiated an Entity Typing Network always needs a name, some parameters in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file under the key <code class="code docutils literal notranslate"><span class="pre">model</span></code> and the number of types, given by the <a class="reference internal" href="#datasetmanager"><span class="std std-ref">Dataset Manager</span></a></p>
 <p>An Entity Typing Network is expected to have the following submodules:</p>
-<dl class="docutils" id="encoder">
-<dt><a class="reference internal" href="encoders.html"><span class="doc">encoder</span></a>:</dt>
-<dd><p class="first">A module that encodes an input sentence starting from a tokenized version inside the <code class="code docutils literal notranslate"><span class="pre">batch</span></code></p>
-<p class="last">Commonly an encoder takes in input a tokenized sentence (a tensor of integers) and return a tensor with some representation of the input tokenized sentence</p>
+<dl id="encoder">
+<dt><a class="reference internal" href="encoders.html"><span class="doc">encoder</span></a>:</dt><dd><p>A module that encodes an input sentence starting from a tokenized version inside the <code class="code docutils literal notranslate"><span class="pre">batch</span></code></p>
+<p>Commonly an encoder takes in input a tokenized sentence (a tensor of integers) and return a tensor with some representation of the input tokenized sentence</p>
 </dd>
 </dl>
-<dl class="docutils" id="type-encoder">
-<dt><a class="reference internal" href="type_encoders.html"><span class="doc">type encoder</span></a>:</dt>
-<dd><p class="first">A module that encodes the types starting from their tokenized version (an id or a list of id) inside the <code class="code docutils literal notranslate"><span class="pre">batch</span></code></p>
-<p class="last">Commonly a type encoder takes in input a type id or a list of type ids and return a tensor with some representation of the type (or the types)</p>
+<dl id="type-encoder">
+<dt><a class="reference internal" href="type_encoders.html"><span class="doc">type encoder</span></a>:</dt><dd><p>A module that encodes the types starting from their tokenized version (an id or a list of id) inside the <code class="code docutils literal notranslate"><span class="pre">batch</span></code></p>
+<p>Commonly a type encoder takes in input a type id or a list of type ids and return a tensor with some representation of the type (or the types)</p>
 </dd>
 </dl>
-<dl class="docutils" id="input-projector">
-<dt><a class="reference internal" href="input_projectors.html"><span class="doc">input projector</span></a>:</dt>
-<dd><p class="first">A module that projects the encoded input in a common space, where types are placed.</p>
+<dl id="input-projector">
+<dt><a class="reference internal" href="input_projectors.html"><span class="doc">input projector</span></a>:</dt><dd><p>A module that projects the encoded input in a common space, where types are placed.</p>
 <p>The input projector is needed since the encoder has not to be aware of the type representation space (we assume an encoder encodes a sentence in a space with fixed dimension, e.g., 768 for <code class="code docutils literal notranslate"><span class="pre">BertBase</span></code>). We think that this solution helps in building simple encoder modules</p>
-<p class="last">Commonly a input projector takes in input the encoded input (returned from the <a class="reference internal" href="#encoder"><span class="std std-ref">encoder submodule</span></a>) and project it in the type representation space (defined by the <a class="reference internal" href="#type-encoder"><span class="std std-ref">type encoder</span></a>)</p>
+<p>Commonly a input projector takes in input the encoded input (returned from the <a class="reference internal" href="#encoder"><span class="std std-ref">encoder submodule</span></a>) and project it in the type representation space (defined by the <a class="reference internal" href="#type-encoder"><span class="std std-ref">type encoder</span></a>)</p>
 </dd>
 </dl>
-</div>
-<div class="section" id="implemented-modules">
-<h2>Implemented Modules<a class="headerlink" href="#implemented-modules" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="implemented-modules">
+<h2>Implemented Modules<a class="headerlink" href="#implemented-modules" title="Permalink to this headline"></a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="dataset_managers.html">Dataset Managers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="entity_typing_networks.html">Entity Typing Networks</a></li>
 </ul>
 </div>
-</div>
-<div class="section" id="implemented-submodules">
-<h2>Implemented Submodules<a class="headerlink" href="#implemented-submodules" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="implemented-submodules">
+<h2>Implemented Submodules<a class="headerlink" href="#implemented-submodules" title="Permalink to this headline"></a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="dataset_readers.html">Dataset Readers</a></li>
@@ -155,8 +154,8 @@
 <li class="toctree-l1"><a class="reference internal" href="input_projectors.html">Input Projectors</a></li>
 </ul>
 </div>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>

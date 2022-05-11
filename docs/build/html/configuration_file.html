@@ -1,18 +1,20 @@
 <!DOCTYPE html>
-<html class="writer-html4" lang="en" >
+<html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Configuration File &mdash; entity_typing_framework 0.1 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <title>Configuration File &mdash; entity_typing_framework 0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
-  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -74,42 +76,42 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="section" id="configuration-file">
-<h1>Configuration File<a class="headerlink" href="#configuration-file" title="Permalink to this headline">¶</a></h1>
+  <section id="configuration-file">
+<h1>Configuration File<a class="headerlink" href="#configuration-file" title="Permalink to this headline"></a></h1>
 <p>A configuration file is a <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> file defined following <a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_cli.html">LightningCLI</a> specifics. It is used to define each hyperparameter needed to drive the modular network definition, training and evaluation and the dataset management</p>
 <p>Some example configuration files are stored in the <cite>/default_configurations</cite> folder on <a class="reference external" href="https://github.com/NooneBug/entity_typing_framework.git">github</a></p>
-<div class="section" id="trainer-parameters">
-<h2>Trainer Parameters<a class="headerlink" href="#trainer-parameters" title="Permalink to this headline">¶</a></h2>
+<section id="trainer-parameters">
+<h2>Trainer Parameters<a class="headerlink" href="#trainer-parameters" title="Permalink to this headline"></a></h2>
 <p><a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_cli.html">LightningCLI</a> supports the parametrization of a <a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html">Trainer</a> object through a <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file</p>
 <p>The trainer parameters are defined under the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> key <code class="code docutils literal notranslate"><span class="pre">trainer</span></code></p>
 <p>For example:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trainer</span><span class="p">:</span>
-    <span class="nt">gpus</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-    <span class="nt">limit_train_batches</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">.1</span>
-    <span class="nt">max_epochs </span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span>
-    <span class="l l-Scalar l-Scalar-Plain">...</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trainer</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">gpus</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w"></span>
+<span class="w">    </span><span class="nt">limit_train_batches</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.1</span><span class="w"></span>
+<span class="w">    </span><span class="nt">max_epochs </span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span><span class="w"></span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w"></span>
 </pre></div>
 </div>
 <p>Default trainer parameters can be shown using <code class="code docutils literal notranslate"><span class="pre">python</span> <span class="pre">trainer.py</span> <span class="pre">fit</span> <span class="pre">--print-config</span></code>, see <a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_cli.html">LightningCLI</a></p>
-</div>
-<div class="section" id="general-parameters">
-<h2>General Parameters<a class="headerlink" href="#general-parameters" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="general-parameters">
+<h2>General Parameters<a class="headerlink" href="#general-parameters" title="Permalink to this headline"></a></h2>
 <p>Under <cite>/default_configurations</cite> files you cane notice that some parameters are given to <a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_cli.html">LightningCLI</a> without indentation. For this project, the useful LightningCLI parameters are:</p>
-<dl class="docutils">
-<dt>seed_everything</dt>
-<dd>set the global seed in the python runtime (<code class="code docutils literal notranslate"><span class="pre">torch</span></code>, <code class="code docutils literal notranslate"><span class="pre">cuda</span></code> and <code class="code docutils literal notranslate"><span class="pre">numpy</span></code>)</dd>
+<dl class="simple">
+<dt>seed_everything</dt><dd><p>set the global seed in the python runtime (<code class="code docutils literal notranslate"><span class="pre">torch</span></code>, <code class="code docutils literal notranslate"><span class="pre">cuda</span></code> and <code class="code docutils literal notranslate"><span class="pre">numpy</span></code>)</p>
+</dd>
 </dl>
-</div>
-<div class="section" id="expected-modules-and-parameters">
-<h2>Expected Modules and Parameters<a class="headerlink" href="#expected-modules-and-parameters" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="expected-modules-and-parameters">
+<h2>Expected Modules and Parameters<a class="headerlink" href="#expected-modules-and-parameters" title="Permalink to this headline"></a></h2>
 <p>Each expected module has parameters; in the <code class="code docutils literal notranslate"><span class="pre">yaml</span></code> configuration file expected module parameters are organized under a <code class="code docutils literal notranslate"><span class="pre">key</span></code></p>
 <p>Here is reported the list expected modules together with each key:</p>
-<dl class="docutils">
-<dt>DatasetManager</dt>
-<dd>key: dataset_manager</dd>
+<dl class="simple">
+<dt>DatasetManager</dt><dd><p>key: dataset_manager</p>
+</dd>
 </dl>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
