@@ -2,6 +2,10 @@ from pytorch_lightning.core.datamodule import LightningDataModule
 from entity_typing_framework.utils.implemented_classes_lvl0 import IMPLEMENTED_CLASSES_LVL0
 from pytorch_lightning.trainer.supporters import CombinedLoader
 from transformers import AutoTokenizer
+import pickle
+import os
+
+RW_OPTIONS_MODALITY = ['Create', 'CreateAndSave', 'Load']
 
 class DatasetManager(LightningDataModule):
     '''
@@ -45,15 +49,33 @@ class DatasetManager(LightningDataModule):
             The dataloader parameters are expected to be in the :code:`yaml` config file under the key : :code:`data.dataloader_params`
 
             See the official torch documentation for `DataLoaders <https://pytorch.org/tutorials/beginner/basics/data_tutorial.html>`_ for more information about the expected params
+        rw_options
+            A dictionary defined in the :code:`yaml` config file used to set the read/write options to load and save the tokenized datasets
+
+            The read/write options are expected to be in the :code:`yaml` config file under the key : :code:`data.rw_options`
+
+            The options available are :code:`modality` ('Create' to create the tokenized version of the dataset, 'CreateAndSave' to save it, 'Load' to load it),
+            :code:`dirpath` to define the read/write directory, and the flag :code:`light` to enable the save/load of the tokenized dataset w/o the original data and tokenizer
+
+
     '''
-    def __init__(self, dataset_paths : dict, dataset_reader_params : dict, tokenizer_params : dict, dataset_params : dict, dataloader_params : dict):
+    def __init__(self, dataset_paths : dict, dataset_reader_params : dict, tokenizer_params : dict, dataset_params : dict, dataloader_params : dict,
+                rw_options : dict):
         self.dataset_paths = dataset_paths
         self.dataset_reader_params = dataset_reader_params
         self.tokenizer_params = tokenizer_params
         self.datasets_params = dataset_params
         self.dataloader_params = dataloader_params
-        self.read_datasets()
+        self.rw_options = rw_options
+        self.rw_options['modality'] = self.rw_options['modality'].lower()
+        if self.rw_options['modality'] == 'load':
+            self.load_type2id()
+        elif self.rw_options['modality'] == 'create' or self.rw_options['modality'] == 'createandsave':
+            self.read_datasets()
+        else:
+            raise Exception(f"Error: the value of data.rw_options.modality must be in {RW_OPTIONS_MODALITY}")
         self.type_number = self.get_type_number()
+        self.tokenizer_config_name = self.get_tokenizer_config_name()
 
     def read_datasets(self):
         '''
@@ -71,15 +93,83 @@ class DatasetManager(LightningDataModule):
 
         Tokenize each partition of the dataset with a :doc:`dataset_tokenizer <dataset_tokenizers>` class, chosen following the configuration file value under the key :code:`data.tokenizer_params.name`
         '''
-
-        tokenizer = self.instance_tokenizer(bertlike_model_name = self.tokenizer_params['bertlike_model_name'])
-        self.tokenized_datasets = {partition_name: IMPLEMENTED_CLASSES_LVL0[self.tokenizer_params['name']](dataset,
-                                                                            self.type2id,
-                                                                            tokenizer,
-                                                                            **self.tokenizer_params
-                                                                            ) for partition_name, dataset in self.datasets.partitions.items()
-                            }
+        if self.rw_options['modality'] == 'load': 
+            self.load_tokenized_datasets()
+        else: 
+            # create
+            tokenizer = self.instance_tokenizer(bertlike_model_name = self.tokenizer_params['bertlike_model_name'])
+            self.tokenized_datasets = {partition_name: IMPLEMENTED_CLASSES_LVL0[self.tokenizer_params['name']](dataset,
+                                                                                self.type2id,
+                                                                                tokenizer,
+                                                                                **self.tokenizer_params
+                                                                                ) for partition_name, dataset in self.datasets.partitions.items()
+                                }
+            # save
+            if self.rw_options['modality'] == 'createandsave':
+                self.save_tokenized_datasets()
+                self.save_type2id()
+            # free original datasets
+            if self.rw_options['light']:
+                self.datasets = None
     
+    def save_tokenized_datasets(self):
+        # delete tokenizer and dataset from tokenized_datasets
+        if self.rw_options['light']:
+            for _, tokenized_dataset in self.tokenized_datasets.items():
+                tokenized_dataset.make_light()
+            
+        # prepare object to save
+        data = {
+            'tokenized_datasets' : self.tokenized_datasets,
+            'tokenizer_params' : self.tokenizer_params,
+            'light' : self.rw_options['light'],
+        }
+        # save
+        path_to_save = os.path.join(self.rw_options['dirpath'], f'{self.tokenizer_config_name}.pickle')
+        if not os.path.exists(self.rw_options['dirpath']):
+            os.makedirs(self.rw_options['dirpath'])
+        with open(path_to_save, 'wb') as f:
+            pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def load_tokenized_datasets(self):
+        # load
+        path_to_load = os.path.join(self.rw_options['dirpath'], f'{self.tokenizer_config_name}.pickle')
+        with open(path_to_load, 'rb') as f:
+            data = pickle.load(f)
+        # check consistency between the format of the data to load and the 'light' option
+        # NOTE: this should not happens since the filename has the 'light' info
+        if self.rw_options['light'] != data['light']:
+            raise Exception(f"Error: you are trying to load {path_to_load} with 'light' set to {self.rw_options['light']},\
+                            but the tokenized datasets are saved with 'light' set to {data['light']}")
+        # load datasets and mappings
+        self.tokenized_datasets = data['tokenized_datasets']
+
+    def save_type2id(self):
+        path_to_save = os.path.join(self.rw_options['dirpath'], f'type2id.pickle')
+        data = {
+            'type2id' : self.type2id,
+            'id2type' : self.id2type
+        }
+        with open(path_to_save, 'wb') as f:
+            pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def load_type2id(self):
+        path_to_load = os.path.join(self.rw_options['dirpath'], 'type2id.pickle')
+        with open(path_to_load, 'rb') as f:
+            data = pickle.load(f)
+        self.type2id = data['type2id']
+        self.id2type = data['id2type']
+
+    def get_tokenizer_config_name(self):
+        config_name = self.tokenizer_params['bertlike_model_name']
+        config_name += '_'
+        config_name += f"M{self.tokenizer_params['max_mention_words']}"
+        config_name += f"L{self.tokenizer_params['max_left_words']}"
+        config_name += f"R{self.tokenizer_params['max_right_words']}"
+        config_name += f"T{self.tokenizer_params['max_tokens']}"
+        config_name += '_light' if self.rw_options['light'] else ''
+        return config_name
+
     def instance_tokenizer(self, bertlike_model_name):
         '''
         instance a tokenizer with `huggingface AutoTokenizer <https://huggingface.co/docs/transformers/v4.15.0/en/model_doc/auto#transformers.AutoTokenizer>`_

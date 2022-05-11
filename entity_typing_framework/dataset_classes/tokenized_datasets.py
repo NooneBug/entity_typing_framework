@@ -255,3 +255,9 @@ class BaseBERTTokenizedDataset(Dataset):
         print('\navg length : {:.2f} (first and last tokens are [CLS] and [SEP])'.format(avg_len))
         return max_length, avg_len
         
+    def make_light(self):
+        '''
+        delete :code:`dataset` and :code:`tokenizer`
+        '''
+        self.dataset = None
+        self.tokenizer = None
