@@ -98,21 +98,6 @@ class MainModule(LightningModule):
         del checkpoint['hyper_parameters']['logger']
         return super().on_save_checkpoint(checkpoint)
 
-    def on_train_end(self) -> None:
-        self.predict_on_test()
-
-    def predict_on_test(self):
-        test_dataloader = self.trainer.datamodule.test_dataloader()
-        for batch in test_dataloader:
-            _, _, true_types = batch
-            network_output, type_representations = self.ET_Network(batch)
-            inferred_types = self.inference_manager.infer_types(network_output)
-            self.test_metric_manager.update(inferred_types, true_types)
-
-        test_metrics = self.test_metric_manager.compute()
-        self.logger_module.log_all_metrics(test_metrics)
-        self.logger_module.log_all()
-
 
 class IncrementalMainModule(MainModule):
 
