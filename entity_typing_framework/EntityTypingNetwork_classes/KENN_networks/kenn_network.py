@@ -29,7 +29,7 @@ class KENNClassifierMultiloss(KENNClassifier):
     super().__init__(clause_file_path, save_training_data, **kwargs)
   
   def forward(self, input_representation):
-    prekenn = super().forward(input_representation=input_representation)
+    prekenn = Classifier.forward(self, input_representation=input_representation)
 
     postkenn = self.ke(prekenn)[0]
     # self.ke(prekenn)[0] -> output
