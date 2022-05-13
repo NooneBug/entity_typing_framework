@@ -31,7 +31,7 @@ class MainModule(LightningModule):
         self.inference_manager = IMPLEMENTED_CLASSES_LVL0[inference_params['name']](**inference_params)
         self.loss = IMPLEMENTED_CLASSES_LVL0[loss_params['name']](**loss_params)
         self.save_hyperparameters()
-    
+
     def on_fit_start(self):
         self.metric_manager.set_device(self.device)
         self.test_metric_manager.set_device(self.device)
