@@ -7,8 +7,9 @@ import yaml
 
 class CustomLogger(WandbLogger, Callback):
     def __init__(self, project, entity, name, config_file):
-        config = self.read_yaml_as_config(config_file)
-        wandb.init(project=project, entity=entity, name = name, config = config)
+        # config = self.read_yaml_as_config(config_file)
+        # wandb.init(project=project, entity=entity, name = name, config = config)
+        wandb.init(project=project, entity=entity, name = name)
         super().__init__(project=project, entity=entity, name=name)
         self.to_log = {}
     
