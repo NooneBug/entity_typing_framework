@@ -1,0 +1,8 @@
+# same as model.yaml, except the following
+model:
+  ET_Network_params:
+    network_params:
+      encoder_params:
+        name : AdapterDistilBERTEncoder # see documentation for available choices
+        adapter_arch : Pfeiffer # see documentation for available choices
+        reduction_factor : 16

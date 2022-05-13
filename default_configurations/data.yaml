@@ -1,0 +1,29 @@
+data:
+  dataset_paths:
+    train: datasets/bbn/train.json
+    dev: datasets/bbn/dev.json
+    test: datasets/bbn/test-12k.json
+  dataset_reader_params:
+    name : BaseDataset
+  tokenizer_params:
+    name : BaseBERTTokenizedDataset
+    bertlike_model_name: distilbert-base-uncased # be sure it is consistent with model.ET_Network_params.network_params.encoder_params.bertlike_model_name
+    max_mention_words: 5
+    max_right_words: 13
+    max_left_words: 13
+    max_tokens: 80
+  dataset_params:
+    name: ET_Dataset
+  dataloader_params:
+    name: torch.DataLoader
+    train:
+      batch_size: 64
+      shuffle: True
+    dev:
+      batch_size: 64
+    test:
+      batch_size: 64
+  rw_options:
+    modality: Load # in [Create, CreateAndSave, Load]
+    dirpath: datasets/bbn/tokenized 
+    light: True

@@ -1,0 +1,9 @@
+# same as model_kenn.yaml, except the following
+model:
+  loss_params:
+    name : KENNBCEMultiloss
+    alpha : .5
+  ET_Network_params:
+    network_params:
+      input_projector_params:
+        name : KENNClassifierMultiloss
