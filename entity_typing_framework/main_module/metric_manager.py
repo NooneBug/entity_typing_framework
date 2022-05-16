@@ -64,15 +64,15 @@ class MetricManager():
         self.macro_r_t.reset()
 
     def compose_return(self, micro_p, micro_r, micro_f1, macro_p_ex, macro_r_ex, macro_f1_ex, macro_p_t, macro_r_t, macro_f1_t):
-        return {'micro/{}micro_precision'.format(self.prefix) : micro_p,
-                'micro/{}micro_recall'.format(self.prefix) : micro_r,
-                'micro/{}micro_f1'.format(self.prefix) : micro_f1,
-                'macro_example/{}macro_precision_example'.format(self.prefix) :  macro_p_ex,
-                'macro_example/{}macro_recall_example'.format(self.prefix) : macro_r_ex,
-                'macro_example/{}macro_f1_example'.format(self.prefix) : macro_f1_ex,
-                'macro_types/{}macro_precision_types'.format(self.prefix) : macro_p_t,
-                'macro_types/{}macro_recall_types'.format(self.prefix) : macro_r_t,
-                'macro_types/{}macro_f1_types'.format(self.prefix) : macro_f1_t}
+        return {'{}/micro/precision'.format(self.prefix) : micro_p,
+                '{}/micro/recall'.format(self.prefix) : micro_r,
+                '{}/micro/f1'.format(self.prefix) : micro_f1,
+                '{}/macro_example/precision'.format(self.prefix) :  macro_p_ex,
+                '{}/macro_example/recall'.format(self.prefix) : macro_r_ex,
+                '{}/macro_example/f1'.format(self.prefix) : macro_f1_ex,
+                '{}/macro_types/precision'.format(self.prefix) : macro_p_t,
+                '{}/macro_types/recall'.format(self.prefix) : macro_r_t,
+                '{}/macro_types/f1'.format(self.prefix) : macro_f1_t}
 
     def compute_f1(self, p, r):
         return (2 * p * r) / (p + r)

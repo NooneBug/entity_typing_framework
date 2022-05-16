@@ -1,0 +1,28 @@
+model:
+  loss_params:
+    name : BCELossForET # see documentation for available choices
+  ET_Network_params:
+    name : BaseEntityTypingNetwork
+    network_params:
+      encoder_params:
+        name : DistilBERTEncoder # see documentation for available choices
+        bertlike_model_name: distilbert-base-uncased # be sure it is consistent with data.tokenizer_params.bertlike_model_name
+      type_encoder_params:
+        name : OneHotTypeEncoder
+        trainable: False
+      input_projector_params:
+        name : Classifier
+        layers_parameters: 
+          '0':
+            in_features : encoder_dim
+            out_features: 250 # or in_features
+            use_dropout: False
+            activation: relu
+          '1':
+            in_features: 250 # or previous_out_features
+            out_features : type_number
+            use_dropout: False
+            activation: sigmoid
+  inference_params:
+    name: BaseInference # see documentation for available choices
+    threshold: 0.5

@@ -1,0 +1,11 @@
+# same as model.yaml or model_adapters.yaml, except the following
+model:
+  ET_Network_params:
+    network_params:
+      input_projector_params:
+        name : KENNClassifier
+        clause_file_path: kb_path/kb_name # if you want to use the automatically generated KB, it must be consistent with data.dataset_reader_params.clause_output_path
+        save_training_data: False
+        layers_parameters: 
+          '1':
+            activation: none # important!

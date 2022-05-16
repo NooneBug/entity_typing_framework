@@ -78,7 +78,9 @@ class DatasetManager(LightningDataModule):
         self.rw_options = rw_options
         self.rw_options['modality'] = self.rw_options['modality'].lower()
         if self.rw_options['modality'] == 'load':
-            self.load_type2id()
+            # self.load_type2id()
+            # TODO: fix the handle of KBs, then remove the next line and uncomment the previous
+            self.read_datasets()
         elif self.rw_options['modality'] == 'create' or self.rw_options['modality'] == 'createandsave':
             self.read_datasets()
         else:

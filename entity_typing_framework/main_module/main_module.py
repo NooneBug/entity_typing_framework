@@ -25,18 +25,20 @@ class MainModule(LightningModule):
             self.ET_Network = IMPLEMENTED_CLASSES_LVL0[self.ET_Network_params['name']](**self.ET_Network_params, type_number = self.type_number)
         else:
             self.ET_Network = self.load_from_checkpoint(ET_Network_params=self.ET_Network_params, checkpoint_to_load=checkpoint_to_load)
-        self.metric_manager = MetricManager(num_classes=self.type_number, device=self.device)
-        self.test_metric_manager = MetricManager(num_classes=self.type_number, device=self.device)
+        self.metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='dev')
+        self.test_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test')
 
         self.inference_manager = IMPLEMENTED_CLASSES_LVL0[inference_params['name']](**inference_params)
         self.loss = IMPLEMENTED_CLASSES_LVL0[loss_params['name']](**loss_params)
         self.save_hyperparameters()
-    
+
     def on_fit_start(self):
         self.metric_manager.set_device(self.device)
+        self.test_metric_manager.set_device(self.device)
 
     def on_test_start(self):
         self.metric_manager.set_device(self.device)
+        self.test_metric_manager.set_device(self.device)
 
     def training_step(self, batch, batch_step):
         network_output, type_representations = self.ET_Network(batch)
@@ -70,10 +72,10 @@ class MainModule(LightningModule):
         _, _, true_types = batch
         network_output, _ = self.ET_Network(batch)
         inferred_types = self.inference_manager.infer_types(network_output)
-        self.metric_manager.update(inferred_types, true_types)
+        self.test_metric_manager.update(inferred_types, true_types)
     
     def test_epoch_end(self, out):
-        metrics = self.metric_manager.compute()
+        metrics = self.test_metric_manager.compute()
         metrics = { k: v.item() for k,v in metrics.items()}
         print('TEST RESULTS:')
         print(metrics)
@@ -222,4 +224,4 @@ class KENNMultilossMainModule(KENNMainModule):
         network_output, _ = self.ET_Network(batch)
         # pick postkenn predictions
         inferred_types = self.inference_manager.infer_types(network_output[1])
-        self.metric_manager.update(inferred_types, true_types)
+        self.test_metric_manager.update(inferred_types, true_types)

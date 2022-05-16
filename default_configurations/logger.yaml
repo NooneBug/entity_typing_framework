@@ -1,0 +1,5 @@
+logger:
+  project : wandb_project
+  entity : wandb_entity
+  name : wandb_run_name
+  config_file: auto # use auto to log the config.yaml dinamically generated, or alternatively specify the path/config.yaml
