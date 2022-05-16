@@ -2,43 +2,42 @@ seed_everything : 1
 
 model:
   loss_params:
-    name : BCELossForET
+    name : BoxEmbeddingBCELoss
   ET_Network_params:
-    name : BaseEntityTypingNetwork
+    name : BoxEmbeddingEntityTypingNetwork
     network_params:
       encoder_params:
         name : DistilBERTEncoder
         bertlike_model_name: distilbert-base-uncased
         freeze_encoder : True
+      box_embeddings_dimension: 109
       type_encoder_params:
-        name : OneHotTypeEncoder
-        trainable: False
+        name : BoxDecoder
+        inv_softplus_temp: 1.2471085395024732
+        softplus_scale: 1.
+        n_negatives: 1000
+        box_offset: 0.5
+        use_gumbel_baysian: True
+        gumbel_beta: 0.00036026463511690845
       input_projector_params:
-        name : Classifier
-        layers_parameters: 
-          '0':
-            in_features : encoder_dim
-            out_features: 512
-            use_dropout: True
-          '1':
-            in_features: 512
-            out_features : type_number
-            use_dropout: False
-            activation: sigmoid
+        name : BoxEmbeddingProjector
+        projection_network_params:
+          name: HighwayNetwork
+          n_layers: 2
   inference_params:
-    name: BaseInference
-    threshold: 0.5
+    name: BoxEmbeddingInference
 
 trainer:
+  deterministic: True
   gpus: 1
-  limit_train_batches: .01
-  max_epochs : 5
+  limit_train_batches: 160
+  max_epochs : 100
   callbacks:
     - class_path: pytorch_lightning.callbacks.ModelCheckpoint
       init_args:
-        dirpath: trained_models/pretraining/
+        dirpath: trained_models_chronos_exp/bbn/
         monitor: val_loss
-        filename: pretraining_location_official
+        filename: baseline_distilbert
         save_weights_only: True
     - class_path: pytorch_lightning.callbacks.EarlyStopping
       init_args:
@@ -57,9 +56,9 @@ data:
   tokenizer_params:
     name : BaseBERTTokenizedDataset
     bertlike_model_name: distilbert-base-uncased
-    max_mention_words: 1
-    max_right_words: 2
-    max_left_words: 2
+    max_mention_words: 5
+    max_right_words: 13
+    max_left_words: 13
     max_tokens: 80
   dataset_params:
     name: ET_Dataset
@@ -69,17 +68,17 @@ data:
       batch_size: 64
       shuffle: True
     dev:
-      batch_size: 8
+      batch_size: 64
     test:
-      batch_size: 8
+      batch_size: 64
   rw_options:
-    modality: CreateAndSave # in [Create, CreateAndSave, Load]
+    modality: Load # in [Create, CreateAndSave, Load]
     dirpath: datasets/bbn/tokenized 
     light: True
   
 
 logger:
-  project : entity_typing_framework_prove
+  project : entity_typing_framework
   entity : noonebug
-  name : prova_debug_metriche
-  config_file : entity_typing_framework/default_configurations/distilbert_classifier.yaml
+  name : box_embedding_baseline_bbn
+  config_file: entity_typing_framework/default_configurations/box_embeddings.yaml

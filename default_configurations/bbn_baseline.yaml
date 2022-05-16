@@ -1,4 +1,4 @@
-seed_everything : 1
+seed_everything : 3
 
 model:
   loss_params:
@@ -7,9 +7,10 @@ model:
     name : BaseEntityTypingNetwork
     network_params:
       encoder_params:
-        name : DistilBERTEncoder
+        name : AdapterDistilBERTEncoder
         bertlike_model_name: distilbert-base-uncased
-        freeze_encoder : True
+        adapter_arch : Pfeiffer
+        reduction_factor : 16
       type_encoder_params:
         name : OneHotTypeEncoder
         trainable: False
@@ -18,10 +19,11 @@ model:
         layers_parameters: 
           '0':
             in_features : encoder_dim
-            out_features: 512
-            use_dropout: True
+            out_features: in_features
+            use_dropout: False
+            activation: relu
           '1':
-            in_features: 512
+            in_features: previous_out_features
             out_features : type_number
             use_dropout: False
             activation: sigmoid
@@ -30,15 +32,16 @@ model:
     threshold: 0.5
 
 trainer:
+  deterministic: True
   gpus: 1
-  limit_train_batches: .01
-  max_epochs : 5
+  limit_train_batches: 160
+  max_epochs : 100
   callbacks:
     - class_path: pytorch_lightning.callbacks.ModelCheckpoint
       init_args:
-        dirpath: trained_models/pretraining/
+        dirpath: trained_models_chronos_exp/bbn/
         monitor: val_loss
-        filename: pretraining_location_official
+        filename: baseline_distilbert
         save_weights_only: True
     - class_path: pytorch_lightning.callbacks.EarlyStopping
       init_args:
@@ -49,17 +52,19 @@ trainer:
 
 data:
   dataset_paths:
-    train: datasets/ren_et_al/bbn/train.json
-    dev: datasets/ren_et_al/bbn/dev.json
-    test: datasets/ren_et_al/bbn/test-12k.json
+    train: datasets/bbn/train.json
+    dev: datasets/bbn/dev.json
+    test: datasets/bbn/test-12k.json
+  # train_test_mapping:
+  #   livingthing: living_thing
   dataset_reader_params:
     name : BaseDataset
   tokenizer_params:
     name : BaseBERTTokenizedDataset
     bertlike_model_name: distilbert-base-uncased
-    max_mention_words: 1
-    max_right_words: 2
-    max_left_words: 2
+    max_mention_words: 5
+    max_right_words: 13
+    max_left_words: 13
     max_tokens: 80
   dataset_params:
     name: ET_Dataset
@@ -69,17 +74,17 @@ data:
       batch_size: 64
       shuffle: True
     dev:
-      batch_size: 8
+      batch_size: 64
     test:
-      batch_size: 8
+      batch_size: 64
   rw_options:
-    modality: CreateAndSave # in [Create, CreateAndSave, Load]
+    modality: Load # in [Create, CreateAndSave, Load]
     dirpath: datasets/bbn/tokenized 
     light: True
   
 
 logger:
-  project : entity_typing_framework_prove
-  entity : noonebug
-  name : prova_debug_metriche
-  config_file : entity_typing_framework/default_configurations/distilbert_classifier.yaml
+  project : tmp
+  entity : cbe
+  name : bbn_baseline
+  config_file: entity_typing_experiments/chronos_experiments/bbn_baseline.yaml

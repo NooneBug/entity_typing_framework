@@ -98,6 +98,29 @@ class MainModule(LightningModule):
         del checkpoint['hyper_parameters']['logger']
         return super().on_save_checkpoint(checkpoint)
 
+class BoxEmbeddingMainModule(MainModule):
+    def training_step(self, batch, batch_step):
+        network_output, log_probs, loss_weights, targets = self.ET_Network(batch, is_training = False)
+        loss = self.loss.compute_loss(log_probs, targets, loss_weights)
+        return loss
+
+    
+    def validation_step(self, batch, batch_step):
+        _, _, true_types = batch
+        network_output, log_probs, loss_weights, targets = self.ET_Network(batch, is_training = False)
+        loss = self.loss.compute_loss(log_probs, targets, loss_weights)
+        inferred_types = self.inference_manager.infer_types(log_probs)
+        self.metric_manager.update(inferred_types, true_types)
+
+        return loss
+    
+    def test_step(self, batch, batch_step):
+        _, _, true_types = batch
+        network_output, log_probs, loss_weights, targets = self.ET_Network(batch, is_training = False)
+        loss = self.loss.compute_loss(log_probs, targets, loss_weights)
+        inferred_types = self.inference_manager.infer_types(log_probs)
+        self.metric_manager.update(inferred_types, true_types)
+
 
 class IncrementalMainModule(MainModule):
 
