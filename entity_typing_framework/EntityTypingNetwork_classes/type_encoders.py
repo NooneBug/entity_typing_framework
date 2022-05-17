@@ -154,6 +154,7 @@ class BoxDecoder(nn.Module):
       return (torch.sum(
         torch.log(
           F.softplus(Z - z - 2 * self.euler_gamma * gumbel_beta, beta=temp).clamp_min(
+          # F.softplus(((Z - z) / gumbel_beta) - 2 * self.euler_gamma, beta=temp).clamp_min(
             eps)),
           dim=-1) + torch.log(s))
 
