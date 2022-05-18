@@ -1,12 +1,40 @@
 from itertools import combinations
 import pickle
 import os
+from treelib import Tree
+
+def create_tree(labels, label2pred = False):
+    tree = Tree()
+    root = 'thing'
+    tree.create_node(root,root)
+    for label in sorted(labels): 
+        # split levels
+        splitted = label[1:].split('/')
+        if len(splitted) == 1:
+            # new first level node
+            parent = root
+        else:
+            # init parent node
+            parent = ''
+            # convert to kenn predicate (must start with uppercase letter)
+            if label2pred:
+                parent = 'P'
+            parent += '/' + '/'.join(splitted[:-1])
+            if not tree.contains(parent):
+                tree.create_node(parent,parent,root)
+        # convert to kenn predicate (must start with uppercase letter)
+        if label2pred:
+            label = 'P' + label
+        tree.create_node(label,label,parent)
+    return tree
 
 ### KENN CONSTRAINTS ###
 # mode in ['bottom_up','top_down','hybrid','hybrid_in','hybrid_out','bottom_up_skip', 'top_down_skip']
-def generate_constraints(tree, mode, filepath = None, weight='_'):
+def generate_constraints(types_list, mode, filepath = None, weight='_'):
+    # create ontology tree
+    tree = create_tree(types_list, label2pred = True)
     # generate predicate list
-    predicates = generate_predicates(tree)
+    predicates = generate_predicates(types_list)
     # generate constraints
     if mode == 'bottom_up':
         clauses = generate_bottom_up(tree, weight)
@@ -55,11 +83,8 @@ def generate_constraints(tree, mode, filepath = None, weight='_'):
             f.write(kb)
         return kb
 
-def generate_predicates(tree):
-    predicates = []
-    for n in tree.filter_nodes(lambda x : tree.depth(x) != 0):
-        predicates.append(n.identifier)
-    return ','.join(predicates)
+def generate_predicates(types_list):
+    return ','.join([f'P{t}' for t in types_list])
 
 
 def generate_bottom_up(tree, weight):

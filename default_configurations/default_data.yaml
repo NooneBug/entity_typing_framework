@@ -1,17 +1,17 @@
 data:
   dataset_paths:
-    train: datasets/bbn/train.json
-    dev: datasets/bbn/dev.json
-    test: datasets/bbn/test-12k.json
+    train: ../datasets/datasets_for_incremental_training/figer/pretraining_location.json
+    dev: ../datasets/datasets_for_incremental_training/figer/pretraining_location_dev.json
+    test: ../datasets/datasets_for_incremental_training/figer/pretraining_location_test.json
   dataset_reader_params:
     name : BaseDataset
   tokenizer_params:
     name : BaseBERTTokenizedDataset
     bertlike_model_name: distilbert-base-uncased # be sure it is consistent with model.ET_Network_params.network_params.encoder_params.bertlike_model_name
-    max_mention_words: 5
-    max_right_words: 13
-    max_left_words: 13
-    max_tokens: 80
+    max_mention_words: 1 #5
+    max_right_words: 2 #13
+    max_left_words: 2 #13
+    max_tokens: 10 #80
   dataset_params:
     name: ET_Dataset
   dataloader_params:
@@ -24,6 +24,6 @@ data:
     test:
       batch_size: 64
   rw_options:
-    modality: Load # in [Create, CreateAndSave, Load]
-    dirpath: datasets/bbn/tokenized 
+    modality: CreateAndSave # in [Create, CreateAndSave, Load]
+    dirpath: ../tokenized_datasets/default_save_dir
     light: True

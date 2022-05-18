@@ -15,8 +15,9 @@ class BaseDataset:
 
     the :code:`__init__` saves the parameters and automatic calls :code:`read_dataset_partitions()`
     '''
-    def __init__(self, name, dataset_paths):
+    def __init__(self, name, dataset_paths, preexistent_type2id = None):
         self.dataset_paths = dataset_paths
+        self.preexistent_type2id = preexistent_type2id
 
         self.read_dataset_partitions()
     
@@ -27,7 +28,7 @@ class BaseDataset:
         partitions = {}
 
         for partition_name, partition_path in self.dataset_paths.items():
-            partitions[partition_name] = DatasetPartition(partition_path=partition_path)
+            partitions[partition_name] = DatasetPartition(partition_path=partition_path, preexistent_type2id=self.preexistent_type2id)
 
         self.partitions = partitions
 
@@ -41,9 +42,11 @@ class DatasetPartition:
         
         The :code:`__init__` method calls :code:`acquire_data()`
     '''
-    def __init__(self, partition_path):
+    def __init__(self, partition_path, preexistent_type2id = None):
         self.path = partition_path
+        self.preexistent_type2id = preexistent_type2id
         self.acquire_data()
+
     
     def acquire_data(self):
         '''
@@ -66,6 +69,9 @@ class DatasetPartition:
         right_contexts = []
         labels = []
 
+        if self.preexistent_type2id:
+            all_labels = set()
+
         with open(self.path, 'r') as inp:
             lines = [json.loads(l) for l in inp.readlines()]
 
@@ -74,11 +80,22 @@ class DatasetPartition:
             left_contexts.append((" ".join(l['left_context_token'])))
             right_contexts.append((" ".join(l['right_context_token'])))
             labels.append(l['y_str'])
+            
+            if self.preexistent_type2id:
+                all_labels.update(l['y_str'])
 
         self.mentions = mentions
         self.left_contexts = left_contexts
         self.right_contexts = right_contexts
         self.labels = labels
+
+        if self.preexistent_type2id:
+            self.check_consistency(all_labels)
+    
+    def check_consistency(self, types_from_dataset_partition):
+        diff = types_from_dataset_partition.difference(set(self.preexistent_type2id.keys())) 
+        if diff:
+            raise Exception('Types given in input through the parameter data.rw_options.type2id_file_path do not match with types present in the dataset at path: {}. Unexpected types found in the dataset: {} '.format(self.path, diff))
     
     def get_elements_number(self):
         '''

@@ -10,6 +10,7 @@ class MainModule(LightningModule):
     def __init__(self, 
     ET_Network_params : dict,
     type_number : int,
+    type2id : dict,
     logger,
     loss_params,
     inference_params : dict,
@@ -20,11 +21,12 @@ class MainModule(LightningModule):
         self.type_number = type_number
         self.logger_module = logger
         self.ET_Network_params = ET_Network_params
+        self.type2id = type2id
 
         if not checkpoint_to_load:
-            self.ET_Network = IMPLEMENTED_CLASSES_LVL0[self.ET_Network_params['name']](**self.ET_Network_params, type_number = self.type_number)
+            self.ET_Network = IMPLEMENTED_CLASSES_LVL0[self.ET_Network_params['name']](**self.ET_Network_params, type_number = self.type_number, type2id = self.type2id)
         else:
-            self.ET_Network = self.load_from_checkpoint(ET_Network_params=self.ET_Network_params, checkpoint_to_load=checkpoint_to_load)
+            self.ET_Network = self.load_from_checkpoint(ET_Network_params=self.ET_Network_params, type2id = self.type2id, checkpoint_to_load=checkpoint_to_load)
         self.metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='dev')
         self.test_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test')
 
@@ -176,29 +178,29 @@ class IncrementalMainModule(MainModule):
         self.logger_module.log_loss(name = 'losses/val_loss', value = torch.mean(torch.tensor(out)))
         self.logger_module.log_all()
 
-    def on_train_end(self) -> None:
-        self.predict_on_test()
+    # def on_train_end(self) -> None:
+    #     self.predict_on_test()
 
-    def predict_on_test(self):
-        test_dataloader = self.trainer.datamodule.test_dataloader()
-        for batch in test_dataloader:
-            pretraining_batch, incremental_batch = batch['pretraining'], batch['incremental']
-            for name, minibatch in zip(['pretraining', 'incremental'], [pretraining_batch, incremental_batch]): 
-                minibatch = [elem.cuda() for elem in minibatch]
-                _, _, true_types = minibatch
-                network_output, type_representations = self.ET_Network(minibatch)
-                loss = self.loss.compute_loss(network_output, type_representations)
-                inferred_types = self.inference_manager.infer_types(network_output)
-                if name == 'pretraining':
-                    self.test_metric_manager.update(inferred_types, true_types)
-                else:
-                    self.test_incremental_metric_manager.update(inferred_types, true_types)
+    # def predict_on_test(self):
+    #     test_dataloader = self.trainer.datamodule.test_dataloader()
+    #     for batch in test_dataloader:
+    #         pretraining_batch, incremental_batch = batch['pretraining'], batch['incremental']
+    #         for name, minibatch in zip(['pretraining', 'incremental'], [pretraining_batch, incremental_batch]): 
+    #             minibatch = [elem.cuda() for elem in minibatch]
+    #             _, _, true_types = minibatch
+    #             network_output, type_representations = self.ET_Network(minibatch)
+    #             loss = self.loss.compute_loss(network_output, type_representations)
+    #             inferred_types = self.inference_manager.infer_types(network_output)
+    #             if name == 'pretraining':
+    #                 self.test_metric_manager.update(inferred_types, true_types)
+    #             else:
+    #                 self.test_incremental_metric_manager.update(inferred_types, true_types)
 
-        test_metrics = self.test_metric_manager.compute()
-        self.logger_module.log_all_metrics(test_metrics)
-        test_incremental_metrics = self.test_incremental_metric_manager.compute()
-        self.logger_module.log_all_metrics(test_incremental_metrics)
-        self.logger_module.log_all()
+    #     test_metrics = self.test_metric_manager.compute()
+    #     self.logger_module.log_all_metrics(test_metrics)
+    #     test_incremental_metrics = self.test_incremental_metric_manager.compute()
+    #     self.logger_module.log_all_metrics(test_incremental_metrics)
+    #     self.logger_module.log_all()
 
 
         

@@ -30,11 +30,13 @@ class BaseEntityTypingNetwork(LightningModule):
         type_number:
             number of types for this run. Automatic managed through :ref:`DatasetManager <DatasetManager>`
     '''
-    def __init__(self, name, network_params, type_number
+    def __init__(self, name, network_params, type_number, type2id
     # , encoder_params, type_encoder_params, 
     # inference_params, metric_manager_params, loss_params, 
     ):
         super().__init__()
+
+        self.type2id = type2id
 
         encoder_params = network_params['encoder_params']
         self.encoder = IMPLEMENTED_CLASSES_LVL1[encoder_params['name']](**encoder_params)
@@ -44,7 +46,8 @@ class BaseEntityTypingNetwork(LightningModule):
 
         input_projector_params = network_params['input_projector_params']
         self.input_projector = IMPLEMENTED_CLASSES_LVL1[input_projector_params['name']](type_number=type_number, 
-                                            input_dim = self.encoder.get_representation_dim(), 
+                                            input_dim = self.encoder.get_representation_dim(),
+                                            type2id = self.type2id,
                                             **input_projector_params)
 
     def forward(self, batch):
