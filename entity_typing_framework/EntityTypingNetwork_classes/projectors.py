@@ -1,6 +1,8 @@
 from pytorch_lightning.core.lightning import LightningModule
 from torch.nn import Sigmoid, ModuleDict, ReLU, Linear, Dropout, BatchNorm1d
 from torch.nn.modules import activation
+import torch
+import entity_typing_framework.utils.incremental_utils as incremental_utils
 
 class Layer(LightningModule):
     '''
@@ -186,3 +188,29 @@ class Classifier(LightningModule):
         
         if self.type_number != self.layers_parameters[str(len(self.layers_parameters) - 1)]['out_features']:
             raise Exception('Types\' number ({}) and projector\'s last layer output dimension ({}) has to have the same value ({}). Check the yaml'.format(self.type_number, self.layers_parameters[str(len(self.layers_parameters) - 1)]['out_features'], self.type_number))
+
+
+class ClassifierForIncrementalTraining(Classifier):
+    def __init__(self, **kwargs):
+        kwargs_pretraining = incremental_utils.get_kwargs_pretraining(**kwargs)
+        super().__init__(**kwargs_pretraining)
+        kwargs_additional_classifier = incremental_utils.get_kwargs_additional_classifier(**kwargs)
+        self.additional_classifier = Classifier(**kwargs_additional_classifier)
+
+    def forward(self, input_representation):
+        # predict pretraining types
+        pretrain_output = super().forward(input_representation)
+        
+        # predict incremental types
+        incremental_projected_representation = self.project_input(input_representation)
+        incremental_output = self.additional_classifier.classify(incremental_projected_representation)
+        
+        # assemble final prediction
+        output_all_types = torch.concat((pretrain_output, incremental_output), dim=1)
+
+        return output_all_types
+
+
+    def freeze_pretraining(self):
+        self.freeze()
+        self.additional_classifier.unfreeze()
