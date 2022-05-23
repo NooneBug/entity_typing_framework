@@ -118,7 +118,7 @@ class Classifier(LightningModule):
     
     def forward(self, input_representation):
         '''
-        operates the forward pass of this submodule, proecting the encoded input in a vector of confidence values (one for each type in the dataset)
+        operates the forward pass of this submodule, projecting the encoded input in a vector of confidence values (one for each type in the dataset)
 
         parameters:
             input_representation:
@@ -127,13 +127,24 @@ class Classifier(LightningModule):
         output:
             classification vector with shape :code:`[type_number, batch_size]`
         '''
-        for i in range(len(self.layers_parameters)):
+        projection_layers_output = self.project_input(input_representation)
+        classifier_output = self.classify(projection_layers_output)
+        return classifier_output
+
+    # TODO: documentation
+    def project_input(self, input_representation):
+        # iteratively forward except the classification layer
+        for i in range(len(self.layers_parameters)-1):
             if i == 0:
                 h = self.layers[str(i)](input_representation)
             else:
                 h = self.layers[str(i)](h)
 
         return h
+    
+    # TODO: documentation
+    def classify(self, projected_representation):
+        return self.layers[str(len(self.layers)-1)](projected_representation)
 
     def add_parameters(self):
         '''

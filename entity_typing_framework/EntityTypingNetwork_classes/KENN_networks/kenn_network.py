@@ -31,25 +31,10 @@ class KENNClassifier(LightningModule):
 
   def forward(self, input_representation):
     prekenn = self.classifier(input_representation=input_representation)
-
     postkenn = self.ke(prekenn)[0]
     # self.ke(prekenn)[0] -> output
     # self.ke(prekenn)[1] -> deltas_list
     return self.sig(prekenn), self.sig(postkenn)
-  
-  # def forward(self, input_representation):
-  #   projection_layers_output = self.project_input(input_representation)
-
-  #   classification = self.classify(projection_layers_output)
-
-  #   return self.sig(classification)
-
-  # def project_input(self, input_representation):
-  #   ...
-
-  # def classify(self, projected_representation):
-  #   ...
-
 
   def automatic_build_clauses(self, types_list, clause_file_path = None, learnable_clause_weight = False, clause_weight = 0.5, kb_mode = 'top_down'):
     # generate and save KENN clauses
@@ -74,7 +59,8 @@ class KENNClassifierForIncrementalTraining(KENNClassifier):
     # prepare additional classifier with out_features set to new_type_number
     single_layers = sorted(kwargs['layers_parameters'].items())
     single_layers[-1][1]['out_features'] = new_type_number
-    layers_parameters = {k: v for k, v in single_layers}
+    # layers_parameters = {k: v for k, v in single_layers}
+    layers_parameters = {'0' : single_layers[-1][1]}
     kwargs_additional_classifiers = {k:v for k,v in kwargs.items()}
     kwargs_additional_classifiers['type_number'] = new_type_number
     kwargs_additional_classifiers['layers_parameters'] = layers_parameters
@@ -100,7 +86,8 @@ class KENNClassifierForIncrementalTraining(KENNClassifier):
     postkenn_pretrain = self.ke(prekenn_pretrain)[0]
     
     # predict incremental types
-    prekenn_incremental = self.additional_classifier(input_representation)
+    prekenn_incremental_projected_representation = self.classifier.project_input(input_representation)
+    prekenn_incremental = self.additional_classifier.classify(prekenn_incremental_projected_representation)
     prekenn_all_types = torch.concat((postkenn_pretrain, prekenn_incremental), dim=1)
     postkenn_incremental = self.additional_ke(prekenn_all_types)[0][:,-self.additional_classifier.type_number:]
     
@@ -113,5 +100,4 @@ class KENNClassifierForIncrementalTraining(KENNClassifier):
   def freeze_pretraining(self):
     self.classifier.freeze()
     self.ke.freeze()
-    # self.ke.knowledge_enhancer.clause_enhancers[indici_nuove_clausole].unfreeze() ?
 
