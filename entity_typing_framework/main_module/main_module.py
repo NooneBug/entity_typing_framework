@@ -54,8 +54,10 @@ class MainModule(LightningModule):
     def validation_step(self, batch, batch_step):
         _, _, true_types = batch
         network_output, type_representations = self.ET_Network(batch)
-        loss = self.loss.compute_loss(network_output, type_representations)
-        inferred_types = self.inference_manager.infer_types(network_output)
+        network_output_for_loss = self.get_output_for_loss(network_output)
+        network_output_for_inference = self.get_output_for_inference(network_output)
+        loss = self.loss.compute_loss(network_output_for_loss, type_representations)
+        inferred_types = self.inference_manager.infer_types(network_output_for_inference)
         self.metric_manager.update(inferred_types, true_types)
 
         return loss
@@ -73,7 +75,8 @@ class MainModule(LightningModule):
     def test_step(self, batch, batch_step):
         _, _, true_types = batch
         network_output, _ = self.ET_Network(batch)
-        inferred_types = self.inference_manager.infer_types(network_output)
+        network_output_for_inference = self.get_output_for_inference(network_output)
+        inferred_types = self.inference_manager.infer_types(network_output_for_inference)
         self.test_metric_manager.update(inferred_types, true_types)
     
     def test_epoch_end(self, out):
@@ -102,6 +105,12 @@ class MainModule(LightningModule):
         checkpoint['state_dict'] = {k: v for k, v in checkpoint['state_dict'].items() if 'input_projector' in k}
         del checkpoint['hyper_parameters']['logger']
         return super().on_save_checkpoint(checkpoint)
+
+    def get_output_for_loss(self, network_output):
+        return network_output
+    
+    def get_output_for_inference(self, network_output):
+        return network_output
 
 
 class IncrementalMainModule(MainModule):
@@ -148,7 +157,8 @@ class IncrementalMainModule(MainModule):
         
         for name, minibatch in zip(['pretraining', 'incremental'], [pretraining_batch, incremental_batch]): 
             network_output, type_representations = self.ET_Network(minibatch)
-            loss = self.loss.compute_loss(network_output, type_representations)
+            network_output_for_loss = self.get_output_for_loss(network_output)
+            loss = self.loss.compute_loss(network_output_for_loss, type_representations)
             if name == 'pretraining':
                 pretraining_loss += loss
             else:
@@ -174,8 +184,10 @@ class IncrementalMainModule(MainModule):
 
         _, _, true_types = batch
         network_output, type_representations = self.ET_Network(batch)
-        loss = self.loss.compute_loss(network_output, type_representations)
-        inferred_types = self.inference_manager.infer_types(network_output)
+        network_output_for_loss = self.get_output_for_loss(network_output)
+        network_output_for_inference = self.get_output_for_inference(network_output)
+        loss = self.loss.compute_loss(network_output_for_loss, type_representations)
+        inferred_types = self.inference_manager.infer_types(network_output_for_inference)
 
         # collect predictions for all val_dataloaders
         self.metric_manager.update(inferred_types, true_types)
@@ -228,8 +240,9 @@ class IncrementalMainModule(MainModule):
     
     def test_step(self, batch, batch_idx, dataloader_idx):
         _, _, true_types = batch
-        network_output, type_representations = self.ET_Network(batch)
-        inferred_types = self.inference_manager.infer_types(network_output)
+        network_output, _ = self.ET_Network(batch)
+        network_output_for_inference = self.get_output_for_inference(network_output)
+        inferred_types = self.inference_manager.infer_types(network_output_for_inference)
 
         # collect predictions for all test_dataloaders
         self.test_metric_manager.update(inferred_types, true_types)
@@ -261,24 +274,24 @@ class IncrementalMainModule(MainModule):
         
 
 class KENNMainModule(MainModule):
-    pass    
+    def get_output_for_inference(self, network_output):
+        # return postkenn output
+        return network_output[1]
+
+    def get_output_for_loss(self, network_output):
+        # return postkenn output
+        return network_output[1]
 
 
 class KENNMultilossMainModule(KENNMainModule):
-    def validation_step(self, batch, batch_step):
-        _, _, true_types = batch
-        network_output, type_representations = self.ET_Network(batch)
-        loss = self.loss.compute_loss(network_output, type_representations)
-        # pick postkenn predictions
-        inferred_types = self.inference_manager.infer_types(network_output[1])
-        self.metric_manager.update(inferred_types, true_types)
-        self.log("val_loss", loss)
+    def get_output_for_loss(self, network_output):
+        # return prekenn and postkenn output (same as returning the output as is...)
+        return network_output[0], network_output[1]
 
-        return loss
-        
-    def test_step(self, batch, batch_step):
-        _, _, true_types = batch
-        network_output, _ = self.ET_Network(batch)
-        # pick postkenn predictions
-        inferred_types = self.inference_manager.infer_types(network_output[1])
-        self.test_metric_manager.update(inferred_types, true_types)
+class IncrementalKENNMainModule(KENNMainModule, IncrementalMainModule):
+    # NOTE: depth-first left-to-right MRO, do not change inheritance order!
+    pass
+
+class IncrementalKENNMultilossMainModule(KENNMultilossMainModule, IncrementalMainModule):
+    # NOTE: depth-first left-to-right MRO, do not change inheritance order!
+    pass

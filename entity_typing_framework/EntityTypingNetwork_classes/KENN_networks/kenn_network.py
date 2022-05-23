@@ -35,7 +35,7 @@ class KENNClassifier(LightningModule):
     postkenn = self.ke(prekenn)[0]
     # self.ke(prekenn)[0] -> output
     # self.ke(prekenn)[1] -> deltas_list
-    return self.sig(postkenn)
+    return self.sig(prekenn), self.sig(postkenn)
   
   # def forward(self, input_representation):
   #   projection_layers_output = self.project_input(input_representation)
@@ -107,27 +107,11 @@ class KENNClassifierForIncrementalTraining(KENNClassifier):
     # assemble final prediction
     postkenn_all_types = torch.concat((postkenn_pretrain, postkenn_incremental), dim=1)
 
-    return self.sig(postkenn_all_types)
+    return self.sig(prekenn_all_types), self.sig(postkenn_all_types)
 
 
   def freeze_pretraining(self):
     self.classifier.freeze()
     self.ke.freeze()
     # self.ke.knowledge_enhancer.clause_enhancers[indici_nuove_clausole].unfreeze() ?
-
-
-
-class KENNClassifierMultiloss(KENNClassifier):
-  def __init__(self, clause_file_path=None, **kwargs):
-    super().__init__(clause_file_path, **kwargs)
-
-  
-
-  def forward(self, input_representation):
-    prekenn = self.classifier(input_representation=input_representation)
-
-    postkenn = self.ke(prekenn)[0]
-    # self.ke(prekenn)[0] -> output
-    # self.ke(prekenn)[1] -> deltas_list
-    return self.sig(prekenn), self.sig(postkenn)
 
