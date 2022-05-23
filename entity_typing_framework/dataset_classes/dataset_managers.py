@@ -97,7 +97,7 @@ class DatasetManager(LightningDataModule):
             # allows the usage of an external vocabulary of types
             self.create_type2id_from_file()
             self.datasets = IMPLEMENTED_CLASSES_LVL0[self.dataset_reader_params['name']](dataset_paths = self.dataset_paths, preexistent_type2id = self.type2id, **self.dataset_reader_params)      
-        elif self.rw_option['modality'] == 'create' or self.rw_option['modality'] == 'createandsave':
+        else:
             # defines the vocabulary of types based on all the partitions defined in the yaml
             self.datasets = IMPLEMENTED_CLASSES_LVL0[self.dataset_reader_params['name']](dataset_paths = self.dataset_paths, **self.dataset_reader_params)
             self.create_type2id_from_partitions({partition_name : partition.labels for partition_name, partition in self.datasets.partitions.items()})
@@ -293,7 +293,7 @@ class DatasetManager(LightningDataModule):
     
 
 class IncrementalTrainingDatasetManager(DatasetManager):
-    def create_type2id(self, types_dict):
+    def create_type2id_from_partitions(self, types_dict):
         '''
         Creates and store the translation dictionaries :code:`type2id` and :code:`id2type`
 
@@ -333,9 +333,10 @@ class IncrementalTrainingDatasetManager(DatasetManager):
 
         Returns the dataset partition used to validate a model during training
         '''
-        loaders = {'pretraining': self.dataloaders['pretraining_dev'], 'incremental': self.dataloaders['incremental_dev']}
-        return CombinedLoader(loaders, mode='min_size')
-    
+        # loaders = {'pretraining': self.dataloaders['pretraining_dev'], 'incremental': self.dataloaders['incremental_dev']}
+        # return CombinedLoader(loaders, mode='min_size')    
+        loaders = [self.dataloaders['pretraining_dev'], self.dataloaders['incremental_dev']]
+        return loaders   
 
     def test_dataloader(self):
         '''
@@ -343,8 +344,8 @@ class IncrementalTrainingDatasetManager(DatasetManager):
 
         Returns the dataset partition used to validate a model during training
         '''
-        loaders = {'pretraining': self.dataloaders['pretraining_test'], 'incremental': self.dataloaders['incremental_test']}
-        return CombinedLoader(loaders, mode='min_size')
+        loaders = self.dataloaders['pretraining_test'] , self.dataloaders['incremental_test']
+        return loaders
     
     def predict_dataloader(self):
         return self.test_dataloader
