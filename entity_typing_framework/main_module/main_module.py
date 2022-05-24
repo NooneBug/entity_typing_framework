@@ -15,6 +15,7 @@ class MainModule(LightningModule):
     loss_params,
     inference_params : dict,
     checkpoint_to_load : str = None,
+    avoid_sanity_logging : bool = False
     ):
 
         super().__init__()
@@ -22,6 +23,7 @@ class MainModule(LightningModule):
         self.logger_module = logger
         self.ET_Network_params = ET_Network_params
         self.type2id = type2id
+        self.avoid_sanity_logging = avoid_sanity_logging
 
         if not checkpoint_to_load:
             self.ET_Network = IMPLEMENTED_CLASSES_LVL0[self.ET_Network_params['name']](**self.ET_Network_params, type_number = self.type_number, type2id = self.type2id)
@@ -57,8 +59,11 @@ class MainModule(LightningModule):
         network_output_for_loss = self.get_output_for_loss(network_output)
         network_output_for_inference = self.get_output_for_inference(network_output)
         loss = self.loss.compute_loss(network_output_for_loss, type_representations)
+
         inferred_types = self.inference_manager.infer_types(network_output_for_inference)
-        self.metric_manager.update(inferred_types, true_types)
+        
+        if self.global_step > 0 or not self.avoid_sanity_logging:
+            self.metric_manager.update(inferred_types, true_types)
 
         return loss
     
@@ -189,17 +194,20 @@ class IncrementalMainModule(MainModule):
         loss = self.loss.compute_loss(network_output_for_loss, type_representations)
         inferred_types = self.inference_manager.infer_types(network_output_for_inference)
 
+        if self.global_step > 0 or not self.avoid_sanity_logging:
         # collect predictions for all val_dataloaders
-        self.metric_manager.update(inferred_types, true_types)
+            self.metric_manager.update(inferred_types, true_types)
         
         if dataloader_idx == 0: # batches from pretraining val dataloader
-            # collect predictions for pretraining val_dataloaders
-            self.pretraining_metric_manager.update(inferred_types, true_types)
-            pretraining_val_loss += loss
+            if self.global_step > 0 or not self.avoid_sanity_logging:
+                # collect predictions for pretraining val_dataloaders
+                self.pretraining_metric_manager.update(inferred_types, true_types)
+                pretraining_val_loss += loss
         else: # batches from incremental val dataloader
-            # collect predictions for incremental val_dataloaders
-            self.incremental_metric_manager.update(inferred_types, true_types)
-            incremental_val_loss += loss
+            if self.global_step > 0 or not self.avoid_sanity_logging:
+                # collect predictions for incremental val_dataloaders
+                self.incremental_metric_manager.update(inferred_types, true_types)
+                incremental_val_loss += loss
         
         val_loss = pretraining_val_loss + incremental_val_loss   
 
