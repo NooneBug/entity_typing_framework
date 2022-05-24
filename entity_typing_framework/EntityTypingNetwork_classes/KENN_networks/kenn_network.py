@@ -1,11 +1,9 @@
-from entity_typing_framework.EntityTypingNetwork_classes.projectors import Classifier
+from entity_typing_framework.EntityTypingNetwork_classes.projectors import Classifier, ClassifierForIncrementalTraining
 from pytorch_lightning import LightningModule
 import torch
 from torch.nn import Sigmoid
 from tqdm import tqdm
 import entity_typing_framework.EntityTypingNetwork_classes.KENN_networks.kenn_utils as kenn_utils
-# import entity_typing_framework.EntityTypingNetwork_classes.projectors as ClassifierForIncrementalTraining
-import entity_typing_framework.utils.incremental_utils as incremental_utils
 
 import sys
 sys.path.append('./')
@@ -13,8 +11,8 @@ from kenn.parsers import unary_parser
 
 class KENNClassifier(LightningModule):
   def __init__(self, clause_file_path=None, learnable_clause_weight = False, clause_weight = 0.5, kb_mode = 'top_down', **kwargs):
-    
-    super().__init__()
+    # explicit super call to avoid multiple inheritance problems in KENNClassifier's subclasses
+    super(LightningModule, self).__init__()
     # classifier
     self.classifier = Classifier(**kwargs)
 
@@ -44,11 +42,16 @@ class KENNClassifier(LightningModule):
     cw = '_' if learnable_clause_weight else clause_weight
     kenn_utils.generate_constraints(types_list, kb_mode, clause_file_path, cw)
 
-class KENNClassifierForIncrementalTraining(KENNClassifier):
+class KENNClassifierForIncrementalTraining(KENNClassifier, ClassifierForIncrementalTraining):
   def __init__(self, clause_file_path=None, learnable_clause_weight=False, clause_weight=0.5, kb_mode='top_down', **kwargs):
-    kwargs_pretraining = incremental_utils.get_kwargs_pretraining(**kwargs)
-    super().__init__(clause_file_path, learnable_clause_weight, clause_weight, kb_mode, **kwargs_pretraining)
-    kwargs_additional_classifier = incremental_utils.get_kwargs_additional_classifier(**kwargs)
+    kwargs_pretraining = self.get_kwargs_pretraining(**kwargs)
+    KENNClassifier.__init__(self, 
+                            clause_file_path=clause_file_path,
+                            learnable_clause_weight=learnable_clause_weight,
+                            clause_weight=clause_weight,
+                            kb_mode=kb_mode,
+                            **kwargs_pretraining)
+    kwargs_additional_classifier = self.get_kwargs_additional_classifier(**kwargs)
     self.additional_classifier = Classifier(**kwargs_additional_classifier)
     
     # prepare additional Knowledge Enhancer
@@ -69,9 +72,9 @@ class KENNClassifierForIncrementalTraining(KENNClassifier):
 
   def forward(self, input_representation):
     # predict pretraining types
-    prekenn_pretrain = self.classifier(input_representation)
-    postkenn_pretrain = self.ke(prekenn_pretrain)[0]
-    
+    # prekenn_pretrain = self.classifier(input_representation)
+    # postkenn_pretrain = self.ke(prekenn_pretrain)[0]
+    _, postkenn_pretrain = super().forward(input_representation)
     # predict incremental types
     prekenn_incremental_projected_representation = self.classifier.project_input(input_representation)
     prekenn_incremental = self.additional_classifier.classify(prekenn_incremental_projected_representation)
@@ -82,7 +85,6 @@ class KENNClassifierForIncrementalTraining(KENNClassifier):
     postkenn_all_types = torch.concat((postkenn_pretrain, postkenn_incremental), dim=1)
 
     return self.sig(prekenn_all_types), self.sig(postkenn_all_types)
-
 
   def freeze_pretraining(self):
     self.freeze()
