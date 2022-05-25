@@ -187,6 +187,9 @@ class Classifier(LightningModule):
         
         if self.type_number != self.layers_parameters[str(len(self.layers_parameters) - 1)]['out_features']:
             raise Exception('Types\' number ({}) and projector\'s last layer output dimension ({}) has to have the same value ({}). Check the yaml'.format(self.type_number, self.layers_parameters[str(len(self.layers_parameters) - 1)]['out_features'], self.type_number))
+    
+    def get_state_dict(self, smart_save=True):
+        return self.state_dict()
 
 
 class ClassifierForIncrementalTraining(Classifier):

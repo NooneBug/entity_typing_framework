@@ -42,6 +42,9 @@ class KENNClassifier(LightningModule):
     cw = '_' if learnable_clause_weight else clause_weight
     kenn_utils.generate_constraints(types_list, kb_mode, clause_file_path, cw)
 
+  def get_state_dict(self, light=True):
+    return self.state_dict()
+
 class KENNClassifierForIncrementalTraining(KENNClassifier, ClassifierForIncrementalTraining):
   def __init__(self, clause_file_path=None, learnable_clause_weight=False, clause_weight=0.5, kb_mode='top_down', **kwargs):
     kwargs_pretraining = self.get_kwargs_pretraining(**kwargs)

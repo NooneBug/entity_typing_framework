@@ -101,3 +101,10 @@ class BaseEntityTypingNetwork(LightningModule):
 
         self.load_state_dict(renamed_state_dict, strict=strict)
         return self
+    
+    def get_state_dict(self, smart_save=True):
+        state_dict = {}
+        state_dict.update(self.encoder.get_state_dict(smart_save))
+        state_dict.update(self.type_encoder.get_state_dict(smart_save))
+        state_dict.update(self.input_projector.get_state_dict(smart_save))
+        return state_dict

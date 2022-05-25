@@ -95,7 +95,7 @@ def generate_constraints_incremental(all_types, new_types, filepath = None, weig
     # generate predicate list
     predicates = generate_predicates(all_types)
     # print number of clauses
-    print(clauses.count('\n'), 'spcialization clauses created')
+    print(clauses.count('\n'), 'specialization clauses created')
     # create kb
     kb = predicates + '\n\n' + clauses
 

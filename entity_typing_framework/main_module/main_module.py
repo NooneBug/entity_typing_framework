@@ -15,7 +15,8 @@ class MainModule(LightningModule):
     loss_params,
     inference_params : dict,
     checkpoint_to_load : str = None,
-    avoid_sanity_logging : bool = False
+    avoid_sanity_logging : bool = False,
+    smart_save : bool = True
     ):
 
         super().__init__()
@@ -24,6 +25,7 @@ class MainModule(LightningModule):
         self.ET_Network_params = ET_Network_params
         self.type2id = type2id
         self.avoid_sanity_logging = avoid_sanity_logging
+        self.smart_save = smart_save
 
         if not checkpoint_to_load:
             self.ET_Network = IMPLEMENTED_CLASSES_LVL0[self.ET_Network_params['name']](**self.ET_Network_params, type_number = self.type_number, type2id = self.type2id)
@@ -106,10 +108,10 @@ class MainModule(LightningModule):
                                                                                                                             **ET_Network_params)
     
     def on_save_checkpoint(self, checkpoint: Dict[str, Any]) -> None:
-        
-        checkpoint['state_dict'] = {k: v for k, v in checkpoint['state_dict'].items() if 'input_projector' in k}
-        del checkpoint['hyper_parameters']['logger']
-        return super().on_save_checkpoint(checkpoint)
+        state_dict = self.ET_Network.get_state_dict(smart_save=self.smart_save)
+        # checkpoint['state_dict'] = {k: v for k, v in checkpoint['state_dict'].items() if 'input_projector' in k}
+        # del checkpoint['hyper_parameters']['logger']
+        return super().on_save_checkpoint(state_dict)
 
     def get_output_for_loss(self, network_output):
         return network_output
