@@ -1,8 +1,10 @@
+from typing import Optional
+from entity_typing_framework.EntityTypingNetwork_classes.box_embeddings_classes import CenterSigmoidBoxTensor
 from pytorch_lightning.core.lightning import LightningModule
 from torch.nn import Sigmoid, ModuleDict, ReLU, Linear, Dropout, BatchNorm1d
-from torch.nn.modules import activation
 import torch
 from copy import deepcopy
+import torch.nn as nn
 
 class Layer(LightningModule):
     '''
@@ -241,3 +243,53 @@ class ClassifierForIncrementalTraining(Classifier):
     def freeze_pretraining(self):
         self.freeze()
         self.additional_classifier.unfreeze()
+
+class BoxEmbeddingProjector(LightningModule):
+    def __init__(self, name, type_number, input_dim, projection_network_params, box_embeddings_dimension=109, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.type_number = type_number
+        self.input_dim = input_dim
+        self.box_embedding_dimension = box_embeddings_dimension
+        self.projection_network = HighwayNetwork(input_dim = input_dim,
+        output_dim=self.box_embedding_dimension * 2,
+        **projection_network_params)
+        self.mc_box = CenterSigmoidBoxTensor
+
+    def forward(self, encoded_input):
+        # use HigwayNetwork to project the encoded input to the joint space with Types' Box Embeddings  
+        projected_input = self.projection_network(encoded_input)
+
+        # assuming that Boxes are CenterSigmoidBoxTensor, split the projected_input (a single tensor for each batch element) into two tensors for each batch elements to represent the box 
+        mention_context_rep = self.mc_box.from_split(projected_input)
+
+        return mention_context_rep
+    
+    def get_state_dict(self, smart_save=True):
+        return self.state_dict()
+
+class HighwayNetwork(nn.Module):
+  def __init__(self,
+               name,
+               input_dim: int,
+               output_dim: int,
+               n_layers: int = 2,
+               activation: Optional[nn.Module] = None):
+    super(HighwayNetwork, self).__init__()
+    self.n_layers = n_layers
+    self.nonlinear = nn.ModuleList(
+      [nn.Linear(input_dim, input_dim) for _ in range(n_layers)])
+    self.gate = nn.ModuleList(
+      [nn.Linear(input_dim, input_dim) for _ in range(n_layers)])
+    for layer in self.gate:
+      layer.bias = torch.nn.Parameter(0. * torch.ones_like(layer.bias))
+    self.final_linear_layer = nn.Linear(input_dim, output_dim)
+    self.activation = nn.ReLU() if activation is None else activation
+    self.sigmoid = nn.Sigmoid()
+
+  def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    for layer_idx in range(self.n_layers):
+      gate_values = self.sigmoid(self.gate[layer_idx](inputs))
+      nonlinear = self.activation(self.nonlinear[layer_idx](inputs))
+      inputs = gate_values * nonlinear + (1. - gate_values) * inputs
+    return self.final_linear_layer(inputs)
+

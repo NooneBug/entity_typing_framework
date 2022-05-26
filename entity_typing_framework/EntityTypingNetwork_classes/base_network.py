@@ -38,16 +38,27 @@ class BaseEntityTypingNetwork(LightningModule):
         super().__init__()
 
         self.type2id = type2id
+        self.type_number = type_number
+        
+        self.instance_encoder(network_params)
 
+        self.instance_input_projector(network_params)
+
+        self.instance_type_encoder(network_params)
+
+
+    def instance_encoder(self, network_params):
         encoder_params = network_params['encoder_params']
         self.encoder = IMPLEMENTED_CLASSES_LVL1[encoder_params['name']](**encoder_params)
 
+    def instance_type_encoder(self, network_params):
         type_encoder_params = network_params['type_encoder_params']
-        self.type_encoder = IMPLEMENTED_CLASSES_LVL1[type_encoder_params['name']](type_number=type_number, **type_encoder_params)
+        self.type_encoder = IMPLEMENTED_CLASSES_LVL1[type_encoder_params['name']](num_embeddings=self.type_number, **type_encoder_params)
 
+    def instance_input_projector(self, network_params):
         input_projector_params = network_params['input_projector_params']
-        self.input_projector = IMPLEMENTED_CLASSES_LVL1[input_projector_params['name']](type_number=type_number, 
-                                            input_dim = self.encoder.get_representation_dim(),
+        self.input_projector = IMPLEMENTED_CLASSES_LVL1[input_projector_params['name']](type_number=self.type_number, 
+                                            input_dim = self.encoder.get_representation_dim(), 
                                             type2id = self.type2id,
                                             **input_projector_params)
 
@@ -115,5 +126,50 @@ class BaseEntityTypingNetwork(LightningModule):
         if state_dict:
             return {f'{prefix}.{k}': v for k, v in state_dict.items()}
         else:
-            return {}
+            return {}        
 
+class BoxEmbeddingEntityTypingNetwork(BaseEntityTypingNetwork):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def instance_type_encoder(self, network_params):
+
+        box_embeddings_dimension = network_params['box_embeddings_dimension']
+        type_encoder_params = network_params['type_encoder_params']
+        self.type_encoder = IMPLEMENTED_CLASSES_LVL1[type_encoder_params['name']](num_embeddings=self.type_number, 
+                                                                                    embedding_dim = box_embeddings_dimension,
+                                                                                    **type_encoder_params)
+    def instance_input_projector(self, network_params):
+        box_embeddings_dimension = network_params['box_embeddings_dimension']
+        input_projector_params = network_params['input_projector_params']
+        self.input_projector = IMPLEMENTED_CLASSES_LVL1[input_projector_params['name']](type_number=self.type_number, 
+                                            input_dim = self.encoder.get_representation_dim(),
+                                            box_embeddings_dimension = box_embeddings_dimension,
+                                            **input_projector_params)
+    
+    def forward(self, batch, is_training = True):
+        '''
+        override of :code:pytorch_lightning.LightningModule.forward (`ref <https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html>`_)
+
+        parameters:
+            batch:
+                the batch returned by the :ref:`Dataset <dataset>`
+        
+        return:
+            projected_input:
+                output of the :ref:`input_projector <input_projector>`. Commonly the :ref:`input_projector <input_projector>` takes in input the output of the :ref:`encoder <encoder>`
+            
+            encoded_types:
+                output of the :ref:`type_encoder <type_encoder>`.
+        '''
+        batched_sentences, batched_attn_masks, batched_labels = batch
+        
+        encoded_input = self.encoder(batched_sentences, batched_attn_masks)
+        projected_input = self.input_projector(encoded_input)
+        log_probs, loss_weights, targets = self.type_encoder(mc_box = projected_input, 
+                                            targets = batched_labels,
+                                            is_training = is_training)
+        
+        return projected_input, log_probs, loss_weights, targets
+
+    
