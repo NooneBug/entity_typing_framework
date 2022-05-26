@@ -56,10 +56,10 @@ data:
   tokenizer_params:
     name : BaseBERTTokenizedDataset
     bertlike_model_name: distilbert-base-uncased
-    max_mention_words: 5
-    max_right_words: 13
-    max_left_words: 13
-    max_tokens: 80
+    max_mention_words: 1
+    max_right_words: 1
+    max_left_words: 1
+    max_tokens: 5
   dataset_params:
     name: ET_Dataset
   dataloader_params:
@@ -75,7 +75,7 @@ data:
     modality: CreateAndSave # in [Create, CreateAndSave, Load]
     dirpath: ../tokenized_datasets/default_save_dir/ 
     light: True
-    # types_list_save_path: ../tokenized_datasets/default_save_dir/bbn_types_list.txt
+    types_list_path: ../tokenized_datasets/default_save_dir/bbn_types_list.txt
   
 
 logger:
