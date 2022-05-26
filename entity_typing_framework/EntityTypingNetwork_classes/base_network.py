@@ -1,6 +1,7 @@
 from pytorch_lightning.core.lightning import LightningModule
 from entity_typing_framework.utils.implemented_classes_lvl1 import IMPLEMENTED_CLASSES_LVL1
 import torch 
+from copy import deepcopy
 
 class BaseEntityTypingNetwork(LightningModule):
     '''
@@ -73,9 +74,10 @@ class BaseEntityTypingNetwork(LightningModule):
         
         return projected_input, encoded_types
 
-    def load_from_checkpoint(self, checkpoint_to_load, strict, **kwargs):
+    def load_from_checkpoint(self, checkpoint_to_load, strict):
         state_dict = torch.load(checkpoint_to_load)
-        renamed_state_dict = {k.replace('ET_Network.', ''): v for k, v in state_dict['state_dict'].items()}
+        s_dict = deepcopy(state_dict['state_dict'])
+        renamed_state_dict = {k.replace('ET_Network.', ''): v for k, v in s_dict.items()}
         
         model_state_dict = self.state_dict()
         is_changed = False
@@ -104,7 +106,14 @@ class BaseEntityTypingNetwork(LightningModule):
     
     def get_state_dict(self, smart_save=True):
         state_dict = {}
-        state_dict.update(self.encoder.get_state_dict(smart_save))
-        state_dict.update(self.type_encoder.get_state_dict(smart_save))
-        state_dict.update(self.input_projector.get_state_dict(smart_save))
+        state_dict.update(self.add_prefix_to_dict(self.encoder.get_state_dict(smart_save), prefix='encoder'))
+        state_dict.update(self.add_prefix_to_dict(self.type_encoder.get_state_dict(smart_save), prefix='type_encoder'))
+        state_dict.update(self.add_prefix_to_dict(self.input_projector.get_state_dict(smart_save), prefix='input_projector'))
         return state_dict
+    
+    def add_prefix_to_dict(self, state_dict, prefix):
+        if state_dict:
+            return {f'{prefix}.{k}': v for k, v in state_dict.items()}
+        else:
+            return {}
+

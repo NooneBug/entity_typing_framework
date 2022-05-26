@@ -1,3 +1,4 @@
+from tabnanny import check
 from typing import Any, Dict
 # from entity_typing_framework.main_module.inference_manager import BaseInferenceManager
 from entity_typing_framework.main_module.losses import BCELossForET
@@ -30,7 +31,7 @@ class MainModule(LightningModule):
         if not checkpoint_to_load:
             self.ET_Network = IMPLEMENTED_CLASSES_LVL0[self.ET_Network_params['name']](**self.ET_Network_params, type_number = self.type_number, type2id = self.type2id)
         else:
-            self.ET_Network = self.load_from_checkpoint(ET_Network_params=self.ET_Network_params, checkpoint_to_load=checkpoint_to_load)
+            self.ET_Network = self.load_ET_Network(ET_Network_params=self.ET_Network_params, checkpoint_to_load=checkpoint_to_load)
         self.metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='dev')
         self.test_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test')
 
@@ -100,18 +101,16 @@ class MainModule(LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
         return optimizer
 
-    def load_from_checkpoint(self, ET_Network_params, checkpoint_to_load):
+    def load_ET_Network(self, ET_Network_params, checkpoint_to_load):
         return IMPLEMENTED_CLASSES_LVL0[ET_Network_params['name']](**ET_Network_params, 
                                                                     type_number = self.type_number,
                                                                     type2id = self.type2id).load_from_checkpoint(checkpoint_to_load = checkpoint_to_load, 
-                                                                                                                            strict = False,
-                                                                                                                            **ET_Network_params)
+                                                                                                                            strict = False)
     
     def on_save_checkpoint(self, checkpoint: Dict[str, Any]) -> None:
-        state_dict = self.ET_Network.get_state_dict(smart_save=self.smart_save)
-        # checkpoint['state_dict'] = {k: v for k, v in checkpoint['state_dict'].items() if 'input_projector' in k}
-        # del checkpoint['hyper_parameters']['logger']
-        return super().on_save_checkpoint(state_dict)
+        checkpoint['state_dict'] = self.ET_Network.get_state_dict(smart_save=self.smart_save)
+        del checkpoint['hyper_parameters']['logger']
+        return super().on_save_checkpoint(checkpoint)
 
     def get_output_for_loss(self, network_output):
         return network_output
@@ -123,10 +122,8 @@ class MainModule(LightningModule):
 class IncrementalMainModule(MainModule):
 
     # def __init__(self, ET_Network_params: dict, type_number: int, type2id: dict, logger, loss_params, checkpoint_to_load: str = None, new_type_number = None):
-    def __init__(self, ET_Network_params, type_number, type2id, inference_params, new_type_number = None, **kwargs):
+    def __init__(self, ET_Network_params, type_number, type2id, inference_params, **kwargs):
         super().__init__(ET_Network_params=ET_Network_params, type_number=type_number, type2id=type2id, inference_params=inference_params, **kwargs)
-        
-        self.new_type_number = new_type_number
         
         self.metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='')
         self.pretraining_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='pretraining')
@@ -146,14 +143,21 @@ class IncrementalMainModule(MainModule):
         self.test_pretraining_metric_manager.set_device(self.device)
         self.test_incremental_metric_manager.set_device(self.device)
 
-    def load_from_checkpoint(self, ET_Network_params, checkpoint_to_load):
-        ckpt_state_dict = torch.load(checkpoint_to_load)
-        checkpoint_type_number = ckpt_state_dict['hyper_parameters']['type_number'] 
+    def load_ET_Network(self, ET_Network_params, checkpoint_to_load):
+        state_dict = torch.load(checkpoint_to_load)
+        # get number of pretraining types
+        checkpoint_type_number = state_dict['hyper_parameters']['type_number'] 
+        # load ET_Network checkpoint
         checkpoint = IMPLEMENTED_CLASSES_LVL0[ET_Network_params['name']](**ET_Network_params, 
                                                                     type_number=checkpoint_type_number,
                                                                     type2id=self.type2id).load_from_checkpoint(checkpoint_to_load = checkpoint_to_load,
-                                                                                                                            strict = False,
-                                                                                                                            **ET_Network_params)
+                                                                                                                            strict = False)
+        return checkpoint
+
+    def load_ET_Network_for_test(self, ET_Network_params, checkpoint_to_load):
+        incremental_checkpoint_state_dict = torch.load(checkpoint_to_load)
+        checkpoint = self.load_ET_Network(ET_Network_params=ET_Network_params, checkpoint_to_load=incremental_checkpoint_state_dict['hyper_parameters']['checkpoint_to_load'])
+        checkpoint.load_from_checkpoint(checkpoint_to_load, strict = False)
         return checkpoint
 
     def training_step(self, batch, batch_step):
