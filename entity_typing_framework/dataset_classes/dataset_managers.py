@@ -69,7 +69,7 @@ class DatasetManager(LightningDataModule):
 
     '''
     def __init__(self, dataset_paths : dict, dataset_reader_params : dict, tokenizer_params : dict, dataset_params : dict, dataloader_params : dict,
-                rw_options : dict):
+                rw_options : dict, ):
         self.dataset_paths = dataset_paths
         self.dataset_reader_params = dataset_reader_params
         self.tokenizer_params = tokenizer_params
@@ -78,9 +78,7 @@ class DatasetManager(LightningDataModule):
         self.rw_options = rw_options
         self.rw_options['modality'] = self.rw_options['modality'].lower()
         if self.rw_options['modality'] == 'load':
-            # self.load_type2id()
-            # TODO: fix the handle of KBs, then remove the next line and uncomment the previous
-            self.read_datasets()
+            self.create_type2id_from_file()
         elif self.rw_options['modality'] == 'create' or self.rw_options['modality'] == 'createandsave':
             self.read_datasets()
         else:
@@ -94,10 +92,18 @@ class DatasetManager(LightningDataModule):
 
         The class for dataset reader is chosen following the configuration file value under the key :code:`data.dataset_reader_params.name`
         '''
-        self.datasets = IMPLEMENTED_CLASSES_LVL0[self.dataset_reader_params['name']](dataset_paths = self.dataset_paths, **self.dataset_reader_params)
         
-        self.create_type2id({partition_name : partition.labels for partition_name, partition in self.datasets.partitions.items()})
+        if "types_list_save_path" in self.rw_options:
+            # allows the usage of an external vocabulary of types
+            self.create_type2id_from_file()
+            self.datasets = IMPLEMENTED_CLASSES_LVL0[self.dataset_reader_params['name']](dataset_paths = self.dataset_paths, preexistent_type2id = self.type2id, **self.dataset_reader_params)      
+        else:
+            # defines the vocabulary of types based on all the partitions defined in the yaml
+            self.datasets = IMPLEMENTED_CLASSES_LVL0[self.dataset_reader_params['name']](dataset_paths = self.dataset_paths, **self.dataset_reader_params)
+            self.create_type2id_from_partitions({partition_name : partition.labels for partition_name, partition in self.datasets.partitions.items()})
         
+        self.save_type2id()
+
     def prepare_data(self):
         '''
         Override of `pytorch_lightning.core.datamodule.LightningDataModule.prepare_data <https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html#prepare-data>`_
@@ -108,6 +114,7 @@ class DatasetManager(LightningDataModule):
         
         If :code:`data.rw_options.modality is 'Load'` loads a previously saved instance of each :doc:`dataset_tokenizer <dataset_tokenizers>` following :code:`data.rw_options.dirpath` and :code:`data.rw_option.light`  
         '''
+
         if self.rw_options['modality'] == 'load': 
             self.load_tokenized_datasets()
         else: 
@@ -122,7 +129,6 @@ class DatasetManager(LightningDataModule):
             # save
             if self.rw_options['modality'] == 'createandsave':
                 self.save_tokenized_datasets()
-                self.save_type2id()
             # free original datasets
             if self.rw_options['light']:
                 self.datasets = None
@@ -171,23 +177,16 @@ class DatasetManager(LightningDataModule):
         '''
         saves a pickle object that contains :code:`self.type2id` and :code:`self.id2type`, the file into save is obtained by :code:`rw_options.dirpath\\type2id.pickle` 
         '''
-        path_to_save = os.path.join(self.rw_options['dirpath'], 'type2id.pickle')
-        data = {
-            'type2id' : self.type2id,
-            'id2type' : self.id2type
-        }
-        with open(path_to_save, 'wb') as f:
-            pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
+        
+        if not os.path.exists(self.rw_options['dirpath']):
+            os.makedirs(self.rw_options['dirpath'])
+        
+        path_to_save = os.path.join(self.rw_options['dirpath'], 'types_list.txt')        
+        with open(path_to_save, 'w') as f:
+            for k in self.type2id.keys():
+                f.write(k + '\n')
 
-    def load_type2id(self):
-        '''
-        loads an object previously saved with :code:`self.save_type2id`
-        '''
-        path_to_load = os.path.join(self.rw_options['dirpath'], 'type2id.pickle')
-        with open(path_to_load, 'rb') as f:
-            data = pickle.load(f)
-        self.type2id = data['type2id']
-        self.id2type = data['id2type']
+        print(f'{len(self.type2id)} types have been saved in {path_to_save}. These types will be used during this run')
 
     def get_tokenizer_config_name(self):
         '''
@@ -234,7 +233,19 @@ class DatasetManager(LightningDataModule):
                                                     **self.dataloader_params[partition_name])                        
                         for partition_name, dataset_obj in dataloader_ready_datasets.items()}
     
-    def create_type2id(self, types_dict):
+    def create_type2id_from_file(self):
+        if "types_list_save_path" in self.rw_options:
+            file_path = self.rw_options['types_list_save_path']
+        else:
+            file_path = os.path.join(self.rw_options['dirpath'], 'types_list.txt')     
+            
+        with open(file_path, 'r') as inp:
+            types = [l.replace('\n', '') for l in inp.readlines()]
+        
+        self.type2id = {k: i for i, k in enumerate(types)}
+        self.id2type = {id: t for t, id in self.type2id.items()}
+
+    def create_type2id_from_partitions(self, types_dict):
         '''
         Creates and store the translation dictionaries :code:`type2id` and :code:`id2type`
 
@@ -282,7 +293,7 @@ class DatasetManager(LightningDataModule):
     
 
 class IncrementalTrainingDatasetManager(DatasetManager):
-    def create_type2id(self, types_dict):
+    def create_type2id_from_partitions(self, types_dict):
         '''
         Creates and store the translation dictionaries :code:`type2id` and :code:`id2type`
 
@@ -322,9 +333,10 @@ class IncrementalTrainingDatasetManager(DatasetManager):
 
         Returns the dataset partition used to validate a model during training
         '''
-        loaders = {'pretraining': self.dataloaders['pretraining_dev'], 'incremental': self.dataloaders['incremental_dev']}
-        return CombinedLoader(loaders, mode='min_size')
-    
+        # loaders = {'pretraining': self.dataloaders['pretraining_dev'], 'incremental': self.dataloaders['incremental_dev']}
+        # return CombinedLoader(loaders, mode='min_size')    
+        loaders = [self.dataloaders['pretraining_dev'], self.dataloaders['incremental_dev']]
+        return loaders   
 
     def test_dataloader(self):
         '''
@@ -332,8 +344,8 @@ class IncrementalTrainingDatasetManager(DatasetManager):
 
         Returns the dataset partition used to validate a model during training
         '''
-        loaders = {'pretraining': self.dataloaders['pretraining_test'], 'incremental': self.dataloaders['incremental_test']}
-        return CombinedLoader(loaders, mode='min_size')
+        loaders = self.dataloaders['pretraining_test'] , self.dataloaders['incremental_test']
+        return loaders
     
     def predict_dataloader(self):
         return self.test_dataloader

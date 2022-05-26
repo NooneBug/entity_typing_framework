@@ -1,9 +1,0 @@
-# same as data.yaml, except the following
-data:
-  dataset_reader_params:
-    name : KENNDataset
-    types_file_path: datasets/bbn/all_types.txt
-    clause_output_path: kb_path/kb_name # if you want to use the automatically generated KB, it must be consistent with model.ET_Network_params.network_params.input_projector_params.clause_file_path
-    learnable_clause_weight: True
-    clause_weight: 1.0
-    kb_mode: top_down # in [bottom_up, top_down, hybrid]

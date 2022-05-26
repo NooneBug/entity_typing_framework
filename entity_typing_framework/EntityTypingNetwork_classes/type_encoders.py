@@ -26,3 +26,6 @@ class OneHotTypeEncoder(LightningModule):
                 the expected format of the one hot labels is a vector [label_number] with values 1 for each :code:`True` label, 0 for each :code:`False` label based on the :code:`type2id` dictionary into the :doc:`Dataset Manager<dataset_managers>`
         '''
         return batched_labels
+    
+    def get_state_dict(self, smart_save=True):
+        return self.state_dict()

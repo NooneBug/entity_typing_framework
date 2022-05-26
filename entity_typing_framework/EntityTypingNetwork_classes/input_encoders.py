@@ -61,6 +61,9 @@ class BaseBERTLikeEncoder(LightningModule):
         '''
         raise Exception("Implement this function")
 
+    def get_state_dict(self, smart_save=True):
+        return self.state_dict()
+
 class BERTEncoder(BaseBERTLikeEncoder):
     '''
     Default class to instantiate BERT as encoder; subclass of :code:`BaseBERTLikeEncoder`.
@@ -206,6 +209,14 @@ class AdapterDistilBERTEncoder(DistilBERTEncoder):
         self.encoder.add_adapter(adapter_name, conf(reduction_factor = reduction_factor))
         self.encoder.train_adapter(adapter_name)
 
+    def get_state_dict(self, smart_save=True):
+        if smart_save:
+            state_dict = {k: v for k, v in self.state_dict().items() if 'adapters' in k}
+        else:
+            state_dict = self.state_dict()
+        return state_dict
+
+
 
 class AdapterBERTEncoder(BERTEncoder):
     '''
@@ -246,3 +257,10 @@ class AdapterBERTEncoder(BERTEncoder):
         
         self.encoder.add_adapter(adapter_name, conf(reduction_factor = reduction_factor))
         self.encoder.train_adapter(adapter_name)
+
+    def get_state_dict(self, smart_save=True):
+        if smart_save:
+            state_dict = {k: v for k, v in self.state_dict().items() if 'adapters' in k}
+        else:
+            state_dict = self.state_dict()
+        return state_dict

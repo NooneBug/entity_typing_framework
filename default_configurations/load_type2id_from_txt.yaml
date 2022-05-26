@@ -1,0 +1,6 @@
+# same as default_data.yaml except the following
+
+data:
+  rw_options:
+    # modality: all values in [Create, CreateAndSave, Load]
+    type2id_file_path: file_path #data.rw_options.dirpath/types_list.txt

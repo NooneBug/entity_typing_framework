@@ -1,12 +1,40 @@
 from itertools import combinations
 import pickle
 import os
+from treelib import Tree
+
+def create_tree(labels, label2pred = False):
+    tree = Tree()
+    root = 'thing'
+    tree.create_node(root,root)
+    for label in sorted(labels): 
+        # split levels
+        splitted = label[1:].split('/')
+        if len(splitted) == 1:
+            # new first level node
+            parent = root
+        else:
+            # init parent node
+            parent = ''
+            # convert to kenn predicate (must start with uppercase letter)
+            if label2pred:
+                parent = 'P'
+            parent += '/' + '/'.join(splitted[:-1])
+            if not tree.contains(parent):
+                tree.create_node(parent,parent,root)
+        # convert to kenn predicate (must start with uppercase letter)
+        if label2pred:
+            label = 'P' + label
+        tree.create_node(label,label,parent)
+    return tree
 
 ### KENN CONSTRAINTS ###
 # mode in ['bottom_up','top_down','hybrid','hybrid_in','hybrid_out','bottom_up_skip', 'top_down_skip']
-def generate_constraints(tree, mode, filepath = None, weight='_'):
+def generate_constraints(types_list, mode, filepath = None, weight='_'):
+    # create ontology tree
+    tree = create_tree(types_list, label2pred = True)
     # generate predicate list
-    predicates = generate_predicates(tree)
+    predicates = generate_predicates(types_list)
     # generate constraints
     if mode == 'bottom_up':
         clauses = generate_bottom_up(tree, weight)
@@ -47,6 +75,33 @@ def generate_constraints(tree, mode, filepath = None, weight='_'):
     # create kb
     kb = predicates + '\n\n' + clauses
 
+    return save_kb(filepath, kb)
+
+def generate_constraints_incremental(all_types, new_types, filepath = None, weight='_'):
+    # create ontology tree from all_types
+    tree = create_tree(all_types, label2pred = True)
+    # create specialization clauses
+    clauses = ''
+    fathers = []
+    for t in new_types:
+        father = tree.parent('P'+t).identifier
+        # check if a new clause is needed
+        if father not in fathers: 
+            fathers.append(father)
+            # get subtree where the father of t is the root
+            subtree = tree.subtree(father)
+            # generate constraints
+            clauses += generate_top_down(subtree, weight)
+    # generate predicate list
+    predicates = generate_predicates(all_types)
+    # print number of clauses
+    print(clauses.count('\n'), 'specialization clauses created')
+    # create kb
+    kb = predicates + '\n\n' + clauses
+
+    return save_kb(filepath, kb)
+
+def save_kb(filepath, kb):
     if filepath:
         folder_path = '/'.join(filepath.split('/')[:-1])
         if not os.path.exists(folder_path):
@@ -55,11 +110,8 @@ def generate_constraints(tree, mode, filepath = None, weight='_'):
             f.write(kb)
         return kb
 
-def generate_predicates(tree):
-    predicates = []
-    for n in tree.filter_nodes(lambda x : tree.depth(x) != 0):
-        predicates.append(n.identifier)
-    return ','.join(predicates)
+def generate_predicates(types_list):
+    return ','.join([f'P{t}' for t in types_list])
 
 
 def generate_bottom_up(tree, weight):
@@ -78,10 +130,14 @@ def generate_bottom_up(tree, weight):
 
 def generate_top_down(tree, weight):
     clauses = ""
+    if tree.root == 'thing':
+        roots = [x.identifier for x in tree.children(tree.root)]
+    else: # specialization
+        roots = [tree.root]
     # iterate over each tree of the forest
-    for root in tree.children(tree.root):
+    for root in roots:
         # get single tree
-        subtree = tree.subtree(root.identifier)
+        subtree = tree.subtree(root)
         # get all the internal nodes
         internal_nodes = subtree.filter_nodes(lambda x : x not in subtree.leaves())
         # create a subtype -> supertype rule for each node

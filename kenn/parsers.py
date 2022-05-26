@@ -3,7 +3,7 @@ from .KnowledgeEnhancer import KnowledgeEnhancer
 from .RelationalKENN import RelationalKenn
 
 
-def unary_parser(knowledge_file: str, activation=lambda x: x, initial_clause_weight=0.5, save_training_data=False, device=0):
+def unary_parser(knowledge_file: str, activation=lambda x: x, initial_clause_weight=0.5, device=0):
     """
     Takes in input the knowledge file containing only unary clauses and returns a Kenn Layer,
     with input the predicates and clauses found in the knowledge file.
@@ -16,8 +16,7 @@ def unary_parser(knowledge_file: str, activation=lambda x: x, initial_clause_wei
 
     predicates = predicates_string[:-1].split(',')
 
-    return Kenn(predicates, clauses, activation, initial_clause_weight, save_training_data, device=device)
-
+    return Kenn(predicates, clauses, activation, initial_clause_weight, device=device)
 
 def unary_parser_ke(knowledge_file: str, initial_clause_weight=0.5):
     """

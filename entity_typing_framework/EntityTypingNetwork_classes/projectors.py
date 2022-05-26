@@ -1,6 +1,8 @@
 from pytorch_lightning.core.lightning import LightningModule
 from torch.nn import Sigmoid, ModuleDict, ReLU, Linear, Dropout, BatchNorm1d
 from torch.nn.modules import activation
+import torch
+from copy import deepcopy
 
 class Layer(LightningModule):
     '''
@@ -104,12 +106,13 @@ class Classifier(LightningModule):
             see the documentation of :code:`Layer` for the format of these parameters 
     '''
 
-    def __init__(self, name, type_number, input_dim, layers_parameters):
+    def __init__(self, name, type2id, type_number, input_dim, layers_parameters):
         super().__init__()
         self.type_number = type_number
         self.input_dim = input_dim
         self.layers_parameters = layers_parameters
-
+        self.type2id = type2id
+        
         self.add_parameters()
         self.check_parameters()
         
@@ -117,7 +120,7 @@ class Classifier(LightningModule):
     
     def forward(self, input_representation):
         '''
-        operates the forward pass of this submodule, proecting the encoded input in a vector of confidence values (one for each type in the dataset)
+        operates the forward pass of this submodule, projecting the encoded input in a vector of confidence values (one for each type in the dataset)
 
         parameters:
             input_representation:
@@ -126,13 +129,24 @@ class Classifier(LightningModule):
         output:
             classification vector with shape :code:`[type_number, batch_size]`
         '''
-        for i in range(len(self.layers_parameters)):
+        projection_layers_output = self.project_input(input_representation)
+        classifier_output = self.classify(projection_layers_output)
+        return classifier_output
+
+    # TODO: documentation
+    def project_input(self, input_representation):
+        # iteratively forward except the classification layer
+        for i in range(len(self.layers_parameters)-1):
             if i == 0:
                 h = self.layers[str(i)](input_representation)
             else:
                 h = self.layers[str(i)](h)
 
         return h
+    
+    # TODO: documentation
+    def classify(self, projected_representation):
+        return self.layers[str(len(self.layers)-1)](projected_representation)
 
     def add_parameters(self):
         '''
@@ -174,3 +188,56 @@ class Classifier(LightningModule):
         
         if self.type_number != self.layers_parameters[str(len(self.layers_parameters) - 1)]['out_features']:
             raise Exception('Types\' number ({}) and projector\'s last layer output dimension ({}) has to have the same value ({}). Check the yaml'.format(self.type_number, self.layers_parameters[str(len(self.layers_parameters) - 1)]['out_features'], self.type_number))
+    
+    def get_state_dict(self, smart_save=True):
+        return self.state_dict()
+
+
+class ClassifierForIncrementalTraining(Classifier):
+    def __init__(self, **kwargs):
+        kwargs_pretraining = self.get_kwargs_pretraining(**kwargs)
+        super().__init__(**kwargs_pretraining)
+        kwargs_additional_classifier = self.get_kwargs_additional_classifier(**kwargs)
+        self.additional_classifier = Classifier(**kwargs_additional_classifier)
+
+    def forward(self, input_representation):
+        # predict pretraining types
+        pretrain_output = super().forward(input_representation)
+        
+        # predict incremental types
+        incremental_projected_representation = self.project_input(input_representation)
+        incremental_output = self.additional_classifier.classify(incremental_projected_representation)
+        
+        # assemble final prediction
+        output_all_types = torch.concat((pretrain_output, incremental_output), dim=1)
+
+        return output_all_types
+
+    def get_kwargs_pretraining(self, **kwargs):
+        # extract info about pretraining types and incremental types
+        kwargs_pretraining = deepcopy(kwargs)
+        type2id = kwargs_pretraining['type2id']
+        type_number_pretraining = kwargs_pretraining['type_number']
+        type_number_actual = len(type2id)
+        new_type_number = type_number_actual - type_number_pretraining
+        # remove new types from type2id
+        # NOTE: it is assumed that new types are always provided at the end of the list
+        type2id_pretraining = {k: v for k, v in list(type2id.items())[:-new_type_number]}
+        kwargs_pretraining['type2id'] = type2id_pretraining
+        return kwargs_pretraining
+
+    def get_kwargs_additional_classifier(self, **kwargs):
+        # prepare additional classifier with out_features set to new_type_number
+        kwargs_additional_classifiers = deepcopy(kwargs)
+        new_type_number = len(kwargs_additional_classifiers['type2id']) - kwargs_additional_classifiers['type_number']
+        single_layers = sorted(kwargs_additional_classifiers['layers_parameters'].items())
+        single_layers[-1][1]['out_features'] = new_type_number
+        # layers_parameters = {k: v for k, v in single_layers}
+        layers_parameters = {'0' : single_layers[-1][1]}
+        kwargs_additional_classifiers['type_number'] = new_type_number
+        kwargs_additional_classifiers['layers_parameters'] = layers_parameters
+        return kwargs_additional_classifiers
+
+    def freeze_pretraining(self):
+        self.freeze()
+        self.additional_classifier.unfreeze()

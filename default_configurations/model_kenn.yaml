@@ -4,8 +4,12 @@ model:
     network_params:
       input_projector_params:
         name : KENNClassifier
-        clause_file_path: kb_path/kb_name # if you want to use the automatically generated KB, it must be consistent with data.dataset_reader_params.clause_output_path
-        save_training_data: False
+        clause_file_path: kb_path/kb_name # need to be specified if you want to use a custom kb
+        # if clause_file_path is not set, the following parameters are needed to generate a clause file path
+        learnable_clause_weight: True
+        clause_weight: 1.0
+        kb_mode: top_down
+        # the last layer before KENN has to avoid activation function since KENN assumes to have preactivations in input
         layers_parameters: 
-          '1':
+          '1': # in this example there are two layers, the last layer has the name '1'
             activation: none # important!

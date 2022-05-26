@@ -1,6 +1,7 @@
 from pytorch_lightning.core.lightning import LightningModule
 from entity_typing_framework.utils.implemented_classes_lvl1 import IMPLEMENTED_CLASSES_LVL1
 import torch 
+from copy import deepcopy
 
 class BaseEntityTypingNetwork(LightningModule):
     '''
@@ -30,11 +31,13 @@ class BaseEntityTypingNetwork(LightningModule):
         type_number:
             number of types for this run. Automatic managed through :ref:`DatasetManager <DatasetManager>`
     '''
-    def __init__(self, name, network_params, type_number
+    def __init__(self, name, network_params, type_number, type2id
     # , encoder_params, type_encoder_params, 
     # inference_params, metric_manager_params, loss_params, 
     ):
         super().__init__()
+
+        self.type2id = type2id
 
         encoder_params = network_params['encoder_params']
         self.encoder = IMPLEMENTED_CLASSES_LVL1[encoder_params['name']](**encoder_params)
@@ -44,7 +47,8 @@ class BaseEntityTypingNetwork(LightningModule):
 
         input_projector_params = network_params['input_projector_params']
         self.input_projector = IMPLEMENTED_CLASSES_LVL1[input_projector_params['name']](type_number=type_number, 
-                                            input_dim = self.encoder.get_representation_dim(), 
+                                            input_dim = self.encoder.get_representation_dim(),
+                                            type2id = self.type2id,
                                             **input_projector_params)
 
     def forward(self, batch):
@@ -70,9 +74,10 @@ class BaseEntityTypingNetwork(LightningModule):
         
         return projected_input, encoded_types
 
-    def load_from_checkpoint(self, checkpoint_to_load, strict, **kwargs):
+    def load_from_checkpoint(self, checkpoint_to_load, strict):
         state_dict = torch.load(checkpoint_to_load)
-        renamed_state_dict = {k.replace('ET_Network.', ''): v for k, v in state_dict['state_dict'].items()}
+        s_dict = deepcopy(state_dict['state_dict'])
+        renamed_state_dict = {k.replace('ET_Network.', ''): v for k, v in s_dict.items()}
         
         model_state_dict = self.state_dict()
         is_changed = False
@@ -96,34 +101,19 @@ class BaseEntityTypingNetwork(LightningModule):
         if is_changed:
             state_dict.pop("optimizer_states", None)
 
-        # self.load_state_dict(new_state_dict, strict=strict)
+        self.load_state_dict(renamed_state_dict, strict=strict)
         return self
-
-
-class EntityTypingNetworkForIncrementalTraining(BaseEntityTypingNetwork):
-    def setup_incremental_training(self, new_type_number, network_params):
-        input_projector_params = network_params['input_projector_params']
-
-        ## extract last classifier layer and manually insert the out_features number
-        single_layers = sorted(input_projector_params['layers_parameters'].items())
-        single_layers[-1][1]['out_features'] = new_type_number
-        input_projector_params['layers_parameters'] = {k: v for k, v in single_layers}
-        
-        self.freeze()
-
-        self.additional_input_projector = IMPLEMENTED_CLASSES_LVL1[input_projector_params['name']](type_number=new_type_number, 
-                                            input_dim = self.encoder.get_representation_dim(), 
-                                            **input_projector_params)
     
-    def forward(self, batch):
-        batched_sentences, batched_attn_masks, batched_labels = batch
-        
-        encoded_input = self.encoder(batched_sentences, batched_attn_masks)
+    def get_state_dict(self, smart_save=True):
+        state_dict = {}
+        state_dict.update(self.add_prefix_to_dict(self.encoder.get_state_dict(smart_save), prefix='encoder'))
+        state_dict.update(self.add_prefix_to_dict(self.type_encoder.get_state_dict(smart_save), prefix='type_encoder'))
+        state_dict.update(self.add_prefix_to_dict(self.input_projector.get_state_dict(smart_save), prefix='input_projector'))
+        return state_dict
+    
+    def add_prefix_to_dict(self, state_dict, prefix):
+        if state_dict:
+            return {f'{prefix}.{k}': v for k, v in state_dict.items()}
+        else:
+            return {}
 
-        projected_input = self.input_projector(encoded_input)
-        additional_projected_input = self.additional_input_projector(encoded_input)
-        network_output = torch.concat((projected_input, additional_projected_input), dim = 1)
-
-        encoded_types = self.type_encoder(batched_labels)
-        
-        return network_output, encoded_types
