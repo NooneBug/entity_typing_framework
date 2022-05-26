@@ -1,0 +1,85 @@
+seed_everything : 1
+
+model:
+  loss_params:
+    name : BCELossForET
+  ET_Network_params:
+    name : BaseEntityTypingNetwork
+    network_params:
+      encoder_params:
+        name : DistilBERTEncoder
+        bertlike_model_name: distilbert-base-uncased
+        freeze_encoder : True
+      type_encoder_params:
+        name : OneHotTypeEncoder
+        trainable: False
+      input_projector_params:
+        name : Classifier
+        layers_parameters: 
+          '0':
+            in_features : encoder_dim
+            out_features: 512
+            use_dropout: True
+          '1':
+            in_features: 512
+            out_features : type_number
+            use_dropout: False
+            activation: sigmoid
+  inference_params:
+    name: BaseInference
+    threshold: 0.5
+
+trainer:
+  gpus: 1
+  limit_train_batches: .01
+  max_epochs : 5
+  callbacks:
+    - class_path: pytorch_lightning.callbacks.ModelCheckpoint
+      init_args:
+        dirpath: trained_models/pretraining/
+        monitor: val_loss
+        filename: pretraining_location_official
+        save_weights_only: True
+    - class_path: pytorch_lightning.callbacks.EarlyStopping
+      init_args:
+        patience: 5
+        monitor: val_loss
+        mode: min
+        verbose: True
+
+data:
+  dataset_paths:
+    train: datasets/ren_et_al/bbn/train.json
+    dev: datasets/ren_et_al/bbn/dev.json
+    test: datasets/ren_et_al/bbn/test-12k.json
+  dataset_reader_params:
+    name : BaseDataset
+  tokenizer_params:
+    name : BaseBERTTokenizedDataset
+    bertlike_model_name: distilbert-base-uncased
+    max_mention_words: 1
+    max_right_words: 2
+    max_left_words: 2
+    max_tokens: 80
+  dataset_params:
+    name: ET_Dataset
+  dataloader_params:
+    name: torch.DataLoader
+    train:
+      batch_size: 64
+      shuffle: True
+    dev:
+      batch_size: 8
+    test:
+      batch_size: 8
+  rw_options:
+    modality: CreateAndSave # in [Create, CreateAndSave, Load]
+    dirpath: datasets/bbn/tokenized 
+    light: True
+  
+
+logger:
+  project : entity_typing_framework_prove
+  entity : noonebug
+  name : prova_debug_metriche
+  config_file : entity_typing_framework/default_configurations/distilbert_classifier.yaml

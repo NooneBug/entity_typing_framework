@@ -39,3 +39,7 @@ class ThresholdOrMaxInferenceManager(BaseInferenceManager):
         for dp, i in zip(discrete_pred, max_values_and_indices.indices):
             dp[i] = 1
         return discrete_pred
+
+class BoxEmbeddingInferenceManager(ThresholdOrMaxInferenceManager):
+    def infer_types(self, network_output):
+        return super().infer_types(torch.exp(network_output))
