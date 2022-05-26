@@ -90,11 +90,8 @@ class MainModule(LightningModule):
     def test_epoch_end(self, out):
         metrics = self.test_metric_manager.compute()
         metrics = { k: v.item() for k,v in metrics.items()}
-        print('TEST RESULTS:')
-        print(metrics)
         self.logger_module.log_all_metrics(metrics)
         self.logger_module.log_all()
-        return metrics
         
         
     def configure_optimizers(self):
@@ -280,11 +277,6 @@ class IncrementalMainModule(MainModule):
         self.logger_module.log_all_metrics(test_incremental_metrics)
 
         self.logger_module.log_all()
-
-        print('TEST RESULTS:')
-        print('*** Global:', test_metrics)
-        print('*** Pretraining:', test_pretraining_metrics)
-        print('*** Incremental:', test_incremental_metrics)
         
 
 class KENNMainModule(MainModule):
