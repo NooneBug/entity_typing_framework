@@ -139,7 +139,7 @@ class BoxEmbeddingMainModule(MainModule):
         network_output, log_probs, loss_weights, targets = self.ET_Network(batch, is_training = False)
         # loss = self.loss.compute_loss(log_probs, targets, loss_weights)
         inferred_types = self.inference_manager.infer_types(log_probs)
-        self.metric_manager.update(inferred_types, true_types)
+        self.test_metric_manager.update(inferred_types, true_types)
 
 
 class IncrementalMainModule(MainModule):
