@@ -93,7 +93,7 @@ class DatasetManager(LightningDataModule):
         The class for dataset reader is chosen following the configuration file value under the key :code:`data.dataset_reader_params.name`
         '''
         
-        if "types_list_save_path" in self.rw_options:
+        if "types_list_path" in self.rw_options:
             # allows the usage of an external vocabulary of types
             self.create_type2id_from_file()
             self.datasets = IMPLEMENTED_CLASSES_LVL0[self.dataset_reader_params['name']](dataset_paths = self.dataset_paths, preexistent_type2id = self.type2id, **self.dataset_reader_params)      
@@ -234,8 +234,8 @@ class DatasetManager(LightningDataModule):
                         for partition_name, dataset_obj in dataloader_ready_datasets.items()}
     
     def create_type2id_from_file(self):
-        if "types_list_save_path" in self.rw_options:
-            file_path = self.rw_options['types_list_save_path']
+        if "types_list_path" in self.rw_options:
+            file_path = self.rw_options['types_list_path']
         else:
             file_path = os.path.join(self.rw_options['dirpath'], 'types_list.txt')     
             
