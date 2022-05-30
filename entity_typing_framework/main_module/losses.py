@@ -87,9 +87,14 @@ class BoxEmbeddingLogProbBCELoss(Loss):
     def compute_loss(self,
                     logits: torch.Tensor,
                     targets: torch.Tensor,
-                    weight: Optional[torch.Tensor] = None) -> torch.Tensor:
-        if weight is not None:
-            loss = self.loss_func(logits, targets, weight=weight)
-        else:
-            loss = self.loss_func(logits, targets)
+                    # weight: Optional[torch.Tensor] = None
+                    ) -> torch.Tensor:
+        # if weight is not None:
+        #     loss = self.loss_func(logits, targets, weight=weight)
+        # else:
+        #     loss = self.loss_func(logits, targets)
+        # return loss
+        
+        loss = self.loss_func(logits, targets)
         return loss
+        
