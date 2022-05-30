@@ -10,27 +10,29 @@ model:
         name : DistilBERTEncoder
         bertlike_model_name: distilbert-base-uncased
         freeze_encoder : True
-      box_embeddings_dimension: 109
       type_encoder_params:
-        name : BoxDecoder
-        inv_softplus_temp: 1.2471085395024732
-        softplus_scale: 1.
-        n_negatives: 1000
-        box_offset: 0.5
-        use_gumbel_baysian: True
-        gumbel_beta: 0.00036026463511690845
+        name : OneHotTypeEncoder
+        trainable: False
       input_projector_params:
         name : BoxEmbeddingProjector
+        box_embeddings_dimension: 109
         projection_network_params:
           name: HighwayNetwork
           n_layers: 2
+        box_decoder_params:
+          inv_softplus_temp: 1.2471085395024732
+          softplus_scale: 1.
+          n_negatives: 1000
+          box_offset: 0.5
+          use_gumbel_baysian: True
+          gumbel_beta: 0.00036026463511690845
   inference_params:
     name: BoxEmbeddingInference
 
 trainer:
   deterministic: True
   gpus: 1
-  limit_train_batches: 160
+  limit_train_batches: 10
   max_epochs : 2
   callbacks:
     - class_path: pytorch_lightning.callbacks.ModelCheckpoint
@@ -48,9 +50,9 @@ trainer:
 
 data:
   dataset_paths:
-    train: ../datasets/ren_et_al/bbn/train.json
-    dev: ../datasets/ren_et_al/bbn/dev.json
-    test: ../datasets/ren_et_al/bbn/test-12k.json
+    train: ../datasets/datasets_for_incremental_training/figer/pretraining_location.json
+    dev: ../datasets/datasets_for_incremental_training/figer/pretraining_location_dev.json
+    test: ../datasets/datasets_for_incremental_training/figer/pretraining_location_test.json
   dataset_reader_params:
     name : BaseDataset
   tokenizer_params:
@@ -72,14 +74,13 @@ data:
     test:
       batch_size: 64
   rw_options:
-    modality: CreateAndSave # in [Create, CreateAndSave, Load]
+    modality: Load # in [Create, CreateAndSave, Load]
     dirpath: ../tokenized_datasets/default_save_dir/ 
     light: True
-    types_list_path: ../tokenized_datasets/default_save_dir/bbn_types_list.txt
   
 
 logger:
   project : cancellami
-  entity : cbe
+  entity : NooneBug
   name : box_embedding_baseline_bbn
   config_file: auto

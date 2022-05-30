@@ -1,7 +1,7 @@
 from entity_typing_framework.EntityTypingNetwork_classes.KENN_networks.kenn_network import KENNClassifier, KENNClassifierForIncrementalTraining
 from entity_typing_framework.EntityTypingNetwork_classes.input_encoders import BERTEncoder, DistilBERTEncoder, AdapterDistilBERTEncoder, AdapterBERTEncoder, BaseBERTLikeEncoder
 from entity_typing_framework.EntityTypingNetwork_classes.projectors import BoxEmbeddingProjector, Classifier
-from entity_typing_framework.EntityTypingNetwork_classes.type_encoders import BoxDecoder, OneHotTypeEncoder
+from entity_typing_framework.EntityTypingNetwork_classes.type_encoders import OneHotTypeEncoder
 
 IMPLEMENTED_CLASSES_LVL1 = {
     'BERTEncoder' : BERTEncoder,
@@ -13,5 +13,4 @@ IMPLEMENTED_CLASSES_LVL1 = {
     'KENNClassifier' : KENNClassifier,
     'KENNClassifierForIncrementalTraining' : KENNClassifierForIncrementalTraining,
     'BoxEmbeddingProjector': BoxEmbeddingProjector,
-    'BoxDecoder': BoxDecoder
 }
