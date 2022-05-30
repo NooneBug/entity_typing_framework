@@ -87,7 +87,14 @@ class Layer(LightningModule):
         else:
             raise Exception('An unknown name (\'{}\')is given for activation, check the yaml or implement an activation that correspond to that name'.format(activation_name))
 
-class Classifier(LightningModule):
+class Projector(LightningModule):
+    def __init__(self, name, type2id, type_number, input_dim, **kwargs):
+        super().__init__()
+        self.type_number = type_number
+        self.input_dim = input_dim
+        self.type2id = type2id
+    
+class Classifier(Projector):
     '''
     Projector used as classification layer after the :ref:`Encoder<encoder>`. Predicts a vector with shape :code:`(type_number)` with values between 0 and 1.
 
@@ -110,12 +117,9 @@ class Classifier(LightningModule):
             see the documentation of :code:`Layer` for the format of these parameters 
     '''
 
-    def __init__(self, name, type2id, type_number, input_dim, layers_parameters):
-        super().__init__()
-        self.type_number = type_number
-        self.input_dim = input_dim
+    def __init__(self, layers_parameters, **kwargs):
+        super().__init__(**kwargs)
         self.layers_parameters = layers_parameters
-        self.type2id = type2id
         
         self.add_parameters()
         self.check_parameters()
@@ -246,12 +250,9 @@ class ClassifierForIncrementalTraining(Classifier):
         self.freeze()
         self.additional_classifier.unfreeze()
 
-class BoxEmbeddingProjector(LightningModule):
-    def __init__(self, name, type_number, input_dim, type2id, projection_network_params, box_decoder_params, box_embeddings_dimension=109, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.type_number = type_number
-        self.input_dim = input_dim
-        self.type2id = type2id
+class BoxEmbeddingProjector(Projector):
+    def __init__(self, type_number, input_dim, projection_network_params, box_decoder_params, box_embeddings_dimension=109, **kwargs) -> None:
+        super().__init__(input_dim=input_dim, type_number=type_number, **kwargs)
         
         self.box_embedding_dimension = box_embeddings_dimension
         self.projection_network = HighwayNetwork(input_dim = input_dim,
