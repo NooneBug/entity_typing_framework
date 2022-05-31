@@ -88,15 +88,11 @@ class Layer(LightningModule):
             raise Exception('An unknown name (\'{}\')is given for activation, check the yaml or implement an activation that correspond to that name'.format(activation_name))
 
 class Projector(LightningModule):
-    def __init__(self, name, type2id, type_number, input_dim, **kwargs):
-        super().__init__()
-        self.type_number = type_number
-        self.input_dim = input_dim
-        self.type2id = type2id
-    
-class Classifier(Projector):
     '''
-    Projector used as classification layer after the :ref:`Encoder<encoder>`. Predicts a vector with shape :code:`(type_number)` with values between 0 and 1.
+
+    A projector is a module that projects the encoded input in a joint space where the types are represented.
+
+    The joint space has to be in accord with the :code:`TypeEncoder` module 
 
     Parameters:
         name:
@@ -105,11 +101,66 @@ class Classifier(Projector):
             to instance this projector insert the string :code:`Classifier` in the :code:`yaml` configuration file with key :code:`model.ET_Network_params.input_projector_params.name`
 
             this param is used by the :ref:`Entity Typing Network<EntityTypingNetwork>` to instance the correct submodule
+        type2id:
+            vocabulary that map each type name to an id. By default is created by the :code:`DatasetManager` and automatically passed through the :code:`MainModule`
         type_number:
             number of types in the dataset for this run, it is automatically extracted by the :doc:`DatasetManager<dataset_managers>` and automatically given in input to the Classifier by the :ref:`Entity Typing Network<EntityTypingNetwork>`
         input_dim:
             dimension of the vector inputed for the forward, it is automatically extracted from the :doc:`Encoder<encoders>` by the :ref:`Entity Typing Network<EntityTypingNetwork>`
+        return_logits:
+            if True, the projector acts like a classifier, so the type space is intended as a one hot space. 
+            
+            Thus the :code:`forward` method returns a value between 0 and 1 for each type in type2id following the behavior defined in :code:`classify()`.  
+    '''
+    def __init__(self, name, type2id, type_number, input_dim, return_logits = True, **kwargs):
+        super().__init__()
+        self.type_number = type_number
+        self.input_dim = input_dim
+        self.type2id = type2id
+        self.return_logits = return_logits
+    
+    def project_input(self, input_representation):
+        '''
+        use this method to project the input_representation into a joint space where the also the types are represented 
+        '''
+        raise NotImplementedError
+
+    def classify(self, projected_input):
+        '''
+        use this method to classify the projected_input if needed.
+        '''
+        raise NotImplementedError
+
+    def forward(self, encoded_input):
+        '''
+        operates the forward pass of this submodule, projecting the encoded input in a joint space where labels are represented.
+        if self.return_logits == True, the projected input is converted in a vector of confidence values (one for each type in the dataset)
+
         parameters:
+            input_representation:
+                output of the :doc:`Input Encoder<encoders>` with shape :code:`[input_dim, batch_size]`
+        
+        output:
+            classification vector with shape :code:`[type_number, batch_size]`
+        '''
+        projected_input = self.project_input(input_representation=encoded_input)
+        if self.return_logits:
+            classifier_output = self.classify(projected_input=projected_input)
+            return classifier_output
+        else:
+            return projected_input  
+          
+    def get_state_dict(self, smart_save=True):
+        return self.state_dict()
+
+class Classifier(Projector):
+    '''
+    Son of Projector, see :code:`Projector` documentation for basic parameters.
+
+    Projector used as classification layer after the :ref:`Encoder<encoder>`. Predicts a vector with shape :code:`(type_number)` with values between 0 and 1.
+
+    Parameters:
+        layers_parameters:
             dictionary of parameters to instantiate different :code:`Layer` objects.
 
             the values for this parameter have to be specified in a :code:`yaml` dictionary in the :code:`yaml` configuration file with key :code:`model.ET_Network_params.input_projector_params.layers_parameters`
@@ -126,21 +177,6 @@ class Classifier(Projector):
         
         self.layers = ModuleDict({layer_name: Layer(**layer_parameters) for layer_name, layer_parameters in self.layers_parameters.items()})
     
-    def forward(self, input_representation):
-        '''
-        operates the forward pass of this submodule, projecting the encoded input in a vector of confidence values (one for each type in the dataset)
-
-        parameters:
-            input_representation:
-                output of the :doc:`Input Encoder<encoders>` with shape :code:`[input_dim, batch_size]`
-        
-        output:
-            classification vector with shape :code:`[type_number, batch_size]`
-        '''
-        projection_layers_output = self.project_input(input_representation)
-        classifier_output = self.classify(projection_layers_output)
-        return classifier_output
-
     # TODO: documentation
     def project_input(self, input_representation):
         # iteratively forward except the classification layer
@@ -153,8 +189,8 @@ class Classifier(Projector):
         return h
     
     # TODO: documentation
-    def classify(self, projected_representation):
-        return self.layers[str(len(self.layers)-1)](projected_representation)
+    def classify(self, projected_input):
+        return self.layers[str(len(self.layers)-1)](projected_input)
 
     def add_parameters(self):
         '''
@@ -186,7 +222,6 @@ class Classifier(Projector):
             previous_out_features = self.layers_parameters[k]['out_features']
 
 
-
     def check_parameters(self):
         '''
         Check the parameters values and raises exceptions. Ensure that a classic classification can be obtained.
@@ -196,32 +231,52 @@ class Classifier(Projector):
         
         if self.type_number != self.layers_parameters[str(len(self.layers_parameters) - 1)]['out_features']:
             raise Exception('Types\' number ({}) and projector\'s last layer output dimension ({}) has to have the same value ({}). Check the yaml'.format(self.type_number, self.layers_parameters[str(len(self.layers_parameters) - 1)]['out_features'], self.type_number))
-    
-    def get_state_dict(self, smart_save=True):
-        return self.state_dict()
 
 
-class ClassifierForIncrementalTraining(Classifier):
+class ProjectorForIncrementalTraining(Projector):
     def __init__(self, **kwargs):
-        kwargs_pretraining = self.get_kwargs_pretraining(**kwargs)
-        super().__init__(**kwargs_pretraining)
-        kwargs_additional_classifier = self.get_kwargs_additional_classifier(**kwargs)
-        self.additional_classifier = Classifier(**kwargs_additional_classifier)
+        super().__init__(**kwargs)
+
+        kwargs_pretraining = self.get_kwargs_pretrained_projector(**kwargs)
+        self.pretrained_projector = self.get_class_for_pretrained_projector()(**kwargs_pretraining)
+
+        kwargs_additional_projector = self.get_kwargs_incremental_projector(**kwargs)
+        self.additional_projector = self.get_class_for_incremental_projector()(**kwargs_additional_projector)
+
+    def get_class_for_pretrained_projector(self):
+        '''
+        returns the class to instantiate the pretrained projector e.g. Classifier
+        '''
+        raise NotImplementedError
+
+
+    def get_class_for_incremental_projector(self):
+        '''
+        returns the class to instantiate the incremental projector e.g. Classifier
+        '''
+        raise NotImplementedError
 
     def forward(self, input_representation):
-        # predict pretraining types
-        pretrain_output = super().forward(input_representation)
+        # project pretraining types
+        pretrained_projected_representation = self.pretrained_projector.project_input(input_representation)
         
-        # predict incremental types
-        incremental_projected_representation = self.project_input(input_representation)
-        incremental_output = self.additional_classifier.classify(incremental_projected_representation)
+        # project incremental types
+        incremental_projected_representation = self.additional_projector.project_input(input_representation)
         
-        # assemble final prediction
-        output_all_types = torch.concat((pretrain_output, incremental_output), dim=1)
 
-        return output_all_types
+        if self.return_logits:
+            pretrained_output = self.pretrained_projector.classify(pretrained_projected_representation)
+            incremental_output = self.additional_projector.classify(incremental_projected_representation)
+            # assemble final prediction
+            output_on_all_types = torch.concat((pretrained_output, incremental_output), dim=1)
+        else:
+            # assemble final prediction
+            output_on_all_types = torch.concat((pretrained_projected_representation, incremental_projected_representation), dim=1)
 
-    def get_kwargs_pretraining(self, **kwargs):
+        return output_on_all_types        
+
+
+    def get_kwargs_pretrained_projector(self, **kwargs):
         # extract info about pretraining types and incremental types
         kwargs_pretraining = deepcopy(kwargs)
         type2id = kwargs_pretraining['type2id']
@@ -234,10 +289,39 @@ class ClassifierForIncrementalTraining(Classifier):
         kwargs_pretraining['type2id'] = type2id_pretraining
         return kwargs_pretraining
 
-    def get_kwargs_additional_classifier(self, **kwargs):
-        # prepare additional classifier with out_features set to new_type_number
+    
+    def get_new_type_number(self, **kwargs):
+        new_type_number = len(kwargs['type2id']) - kwargs['type_number']
+        
+        return new_type_number
+
+    def get_kwargs_incremental_projector(self, **kwargs):
+        '''
+        the composition of kwargs depends on the projector to instantiate (declared into :code:`self.get_class_for_incremental_projector()` method)
+        '''
+        raise NotImplementedError
+
+    def freeze_pretraining(self):
+        self.freeze()
+        self.additional_projector.unfreeze()
+
+class ClassifierForIncrementalTraining(ProjectorForIncrementalTraining):
+
+    def __init__(self, layers_parameters, **kwargs):
+       super().__init__(layers_parameters = layers_parameters, **kwargs)
+
+    def get_class_for_pretrained_projector(self):
+       return Classifier
+
+    def get_class_for_incremental_projector(self):
+        return Classifier
+
+    def get_kwargs_incremental_projector(self, **kwargs):
+
+        new_type_number = self.get_new_type_number(**kwargs)
+
         kwargs_additional_classifiers = deepcopy(kwargs)
-        new_type_number = len(kwargs_additional_classifiers['type2id']) - kwargs_additional_classifiers['type_number']
+        # prepare additional classifier with out_features set to new_type_number
         single_layers = sorted(kwargs_additional_classifiers['layers_parameters'].items())
         single_layers[-1][1]['out_features'] = new_type_number
         # layers_parameters = {k: v for k, v in single_layers}
@@ -245,10 +329,21 @@ class ClassifierForIncrementalTraining(Classifier):
         kwargs_additional_classifiers['type_number'] = new_type_number
         kwargs_additional_classifiers['layers_parameters'] = layers_parameters
         return kwargs_additional_classifiers
+    
+    def forward(self, input_representation):
+        '''
+        this is a custom implementation, defined only for the EMNLP2022 paper
+        '''
+        # project pretraining types
+        pretrained_projected_representation = self.pretrained_projector.project_input(input_representation)
+        
+        pretrained_output = self.pretrained_projector.classify(pretrained_projected_representation)
+        incremental_output = self.additional_projector.classify(pretrained_projected_representation)
+        # assemble final prediction
+        output_on_all_types = torch.concat((pretrained_output, incremental_output), dim=1)
+  
+        return output_on_all_types        
 
-    def freeze_pretraining(self):
-        self.freeze()
-        self.additional_classifier.unfreeze()
 
 class BoxEmbeddingProjector(Projector):
     def __init__(self, type_number, input_dim, projection_network_params, box_decoder_params, box_embeddings_dimension=109, **kwargs) -> None:

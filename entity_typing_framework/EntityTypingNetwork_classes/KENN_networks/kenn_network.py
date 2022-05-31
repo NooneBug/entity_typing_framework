@@ -47,7 +47,7 @@ class KENNClassifier(LightningModule):
 
 class KENNClassifierForIncrementalTraining(KENNClassifier, ClassifierForIncrementalTraining):
   def __init__(self, clause_file_path=None, learnable_clause_weight=False, clause_weight=0.5, kb_mode='top_down', **kwargs):
-    kwargs_pretraining = self.get_kwargs_pretraining(**kwargs)
+    kwargs_pretraining = self.get_kwargs_pretrained_projector(**kwargs)
     KENNClassifier.__init__(self, 
                             clause_file_path=clause_file_path,
                             learnable_clause_weight=learnable_clause_weight,

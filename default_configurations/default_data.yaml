@@ -11,7 +11,7 @@ data:
     max_mention_words: 1 #5
     max_right_words: 2 #13
     max_left_words: 2 #13
-    max_tokens: 10 #80
+    max_tokens: 5 #80
   dataset_params:
     name: ET_Dataset
   dataloader_params:
@@ -24,6 +24,6 @@ data:
     test:
       batch_size: 64
   rw_options:
-    modality: CreateAndSave # in [Create, CreateAndSave, Load]
+    modality: Load # in [Create, CreateAndSave, Load]
     dirpath: ../tokenized_datasets/default_save_dir
     light: True

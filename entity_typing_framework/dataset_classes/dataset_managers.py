@@ -292,7 +292,7 @@ class DatasetManager(LightningDataModule):
         return self.dataloaders['test']
     
 
-class IncrementalTrainingDatasetManager(DatasetManager):
+class IncrementalDatasetManager(DatasetManager):
     def create_type2id_from_partitions(self, types_dict):
         '''
         Creates and store the translation dictionaries :code:`type2id` and :code:`id2type`

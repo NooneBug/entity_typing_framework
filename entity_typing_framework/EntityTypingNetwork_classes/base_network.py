@@ -88,8 +88,7 @@ class BaseEntityTypingNetwork(LightningModule):
     def load_from_checkpoint(self, checkpoint_to_load, strict):
         state_dict = torch.load(checkpoint_to_load)
         s_dict = deepcopy(state_dict['state_dict'])
-        renamed_state_dict = {k.replace('ET_Network.', ''): v for k, v in s_dict.items()}
-        
+        renamed_state_dict = self.get_renamed_state_dict(s_dict)
         model_state_dict = self.state_dict()
         is_changed = False
         for k in renamed_state_dict:
@@ -114,6 +113,11 @@ class BaseEntityTypingNetwork(LightningModule):
 
         self.load_state_dict(renamed_state_dict, strict=strict)
         return self
+
+    def get_renamed_state_dict(self, state_dict):
+        renamed_state_dict = {k.replace('ET_Network.', ''): v for k, v in state_dict.items()}
+
+        return renamed_state_dict
     
     def get_state_dict(self, smart_save=True):
         state_dict = {}
@@ -127,6 +131,15 @@ class BaseEntityTypingNetwork(LightningModule):
             return {f'{prefix}.{k}': v for k, v in state_dict.items()}
         else:
             return {}        
+
+class IncrementalEntityTypingNetwork(BaseEntityTypingNetwork):
+    def get_renamed_state_dict(self, state_dict):
+        father_renamed_state_dict = super().get_renamed_state_dict(state_dict)
+
+        #rename the father's input_projector params into input_projector.pretrained_projector.params
+        renamed_state_dict = {k.replace('input_projector', 'input_projector.pretrained_projector'): v for k, v in father_renamed_state_dict.items() if 'pretrained_projector' not in k and 'additional_projector' not in k }
+
+        return renamed_state_dict
 
 class BoxEmbeddingEntityTypingNetwork(BaseEntityTypingNetwork):
     def __init__(self, **kwargs):
