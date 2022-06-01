@@ -141,32 +141,32 @@ class IncrementalEntityTypingNetwork(BaseEntityTypingNetwork):
 
         return renamed_state_dict
 
-class BoxEmbeddingEntityTypingNetwork(BaseEntityTypingNetwork):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+# class BoxEmbeddingEntityTypingNetwork(BaseEntityTypingNetwork):
+#     def __init__(self, **kwargs):
+#         super().__init__(**kwargs)
 
-    def forward(self, batch, is_training = True):
-        #TODO: write the documentation
-        '''
-        override of :code:pytorch_lightning.LightningModule.forward (`ref <https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html>`_)
+#     def forward(self, batch, is_training = True):
+#         #TODO: write the documentation
+#         '''
+#         override of :code:pytorch_lightning.LightningModule.forward (`ref <https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html>`_)
 
-        parameters:
-            batch:
-                the batch returned by the :ref:`Dataset <dataset>`
+#         parameters:
+#             batch:
+#                 the batch returned by the :ref:`Dataset <dataset>`
         
-        return:
-            projected_input:
-                output of the :ref:`input_projector <input_projector>`. Commonly the :ref:`input_projector <input_projector>` takes in input the output of the :ref:`encoder <encoder>`
+#         return:
+#             projected_input:
+#                 output of the :ref:`input_projector <input_projector>`. Commonly the :ref:`input_projector <input_projector>` takes in input the output of the :ref:`encoder <encoder>`
             
-            encoded_types:
-                output of the :ref:`type_encoder <type_encoder>`.
-        '''
-        batched_sentences, batched_attn_masks, batched_labels = batch
+#             encoded_types:
+#                 output of the :ref:`type_encoder <type_encoder>`.
+#         '''
+#         batched_sentences, batched_attn_masks, batched_labels = batch
         
-        encoded_input = self.encoder(batched_sentences, batched_attn_masks)
-        projected_input, log_probs = self.input_projector(encoded_input)
-        encoded_types = self.type_encoder(batched_labels)
+#         encoded_input = self.encoder(batched_sentences, batched_attn_masks)
+#         projected_input, log_probs = self.input_projector(encoded_input)
+#         encoded_types = self.type_encoder(batched_labels)
         
-        return log_probs, encoded_types
+#         return log_probs, encoded_types
 
     

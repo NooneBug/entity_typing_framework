@@ -1,4 +1,4 @@
-from entity_typing_framework.EntityTypingNetwork_classes.base_network import BaseEntityTypingNetwork, BoxEmbeddingEntityTypingNetwork, IncrementalEntityTypingNetwork
+from entity_typing_framework.EntityTypingNetwork_classes.base_network import BaseEntityTypingNetwork, IncrementalEntityTypingNetwork
 from entity_typing_framework.dataset_classes.tokenized_datasets import BaseBERTTokenizedDataset
 from entity_typing_framework.main_module.KENN_losses.kenn_losses import KENNBCEMultiloss
 from entity_typing_framework.main_module.inference_manager import BaseInferenceManager, BoxEmbeddingInferenceManager, ThresholdOrMaxInferenceManager
@@ -20,5 +20,4 @@ IMPLEMENTED_CLASSES_LVL0 = {
     'ThresholdOrMaxInference' : ThresholdOrMaxInferenceManager,
     'BoxEmbeddingBCELoss' : BoxEmbeddingLogProbBCELoss,
     'BoxEmbeddingInference': BoxEmbeddingInferenceManager,
-    'BoxEmbeddingEntityTypingNetwork': BoxEmbeddingEntityTypingNetwork,
     }

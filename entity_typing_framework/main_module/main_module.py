@@ -49,7 +49,8 @@ class MainModule(LightningModule):
 
     def training_step(self, batch, batch_step):
         network_output, type_representations = self.ET_Network(batch)
-        loss = self.loss.compute_loss(network_output, type_representations)
+        network_output_for_loss = self.get_output_for_loss(network_output)
+        loss = self.loss.compute_loss(network_output_for_loss, type_representations)
         return loss
 
     def training_epoch_end(self, out):
@@ -114,9 +115,6 @@ class MainModule(LightningModule):
     
     def get_output_for_inference(self, network_output):
         return network_output
-
-class BoxEmbeddingMainModule(MainModule):
-    pass
 
 class IncrementalMainModule(MainModule):
 
@@ -280,7 +278,6 @@ class IncrementalMainModule(MainModule):
 
         self.logger_module.log_all()
         
-
 class KENNMainModule(MainModule):
     def get_output_for_inference(self, network_output):
         # return postkenn output
@@ -289,7 +286,6 @@ class KENNMainModule(MainModule):
     def get_output_for_loss(self, network_output):
         # return postkenn output
         return network_output[1]
-
 
 class KENNMultilossMainModule(KENNMainModule):
     def get_output_for_loss(self, network_output):
@@ -303,3 +299,27 @@ class IncrementalKENNMainModule(KENNMainModule, IncrementalMainModule):
 class IncrementalKENNMultilossMainModule(KENNMultilossMainModule, IncrementalMainModule):
     # NOTE: depth-first left-to-right MRO, do not change inheritance order!
     pass
+
+class BoxEmbeddingMainModule(MainModule):
+    def get_output_for_inference(self, network_output):
+        # return log probs
+        return network_output[1]
+    
+    def get_output_for_loss(self, network_output):
+        # return log probs
+        return network_output[1]
+
+class IncrementalBoxEmbeddingMainModule(BoxEmbeddingMainModule, IncrementalMainModule):
+    # this is strange: BoxEmbeddingIncrementalProjector doesn't have a forward, so it inherits the forward from IncrementalMainModule
+    # the forward of IncrementalMainModule uses BoxEmbeddingProjector.classify() and BoxEmbeddingProjector.project_input()
+    # that differently from BoxEmbeddingProjector.classify() return the logits. 
+    # 
+    # So this is the cause of different get_output_for_inference and get_output_for_loss methods 
+    # between BoxEmbeddingMainModule and IncrementalBoxEmbeddingMainModule
+    def get_output_for_inference(self, network_output):
+        # return log probs
+        return network_output
+    
+    def get_output_for_loss(self, network_output):
+        # return log probs
+        return network_output

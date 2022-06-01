@@ -1,4 +1,4 @@
-from entity_typing_framework.EntityTypingNetwork_classes.box_embeddings_classes import CenterSigmoidBoxTensor
+from entity_typing_framework.EntityTypingNetwork_classes.box_embeddings_modules.box_embeddings_classes import CenterSigmoidBoxTensor
 from pytorch_lightning.core.lightning import LightningModule
 
 
