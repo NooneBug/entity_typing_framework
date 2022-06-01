@@ -149,6 +149,10 @@ class IncrementalMainModule(MainModule):
                                                                     type_number=checkpoint_type_number,
                                                                     type2id=self.type2id).load_from_checkpoint(checkpoint_to_load = checkpoint_to_load,
                                                                                                                             strict = False)
+        
+        checkpoint.copy_pretrained_parameters_into_incremental_modules()
+        checkpoint.freeze_pretrained_modules()
+
         return checkpoint
 
     def load_ET_Network_for_test(self, ET_Network_params, checkpoint_to_load):

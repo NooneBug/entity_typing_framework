@@ -250,40 +250,25 @@ class ProjectorForIncrementalTraining(Projector):
         '''
         raise NotImplementedError
 
-    # this is a forward in which pretrained_projector and additional_projector does not interact
-    # def forward(self, input_representation):
-    #     # project pretraining types
-    #     pretrained_projected_representation = self.pretrained_projector.project_input(input_representation)
-        
-    #     # project incremental types
-    #     incremental_projected_representation = self.additional_projector.project_input(input_representation)
-        
-
-    #     if self.return_logits:
-    #         pretrained_output = self.pretrained_projector.classify(pretrained_projected_representation)
-    #         incremental_output = self.additional_projector.classify(incremental_projected_representation)
-    #         # assemble final prediction
-    #         output_on_all_types = torch.concat((pretrained_output, incremental_output), dim=1)
-    #     else:
-    #         # assemble final prediction
-    #         output_on_all_types = torch.concat((pretrained_projected_representation, incremental_projected_representation), dim=1)
-
-    #     return output_on_all_types        
-
     def forward(self, input_representation):
-        '''
-        this is a custom implementation, defined only for the EMNLP2022 paper
-        '''
         # project pretraining types
         pretrained_projected_representation = self.pretrained_projector.project_input(input_representation)
         
-        pretrained_output = self.pretrained_projector.classify(pretrained_projected_representation)
-        incremental_output = self.additional_projector.classify(pretrained_projected_representation)
-        # assemble final prediction
-        output_on_all_types = torch.concat((pretrained_output, incremental_output), dim=1)
-  
-        return output_on_all_types
+        # project incremental types
+        incremental_projected_representation = self.additional_projector.project_input(input_representation)
+        
 
+        if self.return_logits:
+            pretrained_output = self.pretrained_projector.classify(pretrained_projected_representation)
+            incremental_output = self.additional_projector.classify(incremental_projected_representation)
+            # assemble final prediction
+            output_on_all_types = torch.concat((pretrained_output, incremental_output), dim=1)
+        else:
+            # assemble final prediction
+            output_on_all_types = torch.concat((pretrained_projected_representation, incremental_projected_representation), dim=1)
+
+        return output_on_all_types        
+        
     def get_kwargs_pretrained_projector(self, **kwargs):
         # extract info about pretraining types and incremental types
         kwargs_pretraining = deepcopy(kwargs)
@@ -309,9 +294,13 @@ class ProjectorForIncrementalTraining(Projector):
         '''
         raise NotImplementedError
 
-    def freeze_pretraining(self):
-        self.freeze()
+    def freeze_pretrained(self):
+        self.pretrained_projector.freeze()
         self.additional_projector.unfreeze()
+    
+    def copy_pretrained_parameters_into_incremental_module(self):
+        raise NotImplementedError
+        
 
 class ClassifierForIncrementalTraining(ProjectorForIncrementalTraining):
 
@@ -332,11 +321,14 @@ class ClassifierForIncrementalTraining(ProjectorForIncrementalTraining):
         # prepare additional classifier with out_features set to new_type_number
         single_layers = sorted(kwargs_additional_classifiers['layers_parameters'].items())
         single_layers[-1][1]['out_features'] = new_type_number
-        # layers_parameters = {k: v for k, v in single_layers}
-        layers_parameters = {'0' : single_layers[-1][1]}
+        layers_parameters = {k: v for k, v in single_layers}
         kwargs_additional_classifiers['type_number'] = new_type_number
         kwargs_additional_classifiers['layers_parameters'] = layers_parameters
         return kwargs_additional_classifiers
-    
-    
 
+    def copy_pretrained_parameters_into_incremental_module(self):
+        # assuming that pretrained_projector and additional_projector have the same architecture
+        for pretrained_l, incremental_l in zip(list(self.pretrained_projector.layers.values())[:-1], 
+                                                list(self.additional_projector.layers.values())[:-1]):
+            incremental_l.linear.weight = torch.nn.Parameter(pretrained_l.linear.weight.detach().clone())
+            incremental_l.linear.bias = torch.nn.Parameter(pretrained_l.linear.bias.detach().clone())

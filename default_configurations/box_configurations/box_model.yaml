@@ -1,10 +1,10 @@
 loss_params:
     name : BoxEmbeddingBCELoss
 ET_Network_params:
-  name : EntityTypingNetwork
+  name : BaseEntityTypingNetwork
   network_params:
     encoder_params:
-      name : DistilBERTEncoder
+      name : AdapterDistilBERTEncoder
       bertlike_model_name: distilbert-base-uncased
       freeze_encoder : True
     type_encoder_params:

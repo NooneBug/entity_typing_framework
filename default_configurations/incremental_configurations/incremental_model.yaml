@@ -1,4 +1,4 @@
-checkpoint_to_load : trained_models_incremental_exp/figer/dummy_pretraining_location-v3.ckpt
+checkpoint_to_load : trained_models_incremental_exp/figer/dummy_pretraining_location-v10.ckpt
 loss_params:
   name : BCELossForET
 ET_Network_params:

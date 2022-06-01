@@ -13,24 +13,6 @@ box_types = {
 'CenterSigmoidBoxTensor': CenterSigmoidBoxTensor
 }
 
-class BoxEmbeddingIncrementalProjector(ProjectorForIncrementalTraining):
-    def get_class_for_pretrained_projector(self):
-      return BoxEmbeddingProjector
-    
-    def get_class_for_incremental_projector(self):
-      return BoxEmbeddingProjector
-    
-    def get_kwargs_incremental_projector(self, **kwargs):
-
-        new_type_number = self.get_new_type_number(**kwargs)
-
-        kwargs_additional_classifiers = deepcopy(kwargs)
-        kwargs_additional_classifiers['type_number'] = new_type_number
-
-        return kwargs_additional_classifiers
-    
-
-
 class BoxEmbeddingProjector(Projector):
     def __init__(self, type_number, input_dim, box_decoder_params, projection_network_params, box_embeddings_dimension=109, **kwargs) -> None:
         super().__init__(input_dim=input_dim, type_number=type_number, **kwargs)
@@ -67,7 +49,40 @@ class BoxEmbeddingProjector(Projector):
     def classify(self, projected_input):
       return self.box_decoder(projected_input)
 
+class BoxEmbeddingIncrementalProjector(ProjectorForIncrementalTraining):
+    def get_class_for_pretrained_projector(self):
+      return BoxEmbeddingProjector
+    
+    def get_class_for_incremental_projector(self):
+      return BoxEmbeddingProjector
+    
+    def get_kwargs_incremental_projector(self, **kwargs):
 
+        new_type_number = self.get_new_type_number(**kwargs)
+
+        kwargs_additional_classifiers = deepcopy(kwargs)
+        kwargs_additional_classifiers['type_number'] = new_type_number
+
+        return kwargs_additional_classifiers
+    
+    def copy_pretrained_parameters_into_incremental_module(self):
+      # assuming that pretrained_projector and additional_projector have the same architecture
+
+      # copy nonlinear
+      for pretrained_l, incremental_l in zip(self.pretrained_projector.projection_network.nonlinear, 
+                                                self.additional_projector.projection_network.nonlinear):
+            incremental_l.weight = torch.nn.Parameter(pretrained_l.weight.detach().clone())
+            incremental_l.bias = torch.nn.Parameter(pretrained_l.bias.detach().clone())
+
+      # copy gate
+      for pretrained_l, incremental_l in zip(self.pretrained_projector.projection_network.gate, 
+                                                self.additional_projector.projection_network.gate):
+            incremental_l.weight = torch.nn.Parameter(pretrained_l.weight.detach().clone())
+            incremental_l.bias = torch.nn.Parameter(pretrained_l.bias.detach().clone())
+      
+      # copy final_linear_layer
+      self.additional_projector.projection_network.final_linear_layer.weight = torch.nn.Parameter(self.pretrained_projector.projection_network.final_linear_layer.weight.detach().clone())
+      self.additional_projector.projection_network.final_linear_layer.bias = torch.nn.Parameter(self.pretrained_projector.projection_network.final_linear_layer.bias.detach().clone())
 
 class BoxDecoder(LightningModule):
   def __init__(self,

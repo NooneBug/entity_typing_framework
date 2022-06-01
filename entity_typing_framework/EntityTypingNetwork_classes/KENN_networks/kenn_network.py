@@ -87,9 +87,8 @@ class KENNClassifierForIncrementalTraining(ClassifierForIncrementalTraining):
     # predict pretraining types
     _, postkenn_pretrain = self.pretrained_projector(input_representation)
     # predict incremental types
-    prekenn_incremental_projected_representation = self.pretrained_projector.project_input(input_representation)
-    prekenn_incremental = self.additional_projector.classify(prekenn_incremental_projected_representation)
-    
+    prekenn_incremental = self.additional_projector.classifier(input_representation)
+
     prekenn_all_types = torch.concat((postkenn_pretrain, prekenn_incremental), dim=1) # why postkenn_pretrain and not prekenn_pretrain? Because it is stacked...
     
     postkenn_incremental = self.additional_projector.ke(prekenn_all_types)[0][:,-self.additional_projector.type_number:]
@@ -99,4 +98,9 @@ class KENNClassifierForIncrementalTraining(ClassifierForIncrementalTraining):
 
     return self.sig(prekenn_all_types), self.sig(postkenn_all_types)
 
-
+  def copy_pretrained_parameters_into_incremental_module(self):
+        # assuming that pretrained_projector and additional_projector have the same architecture
+        for pretrained_l, incremental_l in zip(list(self.pretrained_projector.classifier.layers.values())[:-1], 
+                                                list(self.additional_projector.classifier.layers.values())[:-1]):
+            incremental_l.linear.weight = torch.nn.Parameter(pretrained_l.linear.weight.detach().clone())
+            incremental_l.linear.bias = torch.nn.Parameter(pretrained_l.linear.bias.detach().clone())

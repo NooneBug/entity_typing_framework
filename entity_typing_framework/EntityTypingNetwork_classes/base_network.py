@@ -140,6 +140,17 @@ class IncrementalEntityTypingNetwork(BaseEntityTypingNetwork):
         renamed_state_dict = {k.replace('input_projector', 'input_projector.pretrained_projector'): v for k, v in father_renamed_state_dict.items() if 'pretrained_projector' not in k and 'additional_projector' not in k }
 
         return renamed_state_dict
+    
+    def copy_pretrained_parameters_into_incremental_modules(self):
+        self.input_projector.copy_pretrained_parameters_into_incremental_module()
+        
+        # for now (before EMNLP2022 deadline) these are not useful since encoder will be frozen and type_encoder is a dummy module (no parameters) 
+        # self.encoder.copy_pretrained_parameters_into_incremental_module()
+        # self.type_encoder.copy_pretrained_parameters_into_incremental_module()
+    
+    def freeze_pretrained_modules(self):
+        self.encoder.freeze()
+        self.input_projector.freeze_pretrained()
 
 # class BoxEmbeddingEntityTypingNetwork(BaseEntityTypingNetwork):
 #     def __init__(self, **kwargs):
