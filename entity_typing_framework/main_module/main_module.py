@@ -161,13 +161,31 @@ class IncrementalMainModule(MainModule):
         checkpoint.load_from_checkpoint(checkpoint_to_load, strict = False)
         return checkpoint
 
-    def training_step(self, batch, batch_step):
-        pretraining_batch, incremental_batch = batch['pretraining'], batch['incremental']
+    # NOTE: method to use externally without instantiating the class
+    def load_ET_Network_for_test_(checkpoint_to_load):
+        incremental_ckpt_state_dict = torch.load(checkpoint_to_load)
+        pretrained_ckpt_state_dict = torch.load(incremental_ckpt_state_dict['hyper_parameters']['checkpoint_to_load'])
+        ET_Network_params = incremental_ckpt_state_dict['hyper_parameters']['ET_Network_params']
+        type_number = pretrained_ckpt_state_dict['hyper_parameters']['type_number']
+        type2id = incremental_ckpt_state_dict['hyper_parameters']['type2id']
+        ckpt = IMPLEMENTED_CLASSES_LVL0[ET_Network_params['name']](**ET_Network_params, 
+                                                                    type_number=type_number,
+                                                                    type2id=type2id).load_from_checkpoint(checkpoint_to_load = checkpoint_to_load,
+                                                                                                               strict = False)
         
+        return ckpt
+
+    def training_step(self, batch, batch_step):
+        pretraining_batch = batch.pop('pretraining')
+        incremental_batches = batch
+
         pretraining_loss = 0
         incremental_loss = 0
         
-        for name, minibatch in zip(['pretraining', 'incremental'], [pretraining_batch, incremental_batch]): 
+        keys = ['pretraining'] + list(incremental_batches.keys())
+        batches = [pretraining_batch] + list(incremental_batches.values())
+
+        for name, minibatch in zip(keys, batches): 
             network_output, type_representations = self.ET_Network(minibatch)
             network_output_for_loss = self.get_output_for_loss(network_output)
             loss = self.loss.compute_loss(network_output_for_loss, type_representations)
@@ -210,7 +228,7 @@ class IncrementalMainModule(MainModule):
                 # collect predictions for pretraining val_dataloaders
                 self.pretraining_metric_manager.update(inferred_types, true_types)
                 pretraining_val_loss += loss
-        else: # batches from incremental val dataloader
+        else: # batches from incremental val dataloaders
             if self.global_step > 0 or not self.avoid_sanity_logging:
                 # collect predictions for incremental val_dataloaders
                 self.incremental_metric_manager.update(inferred_types, true_types)
@@ -253,21 +271,22 @@ class IncrementalMainModule(MainModule):
         self.log("losses/pretraining_val_loss", average_pretraining_val_loss)
         self.log("losses/incremental_val_loss", average_incremental_val_loss)
     
-    def test_step(self, batch, batch_idx, dataloader_idx):
-        _, _, true_types = batch
-        network_output, _ = self.ET_Network(batch)
-        network_output_for_inference = self.get_output_for_inference(network_output)
-        inferred_types = self.inference_manager.infer_types(network_output_for_inference)
+    # # TODO: ???
+    # def test_step(self, batch, batch_idx, dataloader_idx):
+    #     _, _, true_types = batch
+    #     network_output, _ = self.ET_Network(batch)
+    #     network_output_for_inference = self.get_output_for_inference(network_output)
+    #     inferred_types = self.inference_manager.infer_types(network_output_for_inference)
 
-        # collect predictions for all test_dataloaders
-        self.test_metric_manager.update(inferred_types, true_types)
+    #     # collect predictions for all test_dataloaders
+    #     self.test_metric_manager.update(inferred_types, true_types)
         
-        if dataloader_idx == 0: # batches from pretraining test dataloader
-            # collect predictions for pretraining test_dataloaders
-            self.test_pretraining_metric_manager.update(inferred_types, true_types)
-        else: # batches from incremental test dataloader
-            # collect predictions for incremental test_dataloaders
-            self.test_incremental_metric_manager.update(inferred_types, true_types)
+    #     if dataloader_idx == 0: # batches from pretraining test dataloader
+    #         # collect predictions for pretraining test_dataloaders
+    #         self.test_pretraining_metric_manager.update(inferred_types, true_types)
+    #     else: # batches from incremental test dataloaders
+    #         # collect predictions for incremental test_dataloaders
+    #         self.test_incremental_metric_manager.update(inferred_types, true_types)
     
     def test_epoch_end(self, out):
         # wandb log

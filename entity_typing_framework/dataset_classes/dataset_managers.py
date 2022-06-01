@@ -324,7 +324,9 @@ class IncrementalDatasetManager(DatasetManager):
 
         Returns the dataset partition used to train a model
         '''
-        loaders = {'pretraining': self.dataloaders['pretraining_train'], 'incremental': self.dataloaders['incremental_train']}
+        loaders = {'pretraining': self.dataloaders['pretraining_train']}
+        loaders_incremental = {k: v for k,v in self.dataloaders.items() if 'incremental_train' in k}
+        loaders.update(loaders_incremental)
         return CombinedLoader(loaders, mode='min_size')
     
     def val_dataloader(self):
@@ -333,19 +335,18 @@ class IncrementalDatasetManager(DatasetManager):
 
         Returns the dataset partition used to validate a model during training
         '''
-        # loaders = {'pretraining': self.dataloaders['pretraining_dev'], 'incremental': self.dataloaders['incremental_dev']}
-        # return CombinedLoader(loaders, mode='min_size')    
-        loaders = [self.dataloaders['pretraining_dev'], self.dataloaders['incremental_dev']]
+        loaders = [self.dataloaders['pretraining_dev']] + [v for k,v in self.dataloaders.items() if 'incremental_dev' in k]
         return loaders   
 
-    def test_dataloader(self):
-        '''
-        Override of `pytorch_lightning.core.datamodule.LightningDataModule.val_dataloader <https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html#val-dataloader>`_
+    # TODO: ???
+    # def test_dataloader(self):
+    #     '''
+    #     Override of `pytorch_lightning.core.datamodule.LightningDataModule.val_dataloader <https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html#val-dataloader>`_
 
-        Returns the dataset partition used to validate a model during training
-        '''
-        loaders = self.dataloaders['pretraining_test'] , self.dataloaders['incremental_test']
-        return loaders
+    #     Returns the dataset partition used to validate a model during training
+    #     '''
+    #     loaders = self.dataloaders['pretraining_test']# , self.dataloaders['incremental_test']
+    #     return loaders
     
     def predict_dataloader(self):
         return self.test_dataloader

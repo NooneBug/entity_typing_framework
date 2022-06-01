@@ -72,7 +72,7 @@ class BaseBERTTokenizedDataset(Dataset):
 
         sentences = self.extract_sentences_from_dataset(dataset)
 
-        sentences = [self.create_sentence(s, self.max_mention_words, self.max_left_words, self.max_right_words) for s in sentences]
+        sentences = [self.create_sentence(s) for s in sentences]
 
         self.tokenized_sentences, self.max_length, self.avg_length = self.tokenize(sentences, self.max_tokens)
 
@@ -138,29 +138,20 @@ class BaseBERTTokenizedDataset(Dataset):
             ]
         return sentences
 
-    def create_sentence(self, sent_dict, max_mention_words, max_left_words, max_right_words):
+    def create_sentence(self, sent_dict):
         '''
         composes a sentence in the dataset in the format :code:`"mention [SEP] left_context_tokens [SEP] right_context_tokens"`. This method uses :code:`max_mention_words, max_left_words` and :code:`max_right_words` to discard words (using :code:`split_and_cut_mention` and :code:`cut_context`).
 
         parameters:
             sent_dict:
                 a single dictionary extracted by :code:`extract_sentences_from_dataset`
-            
-            max_mention_words:
-                see class parameter :code:`max_mention_words`
-
-            max_left_words:
-                see class parameter :code:`max_left_words`
-
-            max_right_words:
-                see class parameter :code:`max_right_words`
         
         return :
             a sentence in the format :code:`"mention [SEP] left_context_tokens [SEP] right_context_tokens"`
         '''
-        return self.split_and_cut_mention(sent_dict['mention_span'], max_mention_words) + \
-        ' [SEP] ' + self.cut_context(sent_dict['left_context_tokens'], max_left_words, False) + \
-        ' [SEP] ' + self.cut_context(sent_dict['right_context_tokens'], max_right_words, True)
+        return self.split_and_cut_mention(sent_dict['mention_span'], self.max_mention_words) + \
+        ' [SEP] ' + self.cut_context(sent_dict['left_context_tokens'], self.max_left_words, False) + \
+        ' [SEP] ' + self.cut_context(sent_dict['right_context_tokens'], self.max_right_words, True)
     
     def split_and_cut_mention(self, mention, max_mention_words):
         '''
