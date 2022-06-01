@@ -1,0 +1,21 @@
+dataset_paths:
+  pretraining_train: ../datasets/datasets_for_incremental_training/figer/pretraining_location.json
+  pretraining_dev: ../datasets/datasets_for_incremental_training/figer/pretraining_location_dev.json
+  pretraining_test: ../datasets/datasets_for_incremental_training/figer/pretraining_location_test.json
+  incremental_train: ../datasets/datasets_for_incremental_training/figer/incremental_locationprovince.json
+  incremental_dev: ../datasets/datasets_for_incremental_training/figer/incremental_locationprovince_dev.json
+  incremental_test: ../datasets/datasets_for_incremental_training/figer/incremental_locationprovince_test.json
+dataset_reader_params:
+  name : BaseDataset
+tokenizer_params:
+  name : BaseBERTTokenizedDataset
+  bertlike_model_name: distilbert-base-uncased
+  max_mention_words: 1
+  max_right_words: 2
+  max_left_words: 2
+  max_tokens: 5
+rw_options:
+  modality: Load # in [Create, CreateAndSave, Load]
+  dirpath: ../tokenized_datasets/figer_incremental_province/ 
+  light: True
+  # types_list_path: ../tokenized_datasets/default_save_dir/types_list.txt

@@ -17,7 +17,7 @@ class BaseInferenceManager():
         return discrete_pred
 
     def discretize_output(self, network_output):
-        mask = network_output > self.threshold
+        mask = (network_output > self.threshold).cuda()
         ones = torch.ones(mask.shape).cuda()
         zeros = torch.zeros(mask.shape).cuda()
         discrete_pred = torch.where(mask, ones, zeros)

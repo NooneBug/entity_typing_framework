@@ -1,24 +1,19 @@
 model:
   loss_params:
-    # name : KENNBCEMultiloss
-    # alpha : .5
     name : BCELossForET
   ET_Network_params:
     name : BaseEntityTypingNetwork
     network_params:
       encoder_params:
-        name : DistilBERTEncoder
+        name : AdapterDistilBERTEncoder
         bertlike_model_name: distilbert-base-uncased
-        # adapter_arch : Pfeiffer
-        # reduction_factor : 16
+        adapter_arch : Pfeiffer
+        reduction_factor : 16
       type_encoder_params:
         name : OneHotTypeEncoder
         trainable: False
       input_projector_params:
         name : Classifier
-        # name : KENNClassifier
-        # name : KENNClassifierMultiloss
-        # clause_file_path: kb/bbn/top_down
         layers_parameters: 
           '0':
             in_features : encoder_dim

@@ -88,8 +88,7 @@ class BaseEntityTypingNetwork(LightningModule):
     def load_from_checkpoint(self, checkpoint_to_load, strict):
         state_dict = torch.load(checkpoint_to_load)
         s_dict = deepcopy(state_dict['state_dict'])
-        renamed_state_dict = {k.replace('ET_Network.', ''): v for k, v in s_dict.items()}
-        
+        renamed_state_dict = self.get_renamed_state_dict(s_dict)
         model_state_dict = self.state_dict()
         is_changed = False
         for k in renamed_state_dict:
@@ -114,6 +113,11 @@ class BaseEntityTypingNetwork(LightningModule):
 
         self.load_state_dict(renamed_state_dict, strict=strict)
         return self
+
+    def get_renamed_state_dict(self, state_dict):
+        renamed_state_dict = {k.replace('ET_Network.', ''): v for k, v in state_dict.items()}
+
+        return renamed_state_dict
     
     def get_state_dict(self, smart_save=True):
         state_dict = {}
@@ -128,32 +132,52 @@ class BaseEntityTypingNetwork(LightningModule):
         else:
             return {}        
 
-class BoxEmbeddingEntityTypingNetwork(BaseEntityTypingNetwork):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+class IncrementalEntityTypingNetwork(BaseEntityTypingNetwork):
+    def get_renamed_state_dict(self, state_dict):
+        father_renamed_state_dict = super().get_renamed_state_dict(state_dict)
 
-    def forward(self, batch, is_training = True):
-        #TODO: write the documentation
-        '''
-        override of :code:pytorch_lightning.LightningModule.forward (`ref <https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html>`_)
+        #rename the father's input_projector params into input_projector.pretrained_projector.params
+        renamed_state_dict = {k.replace('input_projector', 'input_projector.pretrained_projector'): v for k, v in father_renamed_state_dict.items() if 'pretrained_projector' not in k and 'additional_projector' not in k }
 
-        parameters:
-            batch:
-                the batch returned by the :ref:`Dataset <dataset>`
+        return renamed_state_dict
+    
+    def copy_pretrained_parameters_into_incremental_modules(self):
+        self.input_projector.copy_pretrained_parameters_into_incremental_module()
         
-        return:
-            projected_input:
-                output of the :ref:`input_projector <input_projector>`. Commonly the :ref:`input_projector <input_projector>` takes in input the output of the :ref:`encoder <encoder>`
+        # for now (before EMNLP2022 deadline) these are not useful since encoder will be frozen and type_encoder is a dummy module (no parameters) 
+        # self.encoder.copy_pretrained_parameters_into_incremental_module()
+        # self.type_encoder.copy_pretrained_parameters_into_incremental_module()
+    
+    def freeze_pretrained_modules(self):
+        self.encoder.freeze()
+        self.input_projector.freeze_pretrained()
+
+# class BoxEmbeddingEntityTypingNetwork(BaseEntityTypingNetwork):
+#     def __init__(self, **kwargs):
+#         super().__init__(**kwargs)
+
+#     def forward(self, batch, is_training = True):
+#         #TODO: write the documentation
+#         '''
+#         override of :code:pytorch_lightning.LightningModule.forward (`ref <https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html>`_)
+
+#         parameters:
+#             batch:
+#                 the batch returned by the :ref:`Dataset <dataset>`
+        
+#         return:
+#             projected_input:
+#                 output of the :ref:`input_projector <input_projector>`. Commonly the :ref:`input_projector <input_projector>` takes in input the output of the :ref:`encoder <encoder>`
             
-            encoded_types:
-                output of the :ref:`type_encoder <type_encoder>`.
-        '''
-        batched_sentences, batched_attn_masks, batched_labels = batch
+#             encoded_types:
+#                 output of the :ref:`type_encoder <type_encoder>`.
+#         '''
+#         batched_sentences, batched_attn_masks, batched_labels = batch
         
-        encoded_input = self.encoder(batched_sentences, batched_attn_masks)
-        projected_input, log_probs = self.input_projector(encoded_input)
-        encoded_types = self.type_encoder(batched_labels)
+#         encoded_input = self.encoder(batched_sentences, batched_attn_masks)
+#         projected_input, log_probs = self.input_projector(encoded_input)
+#         encoded_types = self.type_encoder(batched_labels)
         
-        return log_probs, encoded_types
+#         return log_probs, encoded_types
 
     

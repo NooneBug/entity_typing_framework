@@ -1,0 +1,15 @@
+limit_train_batches: .01
+max_epochs : 10
+callbacks:
+  - class_path: pytorch_lightning.callbacks.ModelCheckpoint
+    init_args:
+      dirpath: trained_models_incremental_exp/figer/box_embeddings
+      filename: dummy_incremental_location_province
+      monitor: losses/val_loss
+      save_weights_only: True
+  - class_path: pytorch_lightning.callbacks.EarlyStopping
+    init_args:
+      patience: 2
+      monitor: losses/val_loss
+      mode: min
+      verbose: True

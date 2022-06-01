@@ -39,7 +39,7 @@ trainer:
       init_args:
         dirpath: cancellami/bbn/
         monitor: val_loss
-        filename: baseline_distilbert
+        filename: trained_models_incremental_exp/figer/dummy_pretraining_box_location
         save_weights_only: True
     - class_path: pytorch_lightning.callbacks.EarlyStopping
       init_args:

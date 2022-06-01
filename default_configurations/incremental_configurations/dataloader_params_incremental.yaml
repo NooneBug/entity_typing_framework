@@ -1,0 +1,16 @@
+dataloader_params:
+  name: torch.DataLoader
+  pretraining_train:
+    batch_size: 64
+    shuffle: True
+  pretraining_dev:
+    batch_size: 8
+  pretraining_test:
+    batch_size: 8
+  incremental_train:
+    batch_size: 64
+    shuffle: True
+  incremental_dev:
+    batch_size: 8
+  incremental_test:
+    batch_size: 8

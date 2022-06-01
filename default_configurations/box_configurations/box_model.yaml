@@ -1,0 +1,27 @@
+loss_params:
+    name : BoxEmbeddingBCELoss
+ET_Network_params:
+  name : BaseEntityTypingNetwork
+  network_params:
+    encoder_params:
+      name : AdapterDistilBERTEncoder
+      bertlike_model_name: distilbert-base-uncased
+      freeze_encoder : True
+    type_encoder_params:
+      name : OneHotTypeEncoder
+      trainable: False
+    input_projector_params:
+      name : BoxEmbeddingProjector
+      box_embeddings_dimension: 109
+      projection_network_params:
+        name: HighwayNetwork
+        n_layers: 2
+      box_decoder_params:
+        inv_softplus_temp: 1.2471085395024732
+        softplus_scale: 1.
+        n_negatives: 1000
+        box_offset: 0.5
+        use_gumbel_baysian: True
+        gumbel_beta: 0.00036026463511690845
+inference_params:
+  name: BoxEmbeddingInference

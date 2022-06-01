@@ -1,4 +1,5 @@
-from entity_typing_framework.EntityTypingNetwork_classes.projectors import Classifier, ClassifierForIncrementalTraining
+from copy import deepcopy
+from entity_typing_framework.EntityTypingNetwork_classes.projectors import Classifier, ClassifierForIncrementalTraining, Projector
 from pytorch_lightning import LightningModule
 import torch
 from torch.nn import Sigmoid
@@ -9,10 +10,9 @@ import sys
 sys.path.append('./')
 from kenn.parsers import unary_parser
 
-class KENNClassifier(LightningModule):
+class KENNClassifier(Projector):
   def __init__(self, clause_file_path=None, learnable_clause_weight = False, clause_weight = 0.5, kb_mode = 'top_down', **kwargs):
-    # explicit super call to avoid multiple inheritance problems in KENNClassifier's subclasses
-    super(LightningModule, self).__init__()
+    super().__init__(**kwargs)
     # classifier
     self.classifier = Classifier(**kwargs)
 
@@ -30,8 +30,14 @@ class KENNClassifier(LightningModule):
                           )
     self.sig = Sigmoid()
 
+  def project_input(self, input_representation):
+    return self.classifier.project_input(input_representation)
+  
+  def classify(self, projected_input):
+    return self.classifier.classify(projected_input)
+
   def forward(self, input_representation):
-    prekenn = self.classifier(input_representation=input_representation)
+    prekenn = self.classifier(encoded_input=input_representation)
     postkenn = self.ke(prekenn)[0]
     # self.ke(prekenn)[0] -> output
     # self.ke(prekenn)[1] -> deltas_list
@@ -42,55 +48,59 @@ class KENNClassifier(LightningModule):
     cw = '_' if learnable_clause_weight else clause_weight
     kenn_utils.generate_constraints(types_list, kb_mode, clause_file_path, cw)
 
-  def get_state_dict(self, light=True):
-    return self.state_dict()
+class KENNClassifierForIncrementalTraining(ClassifierForIncrementalTraining):
 
-class KENNClassifierForIncrementalTraining(KENNClassifier, ClassifierForIncrementalTraining):
+  def get_class_for_pretrained_projector(self):
+    return KENNClassifier
+
+  def get_class_for_incremental_projector(self):
+    return KENNClassifier
+
   def __init__(self, clause_file_path=None, learnable_clause_weight=False, clause_weight=0.5, kb_mode='top_down', **kwargs):
-    kwargs_pretraining = self.get_kwargs_pretraining(**kwargs)
-    KENNClassifier.__init__(self, 
-                            clause_file_path=clause_file_path,
-                            learnable_clause_weight=learnable_clause_weight,
-                            clause_weight=clause_weight,
-                            kb_mode=kb_mode,
-                            **kwargs_pretraining)
-    kwargs_additional_classifier = self.get_kwargs_additional_classifier(**kwargs)
-    self.additional_classifier = Classifier(**kwargs_additional_classifier)
+    super().__init__(clause_file_path=clause_file_path, learnable_clause_weight=learnable_clause_weight, clause_weight=clause_weight, kb_mode=kb_mode, **kwargs)
+    self.sig = Sigmoid()
     
-    # prepare additional Knowledge Enhancer
-    type2id = kwargs['type2id']
-    new_type_number = len(kwargs['type2id']) - kwargs['type_number']
+  def get_kwargs_incremental_projector(self, **kwargs):
+    # get kwargs of father class
+    father_kwargs = super().get_kwargs_incremental_projector(**kwargs)
+    
+    # get clauses only for incremental types
+    type2id = father_kwargs['type2id']
+    new_type_number = len(father_kwargs['type2id']) - kwargs['type_number']
     all_types = list(type2id.keys())
     new_types = all_types[-new_type_number:]
     clause_file_path = 'kenn_tmp/incremental_clause_file_path.txt'
-    cw = '_' if learnable_clause_weight else clause_weight
+    cw = '_' if kwargs['learnable_clause_weight'] else kwargs['clause_weight']
     kenn_utils.generate_constraints_incremental(all_types=all_types,
                                                 new_types=new_types,
                                                 filepath=clause_file_path,
                                                 weight=cw)
-    self.additional_ke = unary_parser(knowledge_file=clause_file_path,
-                          activation=lambda x: x, # linear activation
-                          initial_clause_weight=clause_weight
-                          )
+    
+    # modify the kwargs to instantiate the correct ke by the super().__init__(call)
+    incremental_kwargs = deepcopy(father_kwargs)
+    incremental_kwargs['clause_file_path'] = clause_file_path
+
+    return incremental_kwargs
+    
 
   def forward(self, input_representation):
     # predict pretraining types
-    # prekenn_pretrain = self.classifier(input_representation)
-    # postkenn_pretrain = self.ke(prekenn_pretrain)[0]
-    _, postkenn_pretrain = super().forward(input_representation)
+    _, postkenn_pretrain = self.pretrained_projector(input_representation)
     # predict incremental types
-    prekenn_incremental_projected_representation = self.classifier.project_input(input_representation)
-    prekenn_incremental = self.additional_classifier.classify(prekenn_incremental_projected_representation)
+    prekenn_incremental = self.additional_projector.classifier(input_representation)
+
     prekenn_all_types = torch.concat((postkenn_pretrain, prekenn_incremental), dim=1) # why postkenn_pretrain and not prekenn_pretrain? Because it is stacked...
-    postkenn_incremental = self.additional_ke(prekenn_all_types)[0][:,-self.additional_classifier.type_number:]
+    
+    postkenn_incremental = self.additional_projector.ke(prekenn_all_types)[0][:,-self.additional_projector.type_number:]
     
     # assemble final prediction
     postkenn_all_types = torch.concat((postkenn_pretrain, postkenn_incremental), dim=1)
 
     return self.sig(prekenn_all_types), self.sig(postkenn_all_types)
 
-  def freeze_pretraining(self):
-    self.freeze()
-    self.additional_classifier.unfreeze()
-    self.additional_ke.unfreeze()
-
+  def copy_pretrained_parameters_into_incremental_module(self):
+        # assuming that pretrained_projector and additional_projector have the same architecture
+        for pretrained_l, incremental_l in zip(list(self.pretrained_projector.classifier.layers.values())[:-1], 
+                                                list(self.additional_projector.classifier.layers.values())[:-1]):
+            incremental_l.linear.weight = torch.nn.Parameter(pretrained_l.linear.weight.detach().clone())
+            incremental_l.linear.bias = torch.nn.Parameter(pretrained_l.linear.bias.detach().clone())
