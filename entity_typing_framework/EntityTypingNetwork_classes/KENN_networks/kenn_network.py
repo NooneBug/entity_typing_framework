@@ -36,11 +36,14 @@ class KENNClassifier(Projector):
   def classify(self, projected_input):
     return self.classifier.classify(projected_input)
 
-  def forward(self, input_representation):
-    prekenn = self.classifier(encoded_input=input_representation)
-    postkenn = self.ke(prekenn)[0] if self.ke.knowledge_enhancer.clause_enhancers else prekenn
+  def apply_knowledge_enhancement(self, prekenn_input):
     # self.ke(prekenn)[0] -> output
     # self.ke(prekenn)[1] -> deltas_list
+    return self.ke(prekenn_input)[0] if self.ke.knowledge_enhancer.clause_enhancers else prekenn_input
+
+  def forward(self, input_representation):
+    prekenn = self.classifier(encoded_input=input_representation)
+    postkenn = self.apply_knowledge_enhancement(prekenn)
     return self.sig(prekenn), self.sig(postkenn)
 
   def automatic_build_clauses(self, types_list, clause_file_path = None, learnable_clause_weight = False, clause_weight = 0.5, kb_mode = 'top_down'):
@@ -85,7 +88,10 @@ class KENNClassifierForIncrementalTraining(ClassifierForIncrementalTraining):
 
   def forward(self, input_representation):
     # predict pretraining types
-    _, postkenn_pretrain = self.pretrained_projector(input_representation)
+    pretrain_projected_input = self.pretrained_projector.project_input(input_representation)
+    prekenn_pretrain = self.pretrained_projector.classify(pretrain_projected_input)
+    postkenn_pretrain = self.pretrained_projector.apply_knowledge_enhancement(prekenn_pretrain)
+
     # predict incremental types
     prekenn_incremental = self.additional_projector.classifier(input_representation)
 
