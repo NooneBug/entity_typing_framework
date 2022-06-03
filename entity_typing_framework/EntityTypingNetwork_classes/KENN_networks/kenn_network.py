@@ -38,7 +38,7 @@ class KENNClassifier(Projector):
 
   def forward(self, input_representation):
     prekenn = self.classifier(encoded_input=input_representation)
-    postkenn = self.ke(prekenn)[0]
+    postkenn = self.ke(prekenn)[0] if self.ke.knowledge_enhancer.clause_enhancers else prekenn
     # self.ke(prekenn)[0] -> output
     # self.ke(prekenn)[1] -> deltas_list
     return self.sig(prekenn), self.sig(postkenn)
