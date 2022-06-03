@@ -207,7 +207,6 @@ class IncrementalMainModule(MainModule):
         self.logger_module.log_loss(name = 'losses/loss', value = average_loss)
         self.logger_module.log_loss(name = 'losses/pretraining_loss', value = average_pretraining_loss)
         self.logger_module.log_loss(name = 'losses/incremental_loss', value = average_incremental_loss)
-        self.logger_module.log_all()
     
     def validation_step(self, batch, batch_idx, dataloader_idx):
         pretraining_val_loss = 0
