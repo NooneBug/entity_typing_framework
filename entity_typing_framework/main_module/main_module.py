@@ -72,14 +72,15 @@ class MainModule(LightningModule):
         return loss
     
     def validation_epoch_end(self, out):
-        metrics = self.metric_manager.compute()
-        
-        self.logger_module.log_all_metrics(metrics)
-        val_loss = torch.mean(torch.tensor(out))
-        self.logger_module.log_loss(name = 'val_loss', value = val_loss)
-        self.logger_module.log_all()
-        
-        self.log("val_loss", val_loss)
+        if self.global_step > 0 or not self.avoid_sanity_logging:
+            metrics = self.metric_manager.compute()
+            
+            self.logger_module.log_all_metrics(metrics)
+            val_loss = torch.mean(torch.tensor(out))
+            self.logger_module.log_loss(name = 'val_loss', value = val_loss)
+            self.logger_module.log_all()
+            
+            self.log("val_loss", val_loss)
 
     def test_step(self, batch, batch_step):
         _, _, true_types = batch
@@ -249,27 +250,28 @@ class IncrementalMainModule(MainModule):
         average_losses = (out*mask).sum(dim=0)/mask.sum(dim=0)
         
         average_val_loss, average_pretraining_val_loss, average_incremental_val_loss = average_losses
-        
-        # wandb log
-        metrics = self.metric_manager.compute()
-        self.logger_module.log_all_metrics(metrics)
+            
+        if self.global_step > 0 or not self.avoid_sanity_logging:
+            # wandb log
+            metrics = self.metric_manager.compute()
+            self.logger_module.log_all_metrics(metrics)
 
-        pretraining_metrics = self.pretraining_metric_manager.compute()
-        self.logger_module.log_all_metrics(pretraining_metrics)
+            pretraining_metrics = self.pretraining_metric_manager.compute()
+            self.logger_module.log_all_metrics(pretraining_metrics)
 
-        incremental_metrics = self.incremental_metric_manager.compute()
-        self.logger_module.log_all_metrics(incremental_metrics)
+            incremental_metrics = self.incremental_metric_manager.compute()
+            self.logger_module.log_all_metrics(incremental_metrics)
 
-        self.logger_module.log_loss(name = 'losses/val_loss', value = average_val_loss)
-        self.logger_module.log_loss(name = 'losses/pretraining_val_loss', value = average_pretraining_val_loss)
-        self.logger_module.log_loss(name = 'losses/incremental_val_loss', value = average_incremental_val_loss)
-        
-        self.logger_module.log_all()
+            self.logger_module.log_loss(name = 'losses/val_loss', value = average_val_loss)
+            self.logger_module.log_loss(name = 'losses/pretraining_val_loss', value = average_pretraining_val_loss)
+            self.logger_module.log_loss(name = 'losses/incremental_val_loss', value = average_incremental_val_loss)
+            
+            self.logger_module.log_all()
 
-        # callback log
-        self.log("losses/val_loss", average_val_loss)
-        self.log("losses/pretraining_val_loss", average_pretraining_val_loss)
-        self.log("losses/incremental_val_loss", average_incremental_val_loss)
+            # callback log
+            self.log("losses/val_loss", average_val_loss)
+            self.log("losses/pretraining_val_loss", average_pretraining_val_loss)
+            self.log("losses/incremental_val_loss", average_incremental_val_loss)
     
     # # TODO: ???
     # def test_step(self, batch, batch_idx, dataloader_idx):
