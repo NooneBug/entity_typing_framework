@@ -249,7 +249,7 @@ class ProjectorForIncrementalTraining(Projector):
         returns the class to instantiate the incremental projector e.g. Classifier
         '''
         raise NotImplementedError
-
+        
     def forward(self, input_representation):
         # project pretraining types
         pretrained_projected_representation = self.pretrained_projector.project_input(input_representation)
@@ -261,13 +261,9 @@ class ProjectorForIncrementalTraining(Projector):
         if self.return_logits:
             pretrained_output = self.pretrained_projector.classify(pretrained_projected_representation)
             incremental_output = self.additional_projector.classify(incremental_projected_representation)
-            # assemble final prediction
-            output_on_all_types = torch.concat((pretrained_output, incremental_output), dim=1)
+            return pretrained_output, incremental_output
         else:
-            # assemble final prediction
-            output_on_all_types = torch.concat((pretrained_projected_representation, incremental_projected_representation), dim=1)
-
-        return output_on_all_types        
+            return pretrained_projected_representation, incremental_projected_representation
         
     def get_kwargs_pretrained_projector(self, **kwargs):
         # extract info about pretraining types and incremental types

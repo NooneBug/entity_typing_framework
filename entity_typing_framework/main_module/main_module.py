@@ -217,7 +217,7 @@ class IncrementalMainModule(MainModule):
         network_output_for_loss = self.get_output_for_loss(network_output)
         network_output_for_inference = self.get_output_for_inference(network_output)
         loss = self.loss.compute_loss(network_output_for_loss, type_representations)
-        inferred_types = self.inference_manager.infer_types(network_output_for_inference)
+        inferred_types = self.inference_manager.infer_types(*network_output_for_inference)
 
         if self.global_step > 0 or not self.avoid_sanity_logging:
         # collect predictions for all val_dataloaders
@@ -301,6 +301,9 @@ class IncrementalMainModule(MainModule):
         self.logger_module.log_all_metrics(test_incremental_metrics)
 
         self.logger_module.log_all()
+    
+    def get_output_for_loss(self, network_output):
+        return torch.concat(network_output, dim=1)
         
 class KENNMainModule(MainModule):
     def get_output_for_inference(self, network_output):
@@ -318,16 +321,22 @@ class KENNMultilossMainModule(KENNMainModule):
 
 class IncrementalKENNMainModule(KENNMainModule, IncrementalMainModule):
     # NOTE: depth-first left-to-right MRO, do not change inheritance order!
-    pass
+    
+    def get_output_for_loss(self, network_output):
+        # return postkenn output
+        return torch.concat(network_output[1], dim=1)
+    
 
 class IncrementalKENNMultilossMainModule(KENNMultilossMainModule, IncrementalMainModule):
     # NOTE: depth-first left-to-right MRO, do not change inheritance order!
-    pass
+    
+    def get_output_for_loss(self, network_output):
+        # return prekenn and postkenn output (same as returning the output as is...)
+        return torch.concat(network_output[0], dim=1), torch.concat(network_output[1], dim=1)
 
 class BoxEmbeddingMainModule(MainModule):
     def get_output_for_inference(self, network_output):
-        # return log probs
-        return network_output[1]
+        return torch.exp(network_output[1])
     
     def get_output_for_loss(self, network_output):
         # return log probs
@@ -341,9 +350,8 @@ class IncrementalBoxEmbeddingMainModule(BoxEmbeddingMainModule, IncrementalMainM
     # So this is the cause of different get_output_for_inference and get_output_for_loss methods 
     # between BoxEmbeddingMainModule and IncrementalBoxEmbeddingMainModule
     def get_output_for_inference(self, network_output):
-        # return log probs
-        return network_output
+        return torch.exp(network_output[0]), torch.exp(network_output[1])
     
     def get_output_for_loss(self, network_output):
-        # return log probs
-        return network_output
+        # return log probs by concatenating pretrained and incremental outputs
+        return torch.concat(network_output, dim=1)
