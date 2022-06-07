@@ -40,6 +40,16 @@ class ThresholdOrMaxInferenceManager(BaseInferenceManager):
             dp[i] = 1
         return discrete_pred
 
-class BoxEmbeddingInferenceManager(ThresholdOrMaxInferenceManager):
-    def infer_types(self, network_output):
-        return super().infer_types(torch.exp(network_output))
+class IncrementalThresholdOrMaxInferenceManager(ThresholdOrMaxInferenceManager):
+    def infer_types(self, network_output_pretraining, network_output_incremental):
+        # apply ThresholdOrMaxInferenceManager on the predictions of the pretrained classifier
+        discrete_pred_pretraining = super().infer_types(network_output_pretraining)
+        # incremental inference: apply ThresholdOrMaxInferenceManager only for predictions that were empty
+        discrete_pred_pretraining_base = super(ThresholdOrMaxInferenceManager, self).infer_types(network_output_pretraining)
+        discrete_pred_incremental = super(ThresholdOrMaxInferenceManager, self).infer_types(network_output_incremental)
+        for i in (torch.sum(discrete_pred_pretraining_base, dim=1) == 0).nonzero():
+          if torch.sum(discrete_pred_incremental[i]) == 0:
+            discrete_pred_incremental[i] = super().infer_types(network_output_incremental[i])
+        # concatenate discretized predictions
+        discrete_pred = torch.concat((discrete_pred_pretraining, discrete_pred_incremental), dim=1)
+        return discrete_pred

@@ -98,11 +98,8 @@ class KENNClassifierForIncrementalTraining(ClassifierForIncrementalTraining):
     prekenn_all_types = torch.concat((postkenn_pretrain, prekenn_incremental), dim=1) # why postkenn_pretrain and not prekenn_pretrain? Because it is stacked...
     
     postkenn_incremental = self.additional_projector.ke(prekenn_all_types)[0][:,-self.additional_projector.type_number:]
-    
-    # assemble final prediction
-    postkenn_all_types = torch.concat((postkenn_pretrain, postkenn_incremental), dim=1)
 
-    return self.sig(prekenn_all_types), self.sig(postkenn_all_types)
+    return (self.sig(postkenn_pretrain), self.sig(prekenn_incremental)), (self.sig(postkenn_pretrain), self.sig(postkenn_incremental))
 
   def copy_pretrained_parameters_into_incremental_module(self):
         # assuming that pretrained_projector and additional_projector have the same architecture
