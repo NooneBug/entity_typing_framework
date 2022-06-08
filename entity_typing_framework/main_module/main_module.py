@@ -73,6 +73,9 @@ class MainModule(LightningModule):
     
     def validation_epoch_end(self, out):
         if self.global_step > 0 or not self.avoid_sanity_logging:
+            
+            self.logger_module.add(key = 'epoch', value = self.current_epoch)
+
             metrics = self.metric_manager.compute()
             
             self.logger_module.log_all_metrics(metrics)
@@ -97,7 +100,7 @@ class MainModule(LightningModule):
         
         
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(self.parameters(), lr=5e-4)
         return optimizer
 
     def load_ET_Network(self, ET_Network_params, checkpoint_to_load):
@@ -252,6 +255,8 @@ class IncrementalMainModule(MainModule):
             
         if self.global_step > 0 or not self.avoid_sanity_logging:
             # wandb log
+            self.logger_module.add(key = 'epoch', value = self.current_epoch)
+
             metrics = self.metric_manager.compute()
             self.logger_module.log_all_metrics(metrics)
 
