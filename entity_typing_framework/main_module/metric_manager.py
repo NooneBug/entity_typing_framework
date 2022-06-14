@@ -82,6 +82,50 @@ class MetricManager():
     def compute_f1(self, p, r):
         return (2 * p * r) / (p + r)
 
+class MetricManagerForIncrementalTypes():
+
+    def __init__(self, num_classes, device, prefix = ''):
+        self.prefix = prefix
+        self.macro_p_t = PrecisionCustom(num_classes=num_classes, average=AverageMethod.NONE, mdmc_average='global').to(device=device)
+        self.macro_r_t = RecallCustom(num_classes=num_classes, average=AverageMethod.NONE, mdmc_average='global').to(device=device)
+
+    def set_device(self, device):
+        self.macro_p_t = self.macro_p_t.to(device=device)
+        self.macro_r_t = self.macro_r_t.to(device=device)
+
+    def update(self, pred, target):
+        pred = pred.float()
+        target = target.int()
+        self.macro_p_t.update(preds=pred, target=target)
+        self.macro_r_t.update(preds=pred, target=target)
+    
+    def compute(self, type2id):
+        macro_p_t = self.macro_p_t.compute()
+        macro_r_t = self.macro_r_t.compute()
+        macro_f1_t = self.compute_f1(macro_p_t, macro_r_t)
+
+        self.reset_metrics()
+
+        return self.compose_return(macro_p_t, macro_r_t, macro_f1_t, type2id)
+
+    def reset_metrics(self):
+        self.macro_p_t.reset()
+        self.macro_r_t.reset()
+
+    def compose_return(self, macro_p_t, macro_r_t, macro_f1_t, type2id):
+        metrics = {}
+        for type, id in type2id.items():
+            key = f"{self.prefix}_{type[1:].replace('/','-')}"
+            metrics[f'{key}/macro_types/precision'] = macro_p_t[id]
+            metrics[f'{key}/macro_types/recall'] = macro_r_t[id]
+            metrics[f'{key}/macro_types/f1'] = macro_f1_t[id]
+
+        return metrics
+        
+
+    def compute_f1(self, p, r):
+        return (2 * p * r) / (p + r)
+
 class PrecisionCustom(Precision):
     def compute(self) -> Tensor:
         tp, fp, _, fn = self._get_final_stats()
