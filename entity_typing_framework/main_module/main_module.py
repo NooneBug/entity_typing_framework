@@ -174,8 +174,8 @@ class IncrementalMainModule(MainModule):
         type2id = incremental_ckpt_state_dict['hyper_parameters']['type2id']
         ckpt = IMPLEMENTED_CLASSES_LVL0[ET_Network_params['name']](**ET_Network_params, 
                                                                     type_number=type_number,
-                                                                    type2id=type2id).load_from_checkpoint(checkpoint_to_load = checkpoint_to_load,
-                                                                                                               strict = False)
+                                                                    type2id=type2id)
+        ckpt.load_from_checkpoint(checkpoint_to_load = checkpoint_to_load, strict = False)
         
         return ckpt
 

@@ -134,10 +134,23 @@ class BaseEntityTypingNetwork(LightningModule):
 
 class IncrementalEntityTypingNetwork(BaseEntityTypingNetwork):
     def get_renamed_state_dict(self, state_dict):
-        father_renamed_state_dict = super().get_renamed_state_dict(state_dict)
+        '''
+        This method is called in two use cases:
+            1) loading a pretrained network to setup incremental training
+            2) loading an incremental network to test it
+        '''
 
-        #rename the father's input_projector params into input_projector.pretrained_projector.params
-        renamed_state_dict = {k.replace('input_projector', 'input_projector.pretrained_projector'): v for k, v in father_renamed_state_dict.items() if 'pretrained_projector' not in k and 'additional_projector' not in k }
+        parameters = list(state_dict.keys())
+
+        if any('pretrained_projector' in p for p in parameters):
+            # loading an incremental network to test it
+            # keep the state dict as is
+            renamed_state_dict = state_dict
+        else:
+            # loading a pretrained network to setup incremental training
+            father_renamed_state_dict = super().get_renamed_state_dict(state_dict)
+            #rename the father's input_projector params into input_projector.pretrained_projector.params
+            renamed_state_dict = {k.replace('input_projector', 'input_projector.pretrained_projector'): v for k, v in father_renamed_state_dict.items() if 'pretrained_projector' not in k and 'additional_projector' not in k }
 
         return renamed_state_dict
     
