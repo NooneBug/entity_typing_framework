@@ -95,8 +95,21 @@ class DatasetPartition:
     def check_consistency(self, types_from_dataset_partition):
         diff = types_from_dataset_partition.difference(set(self.preexistent_type2id.keys())) 
         if diff:
-            raise Exception('Types given in input through the parameter data.rw_options.type2id_file_path do not match with types present in the dataset at path: {}. Unexpected types found in the dataset: {} '.format(self.path, diff))
-    
+            # raise Exception('Types given in input through the parameter data.rw_options.type2id_file_path do not match with types present in the dataset at path: {}. Unexpected types found in the dataset: {} '.format(self.path, diff))
+            print('WARNING: Types given in input through the parameter data.rw_options.type2id_file_path do not match with types present in the dataset at path: {}. Unexpected types found in the dataset: {} '.format(self.path, diff))
+            print('WARNING: types that are not in the provided file will be ignored ')
+            self.labels = self.filter_exceeded_types(self.labels)
+
+    def filter_exceeded_types(self, labels):
+        new_types = []
+        for example_types in labels:
+            new_types.append(self.filter_types(example_types))
+
+        return new_types
+
+    def filter_types(self, types_to_filter):
+        return [y for y in types_to_filter if y in self.preexistent_type2id]
+
     def get_elements_number(self):
         '''
         Returns the number of elements found in the dataset file

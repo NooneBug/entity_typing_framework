@@ -2,7 +2,7 @@ from tabnanny import check
 from typing import Any, Dict
 # from entity_typing_framework.main_module.inference_manager import BaseInferenceManager
 from entity_typing_framework.main_module.losses import BCELossForET
-from entity_typing_framework.main_module.metric_manager import MetricManager
+from entity_typing_framework.main_module.metric_manager import MetricManager, MetricManagerForIncrementalTypes
 from entity_typing_framework.utils.implemented_classes_lvl0 import IMPLEMENTED_CLASSES_LVL0
 from pytorch_lightning.core.lightning import LightningModule
 import torch
@@ -124,16 +124,41 @@ class MainModule(LightningModule):
 class IncrementalMainModule(MainModule):
 
     # def __init__(self, ET_Network_params: dict, type_number: int, type2id: dict, logger, loss_params, checkpoint_to_load: str = None, new_type_number = None):
-    def __init__(self, ET_Network_params, type_number, type2id, inference_params, **kwargs):
+    def __init__(self, ET_Network_params, type_number, test_index, type2id, inference_params, **kwargs):
         super().__init__(ET_Network_params=ET_Network_params, type_number=type_number, type2id=type2id, inference_params=inference_params, **kwargs)
         
+        self.test_index = test_index
+
         self.metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='')
         self.pretraining_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='pretraining')
         self.incremental_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='incremental')
 
-        self.test_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test')
-        self.test_pretraining_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test_pretraining')
-        self.test_incremental_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test_incremental')
+        self.test_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test_evolution')
+        self.test_pretraining_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test_pretraining_evolution')
+        self.test_incremental_metric_manager = MetricManager(num_classes=self.test_index, device=self.device, prefix='test_incremental_evolution')
+        
+        # test_index is always equal to the number of incremental types + 1 since we have a dev set for each incremental type
+        self.test_metric_manager_specific = MetricManagerForIncrementalTypes(self.type_number, device=self.device, prefix='test_incremental_evolution')
+
+        self.test_metric_manager_exclusive = MetricManager(self.test_index, device=self.device, prefix='test_incremental_evolution')
+
+
+        # filter incremental types
+        type2id_pretrained = self.ET_Network.input_projector.pretrained_projector.type2id
+        type2id_all = self.ET_Network.input_projector.additional_projector.type2id
+        types_incremental = set(type2id_all.keys()) - set(type2id_pretrained.keys())
+        type2id_incremental = { type_incremental : type2id_all[type_incremental] for type_incremental in types_incremental }
+        # add fathers of incremental types
+        fathers = set()
+        for t in type2id_incremental.keys():
+            f = t.replace(f"/{t.split('/')[-1]}", "")
+            fathers.add(f)
+        
+        fathers = list(fathers)
+        self.type2id_evaluation = { f : type2id_all[f] for f in fathers }
+
+        self.type2id_evaluation.update(type2id_incremental)
+
 
 
     def on_fit_start(self):
@@ -144,6 +169,9 @@ class IncrementalMainModule(MainModule):
         self.test_metric_manager.set_device(self.device)
         self.test_pretraining_metric_manager.set_device(self.device)
         self.test_incremental_metric_manager.set_device(self.device)
+
+        self.test_metric_manager_specific.set_device(self.device)
+        self.test_metric_manager_exclusive.set_device(self.device)
 
     def load_ET_Network(self, ET_Network_params, checkpoint_to_load):
         state_dict = torch.load(checkpoint_to_load)
@@ -242,13 +270,35 @@ class IncrementalMainModule(MainModule):
         # collect predictions for all val_dataloaders
             self.metric_manager.update(inferred_types, true_types)
         
-        if dataloader_idx == 0: # batches from pretraining val dataloader
-            if self.global_step > 0 or not self.avoid_sanity_logging:
+        if self.global_step > 0 or not self.avoid_sanity_logging:
+            if dataloader_idx == 0: # batches from pretraining val dataloader
                 # collect predictions for pretraining val_dataloaders
                 self.pretraining_metric_manager.update(inferred_types, true_types)
                 pretraining_val_loss += loss
-        else: # batches from incremental val dataloaders
-            if self.global_step > 0 or not self.avoid_sanity_logging:
+            elif dataloader_idx == self.test_index:
+
+                # collect predictions for incremental test_dataloaders
+                self.test_metric_manager.update(inferred_types, true_types)
+                self.test_pretraining_metric_manager.update(inferred_types, true_types)
+                self.test_metric_manager_specific.update(inferred_types, true_types)
+
+                # prepare filtered predictions with only incremental types and their fathers
+                idx = torch.tensor(list(self.type2id_evaluation.values()))
+                y_true_filtered = true_types.index_select(dim=1, index=idx.cuda())
+                inferred_types_filtered = inferred_types.index_select(dim=1, index=idx.cuda())
+
+                self.test_incremental_metric_manager.update(inferred_types_filtered, y_true_filtered)
+
+                # prepare filtered predictions with only incremental types and their fathers and using only the examples that has at least one of the types of interes as true type 
+                idx = torch.sum(y_true_filtered, dim=1).nonzero().squeeze()
+                y_true_filtered = y_true_filtered.index_select(dim=0, index=idx.cuda())
+                if torch.sum(y_true_filtered):
+                    inferred_types_filtered = inferred_types_filtered.index_select(dim=0, index=idx.cuda())
+
+                    self.test_metric_manager_exclusive.update(inferred_types_filtered, y_true_filtered)
+
+
+            else: # batches from incremental val dataloaders
                 # collect predictions for incremental val_dataloaders
                 self.incremental_metric_manager.update(inferred_types, true_types)
                 incremental_val_loss += loss
@@ -281,11 +331,27 @@ class IncrementalMainModule(MainModule):
 
             incremental_metrics = self.incremental_metric_manager.compute()
             self.logger_module.log_all_metrics(incremental_metrics)
-
+            
             self.logger_module.log_loss(name = 'losses/val_loss', value = average_val_loss)
             self.logger_module.log_loss(name = 'losses/pretraining_val_loss', value = average_pretraining_val_loss)
             self.logger_module.log_loss(name = 'losses/incremental_val_loss', value = average_incremental_val_loss)
             
+            test_metrics = self.test_metric_manager.compute()
+            self.logger_module.log_all_metrics(test_metrics)
+
+            test_pretraining_metrics = self.test_pretraining_metric_manager.compute()
+            self.logger_module.log_all_metrics(test_pretraining_metrics)
+
+            test_incremental_metrics = self.test_incremental_metric_manager.compute()
+            self.logger_module.log_all_metrics(test_incremental_metrics)
+            
+            test_specific_metrics = self.test_metric_manager_specific.compute(self.type2id_evaluation)
+            self.logger_module.log_all_metrics(test_specific_metrics)
+                        
+            test_exclusive_metrics = self.test_metric_manager_exclusive.compute()
+            metrics_test_incremental_aggregated = {k.replace('macro_example', 'macro_example_exclusive'): v.item() for k,v in test_exclusive_metrics.items() if 'macro_example' in k}
+            self.logger_module.log_all_metrics(metrics_test_incremental_aggregated)
+
             self.logger_module.log_all()
 
             # callback log
