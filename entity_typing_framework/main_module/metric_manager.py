@@ -131,6 +131,30 @@ class PrecisionCustom(Precision):
         tp, fp, _, fn = self._get_final_stats()
         return self._precision_compute(tp, fp, fn, self.average, self.mdmc_reduce)
     
+    def _get_final_stats(self):
+        """Performs concatenation on the stat scores if neccesary, before passing them to a compute function."""
+        if isinstance(self.tp, list):
+            tp = torch.cat(self.tp) if len(self.tp) > 0 else torch.tensor(0)
+        else:
+            tp = self.tp
+
+        if isinstance(self.fp, list):
+            fp = torch.cat(self.fp) if len(self.fp) > 0 else torch.tensor(0)
+        else:
+            fp = self.fp
+
+        if isinstance(self.tn, list):
+            tn = torch.cat(self.tn) if len(self.tn) > 0 else torch.tensor(0)
+        else:
+            tn = self.tn
+        
+        if isinstance(self.fn, list):
+            fn = torch.cat(self.fn) if len(self.fn) > 0 else torch.tensor(0)
+        else:
+            fn = self.fn
+
+        return tp, fp, tn, fn
+
     def _precision_compute(
         self,
         tp: Tensor,
@@ -157,6 +181,30 @@ class RecallCustom(Recall):
         tp, fp, _, fn = self._get_final_stats()
         return self._recall_compute(tp, fp, fn, self.average, self.mdmc_reduce)
     
+    def _get_final_stats(self):
+        """Performs concatenation on the stat scores if neccesary, before passing them to a compute function."""
+        if isinstance(self.tp, list):
+            tp = torch.cat(self.tp) if len(self.tp) > 0 else torch.tensor(0)
+        else:
+            tp = self.tp
+
+        if isinstance(self.fp, list):
+            fp = torch.cat(self.fp) if len(self.fp) > 0 else torch.tensor(0)
+        else:
+            fp = self.fp
+
+        if isinstance(self.tn, list):
+            tn = torch.cat(self.tn) if len(self.tn) > 0 else torch.tensor(0)
+        else:
+            tn = self.tn
+        
+        if isinstance(self.fn, list):
+            fn = torch.cat(self.fn) if len(self.fn) > 0 else torch.tensor(0)
+        else:
+            fn = self.fn
+
+        return tp, fp, tn, fn
+
     def _recall_compute(
         self,
         tp: Tensor,
