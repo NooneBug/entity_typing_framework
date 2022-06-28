@@ -338,15 +338,27 @@ class IncrementalDatasetManager(DatasetManager):
         loaders = [self.dataloaders['pretraining_dev']] + [v for k,v in self.dataloaders.items() if 'incremental_dev' in k]
         return loaders   
 
-    # TODO: ???
-    # def test_dataloader(self):
-    #     '''
-    #     Override of `pytorch_lightning.core.datamodule.LightningDataModule.val_dataloader <https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html#val-dataloader>`_
-
-    #     Returns the dataset partition used to validate a model during training
-    #     '''
-    #     loaders = self.dataloaders['pretraining_test']# , self.dataloaders['incremental_test']
-    #     return loaders
-    
     def predict_dataloader(self):
         return self.test_dataloader
+
+class IncrementalDatasetManagerWithTestLog(IncrementalDatasetManager):
+    
+    def __init__(self, dataset_paths: dict, dataset_reader_params: dict, tokenizer_params: dict, dataset_params: dict, dataloader_params: dict, rw_options: dict):
+        super().__init__(dataset_paths, dataset_reader_params, tokenizer_params, dataset_params, dataloader_params, rw_options)
+        self.test_index = len([d for d in self.dataset_paths if 'pretraining_dev' in d or 'incremental_dev' in d])
+
+    def val_dataloader(self):
+        '''
+        '''
+        loaders = [self.dataloaders['pretraining_dev']] + [v for k,v in self.dataloaders.items() if 'incremental_dev' in k]
+        loaders += [self.dataloaders['test']]
+        return loaders
+    
+    def test_dataloader(self):
+        '''
+        Override of `pytorch_lightning.core.datamodule.LightningDataModule.val_dataloader <https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html#val-dataloader>`_
+
+        Returns the dataset partition used to validate a model during training
+        '''
+        loaders = self.dataloaders['test']# , self.dataloaders['incremental_test']
+        return loaders

@@ -68,8 +68,7 @@ def generate_constraints(types_list, mode, filepath = None, weight='_'):
     elif mode == 'top_down_skip':
         pass
     else:
-        print('Mode not handled...')
-        return None
+        raise Exception(f'Mode {mode} not handled...')
     # print number of clauses
     print(clauses.count('\n'), 'clauses created')
     # create kb
@@ -77,7 +76,7 @@ def generate_constraints(types_list, mode, filepath = None, weight='_'):
 
     return save_kb(filepath, kb)
 
-def generate_constraints_incremental(all_types, new_types, filepath = None, weight='_'):
+def generate_constraints_incremental(all_types, new_types, filepath = None, weight='_', mode='top_down'):
     # create ontology tree from all_types
     tree = create_tree(all_types, label2pred = True)
     # create specialization clauses
@@ -91,7 +90,14 @@ def generate_constraints_incremental(all_types, new_types, filepath = None, weig
             # get subtree where the father of t is the root
             subtree = tree.subtree(father)
             # generate constraints
-            clauses += generate_top_down(subtree, weight)
+            if mode == 'bottom_up':
+                clauses = generate_bottom_up(subtree, weight)
+            elif mode == 'top_down':
+                clauses = generate_top_down(subtree, weight)
+            elif mode == 'hybrid':
+                clauses += generate_hybrid(subtree, weight)
+            else:
+                raise Exception(f'Mode {mode} not handled...')
     # generate predicate list
     predicates = generate_predicates(all_types)
     # print number of clauses
@@ -116,10 +122,14 @@ def generate_predicates(types_list):
 
 def generate_bottom_up(tree, weight):
     clauses = ""
+    if tree.root == 'thing':
+        roots = [x.identifier for x in tree.children(tree.root)]
+    else: # specialization
+        roots = [tree.root]
     # iterate over each tree of the forest
-    for root in tree.children(tree.root):
+    for root in roots:
         # get single tree
-        subtree = tree.subtree(root.identifier)
+        subtree = tree.subtree(root)
         # get all descendants
         descendants = subtree.filter_nodes(lambda x : subtree.depth(x) != 0)
         # create a subtype -> supertype rule for each node

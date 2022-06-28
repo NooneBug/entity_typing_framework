@@ -77,7 +77,8 @@ class KENNClassifierForIncrementalTraining(ClassifierForIncrementalTraining):
     kenn_utils.generate_constraints_incremental(all_types=all_types,
                                                 new_types=new_types,
                                                 filepath=clause_file_path,
-                                                weight=cw)
+                                                weight=cw,
+                                                mode=kwargs['kb_mode'])
     
     # modify the kwargs to instantiate the correct ke by the super().__init__(call)
     incremental_kwargs = deepcopy(father_kwargs)
