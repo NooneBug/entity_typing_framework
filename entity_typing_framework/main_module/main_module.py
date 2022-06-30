@@ -109,6 +109,32 @@ class MainModule(LightningModule):
                                                                     type_number = self.type_number,
                                                                     type2id = self.type2id).load_from_checkpoint(checkpoint_to_load = checkpoint_to_load, 
                                                                                                                             strict = False)
+
+    def load_ET_Network_for_test_(checkpoint_to_load):
+
+        print('Loading model with torch.load ...')
+        start = time.time()
+        ckpt_state_dict = torch.load(checkpoint_to_load)
+        print('Loaded in {:.2f} seconds'.format(time.time() - start))
+        
+        ET_Network_params = ckpt_state_dict['hyper_parameters']['ET_Network_params']
+        type_number = ckpt_state_dict['hyper_parameters']['type_number']
+        type2id = ckpt_state_dict['hyper_parameters']['type2id']
+        
+        print('Instantiating {} class ...'.format(ET_Network_params['name']))
+        start = time.time()
+        ckpt = IMPLEMENTED_CLASSES_LVL0[ET_Network_params['name']](**ET_Network_params, 
+                                                                    type_number=type_number,
+                                                                    type2id=type2id)
+        print('Instantiated in {:.2f} seconds'.format(time.time() - start))
+        
+        print('Loading from checkpoint with load_from_checkpoint...')
+        start = time.time()
+        ckpt.load_from_checkpoint(checkpoint_to_load = checkpoint_to_load, strict = False)
+        print('Loaded in {:.2f} seconds'.format(time.time() - start))
+        
+        return ckpt
+
     
     def on_save_checkpoint(self, checkpoint: Dict[str, Any]) -> None:
         checkpoint['state_dict'] = self.ET_Network.get_state_dict(smart_save=self.smart_save)
