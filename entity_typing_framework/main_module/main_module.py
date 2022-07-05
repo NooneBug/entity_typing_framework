@@ -101,7 +101,7 @@ class MainModule(LightningModule):
         
         
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=5e-4)
+        optimizer = torch.optim.Adam(self.parameters(), lr=5e-4) # TODO: customizable parameter
         return optimizer
 
     def load_ET_Network(self, ET_Network_params, checkpoint_to_load):
@@ -380,28 +380,7 @@ class IncrementalMainModule(MainModule):
             self.logger_module.log_loss(name = 'losses/pretraining_val_loss', value = average_pretraining_val_loss)
             self.logger_module.log_loss(name = 'losses/incremental_val_loss', value = average_incremental_val_loss)
             
-            test_metrics = self.test_metric_manager.compute()
-            self.logger_module.log_all_metrics(test_metrics)
-
-            test_pretraining_metrics = self.test_pretraining_metric_manager.compute()
-            self.logger_module.log_all_metrics(test_pretraining_metrics)
-
-            test_incremental_metrics = self.test_incremental_metric_manager.compute()
-            self.logger_module.log_all_metrics(test_incremental_metrics)
-
-            test_incremental_only_metrics = self.test_incremental_only_metric_manager.compute()
-            self.logger_module.log_all_metrics(test_incremental_only_metrics)
-            
-            test_incremental_specific_metrics = self.test_incremental_specific_metric_manager.compute(self.type2id_evaluation)
-            self.logger_module.log_all_metrics(test_incremental_specific_metrics)
-                        
-            test_incremental_exclusive_metrics = self.test_incremental_exclusive_metric_manager.compute()
-            metrics_test_incremental_aggregated = {k.replace('macro_example', 'macro_example_exclusive'): v.item() for k,v in test_incremental_exclusive_metrics.items() if 'macro_example' in k}
-            self.logger_module.log_all_metrics(metrics_test_incremental_aggregated)
-
-            test_incremental_only_exclusive_metrics = self.test_incremental_only_exclusive_metric_manager.compute()
-            metrics_test_incremental_only_exclusive_aggregated = {k.replace('macro_example', 'macro_example_exclusive'): v.item() for k,v in test_incremental_only_exclusive_metrics.items() if 'macro_example' in k}
-            self.logger_module.log_all_metrics(metrics_test_incremental_only_exclusive_aggregated)
+            self.log_test_metrics()
 
             self.logger_module.log_all()
 
@@ -410,25 +389,49 @@ class IncrementalMainModule(MainModule):
             self.log("losses/pretraining_val_loss", average_pretraining_val_loss)
             self.log("losses/incremental_val_loss", average_incremental_val_loss)
     
-    # # TODO: ???
-    # def test_step(self, batch, batch_idx, dataloader_idx):
-    #     _, _, true_types = batch
-    #     network_output, _ = self.ET_Network(batch)
-    #     network_output_for_inference = self.get_output_for_inference(network_output)
-    #     inferred_types = self.inference_manager.infer_types(network_output_for_inference)
+    def test_step(self, batch, batch_idx):
+        _, _, true_types = batch
+        network_output, type_representations = self.ET_Network(batch)
+        network_output_for_inference = self.get_output_for_inference(network_output)
+        inferred_types = self.inference_manager.infer_types(*network_output_for_inference)
 
-    #     # collect predictions for all test_dataloaders
-    #     self.test_metric_manager.update(inferred_types, true_types)
-        
-    #     if dataloader_idx == 0: # batches from pretraining test dataloader
-    #         # collect predictions for pretraining test_dataloaders
-    #         self.test_pretraining_metric_manager.update(inferred_types, true_types)
-    #     else: # batches from incremental test dataloaders
-    #         # collect predictions for incremental test_dataloaders
-    #         self.test_incremental_metric_manager.update(inferred_types, true_types)
+        # collect predictions for incremental test_dataloaders
+        self.test_metric_manager.update(inferred_types, true_types)
+        self.test_pretraining_metric_manager.update(inferred_types, true_types)
+        self.test_incremental_specific_metric_manager.update(inferred_types, true_types)
+
+        # NOTE: exclude fathers from aggregation
+        # prepare filtered predictions with only incremental types
+        idx = torch.tensor(list(self.type2id_incremental.values()))
+        y_true_filtered = true_types.index_select(dim=1, index=idx.cuda())
+        inferred_types_filtered = inferred_types.index_select(dim=1, index=idx.cuda())
+        self.test_incremental_only_metric_manager.update(inferred_types_filtered.cuda(), y_true_filtered.cuda())
+        # prepare filtered predictions with only incremental types and using only the examples that has at least one of the types of interes as true type 
+        idx = torch.sum(y_true_filtered, dim=1).nonzero().squeeze()
+        y_true_filtered = y_true_filtered.index_select(dim=0, index=idx.cuda())
+        if torch.sum(y_true_filtered):
+            inferred_types_filtered = inferred_types_filtered.index_select(dim=0, index=idx.cuda())
+            self.test_incremental_only_exclusive_metric_manager.update(inferred_types_filtered, y_true_filtered)
+
+        # NOTE: include fathers in aggregation
+        # prepare filtered predictions with only incremental types and their fathers
+        idx = torch.tensor(list(self.type2id_evaluation.values()))
+        y_true_filtered = true_types.index_select(dim=1, index=idx.cuda())
+        inferred_types_filtered = inferred_types.index_select(dim=1, index=idx.cuda())
+        self.test_incremental_metric_manager.update(inferred_types_filtered, y_true_filtered)
+        # prepare filtered predictions with only incremental types and their fathers and using only the examples that has at least one of the types of interes as true type 
+        idx = torch.sum(y_true_filtered, dim=1).nonzero().squeeze()
+        y_true_filtered = y_true_filtered.index_select(dim=0, index=idx.cuda())
+        if torch.sum(y_true_filtered):
+            inferred_types_filtered = inferred_types_filtered.index_select(dim=0, index=idx.cuda())
+            self.test_incremental_exclusive_metric_manager.update(inferred_types_filtered, y_true_filtered)
+
+
     
     def test_epoch_end(self, out):
-        # wandb log
+        self.log_test_metrics()
+
+    def log_test_metrics(self):
         test_metrics = self.test_metric_manager.compute()
         self.logger_module.log_all_metrics(test_metrics)
 
@@ -438,7 +441,19 @@ class IncrementalMainModule(MainModule):
         test_incremental_metrics = self.test_incremental_metric_manager.compute()
         self.logger_module.log_all_metrics(test_incremental_metrics)
 
-        self.logger_module.log_all()
+        test_incremental_only_metrics = self.test_incremental_only_metric_manager.compute()
+        self.logger_module.log_all_metrics(test_incremental_only_metrics)
+        
+        test_incremental_specific_metrics = self.test_incremental_specific_metric_manager.compute(self.type2id_evaluation)
+        self.logger_module.log_all_metrics(test_incremental_specific_metrics)
+                    
+        test_incremental_exclusive_metrics = self.test_incremental_exclusive_metric_manager.compute()
+        metrics_test_incremental_aggregated = {k.replace('macro_example', 'macro_example_exclusive'): v.item() for k,v in test_incremental_exclusive_metrics.items() if 'macro_example' in k}
+        self.logger_module.log_all_metrics(metrics_test_incremental_aggregated)
+
+        test_incremental_only_exclusive_metrics = self.test_incremental_only_exclusive_metric_manager.compute()
+        metrics_test_incremental_only_exclusive_aggregated = {k.replace('macro_example', 'macro_example_exclusive'): v.item() for k,v in test_incremental_only_exclusive_metrics.items() if 'macro_example' in k}
+        self.logger_module.log_all_metrics(metrics_test_incremental_only_exclusive_aggregated)
     
     def get_output_for_loss(self, network_output):
         return torch.concat(network_output, dim=1)

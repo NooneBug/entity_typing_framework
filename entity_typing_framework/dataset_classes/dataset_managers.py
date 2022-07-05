@@ -360,5 +360,5 @@ class IncrementalDatasetManagerWithTestLog(IncrementalDatasetManager):
 
         Returns the dataset partition used to validate a model during training
         '''
-        loaders = self.dataloaders['test']# , self.dataloaders['incremental_test']
+        loaders = self.dataloaders['test']
         return loaders
