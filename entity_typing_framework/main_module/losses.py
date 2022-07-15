@@ -82,7 +82,6 @@ class BoxEmbeddingLogProbBCELoss(Loss):
     def __init__(self, name):
         super().__init__()
         self.loss_func = BCEWithLogProbLoss()
-        self.sigmoid_fn = nn.Sigmoid()
 
     def compute_loss(self,
                     logits: torch.Tensor,

@@ -17,7 +17,7 @@ class KENNClassifier(Projector):
     self.classifier = Classifier(**kwargs)
 
     if not clause_file_path:
-      clause_file_path = 'kenn_tmp/clause_file_path.txt'
+      clause_file_path = 'kenn_tmp/clause_file.txt'
       id2type = {v: k for k, v in self.classifier.type2id.items()}
       # generate and save KENN clauses
       self.automatic_build_clauses(types_list = [id2type[idx] for idx in range(len(id2type))], clause_file_path=clause_file_path,
