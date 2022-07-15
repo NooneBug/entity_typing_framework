@@ -1,0 +1,21 @@
+from entity_typing_framework.main_module.losses_modules import BCELossModule
+
+# from entity_typing_framework.main_module.losses import BCELossForET
+
+# class KENNBCEMultiloss(BCELossForET):
+#     def __init__(self, alpha = .5, **kwargs) -> None:
+#         super().__init__(**kwargs)
+#         self.alpha = alpha
+
+#     def compute_loss(self, encoded_input, type_representation):
+#         prekenn, postkenn = encoded_input
+#         return self.alpha * self.loss(prekenn, type_representation) + (1 - self.alpha) * self.loss(postkenn, type_representation)
+
+class BCEMultiLossModule(BCELossModule):
+    def __init__(self, name, alpha, loss_params) -> None:
+        super().__init__(name, loss_params)
+        self.alpha = alpha
+    
+    def compute_loss(self, encoded_input, type_representation):
+        prekenn, postkenn = encoded_input
+        return self.alpha * self.loss(prekenn, type_representation) + (1 - self.alpha) * self.loss(postkenn, type_representation)

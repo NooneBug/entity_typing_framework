@@ -10,15 +10,15 @@ import sys
 sys.path.append('./')
 from kenn.parsers import unary_parser
 
-class KENNClassifier(Projector):
+class KENNModule(Projector):
   def __init__(self, clause_file_path=None, learnable_clause_weight = False, clause_weight = 0.5, kb_mode = 'top_down', **kwargs):
     super().__init__(**kwargs)
-    # classifier
-    self.classifier = Classifier(**kwargs)
+
+    self.type2id = kwargs['type2id']
 
     if not clause_file_path:
       clause_file_path = 'kenn_tmp/clause_file.txt'
-      id2type = {v: k for k, v in self.classifier.type2id.items()}
+      id2type = {v: k for k, v in self.type2id.items()}
       # generate and save KENN clauses
       self.automatic_build_clauses(types_list = [id2type[idx] for idx in range(len(id2type))], clause_file_path=clause_file_path,
                                   learnable_clause_weight=learnable_clause_weight, clause_weight=clause_weight, kb_mode=kb_mode)
@@ -28,6 +28,22 @@ class KENNClassifier(Projector):
                           activation=lambda x: x, # linear activation
                           initial_clause_weight=clause_weight
                           )
+  
+  def apply_knowledge_enhancement(self, prekenn_input):
+    # self.ke(prekenn)[0] -> output
+    # self.ke(prekenn)[1] -> deltas_list
+    return self.ke(prekenn_input)[0] if self.ke.knowledge_enhancer.clause_enhancers else prekenn_input
+  
+  def automatic_build_clauses(self, types_list, clause_file_path = None, learnable_clause_weight = False, clause_weight = 0.5, kb_mode = 'top_down'):
+    # generate and save KENN clauses
+    cw = '_' if learnable_clause_weight else clause_weight
+    kenn_utils.generate_constraints(types_list, kb_mode, clause_file_path, cw)
+
+class KENNClassifier(KENNModule):
+  def __init__(self, clause_file_path=None, learnable_clause_weight = False, clause_weight = 0.5, kb_mode = 'top_down',**kwargs):
+    super().__init__(clause_file_path, learnable_clause_weight, clause_weight, kb_mode, **kwargs)
+    # classifier
+    self.classifier = Classifier(**kwargs)
     self.sig = Sigmoid()
 
   def project_input(self, input_representation):
@@ -36,20 +52,11 @@ class KENNClassifier(Projector):
   def classify(self, projected_input):
     return self.classifier.classify(projected_input)
 
-  def apply_knowledge_enhancement(self, prekenn_input):
-    # self.ke(prekenn)[0] -> output
-    # self.ke(prekenn)[1] -> deltas_list
-    return self.ke(prekenn_input)[0] if self.ke.knowledge_enhancer.clause_enhancers else prekenn_input
-
   def forward(self, input_representation):
     prekenn = self.classifier(encoded_input=input_representation)
     postkenn = self.apply_knowledge_enhancement(prekenn)
     return self.sig(prekenn), self.sig(postkenn)
 
-  def automatic_build_clauses(self, types_list, clause_file_path = None, learnable_clause_weight = False, clause_weight = 0.5, kb_mode = 'top_down'):
-    # generate and save KENN clauses
-    cw = '_' if learnable_clause_weight else clause_weight
-    kenn_utils.generate_constraints(types_list, kb_mode, clause_file_path, cw)
 
 class KENNClassifierForIncrementalTraining(ClassifierForIncrementalTraining):
 

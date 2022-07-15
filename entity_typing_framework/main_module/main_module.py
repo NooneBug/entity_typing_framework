@@ -1,7 +1,6 @@
 from tabnanny import check
 from typing import Any, Dict
 # from entity_typing_framework.main_module.inference_manager import BaseInferenceManager
-from entity_typing_framework.main_module.losses import BCELossForET
 from entity_typing_framework.main_module.metric_manager import MetricManager, MetricManagerForIncrementalTypes
 from entity_typing_framework.utils.implemented_classes_lvl0 import IMPLEMENTED_CLASSES_LVL0
 from pytorch_lightning.core.lightning import LightningModule
@@ -14,7 +13,7 @@ class MainModule(LightningModule):
     type_number : int,
     type2id : dict,
     logger,
-    loss_params,
+    loss_module_params,
     inference_params : dict,
     checkpoint_to_load : str = None,
     avoid_sanity_logging : bool = False,
@@ -37,7 +36,7 @@ class MainModule(LightningModule):
         self.test_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test')
 
         self.inference_manager = IMPLEMENTED_CLASSES_LVL0[inference_params['name']](**inference_params)
-        self.loss = IMPLEMENTED_CLASSES_LVL0[loss_params['name']](**loss_params)
+        self.loss = IMPLEMENTED_CLASSES_LVL0[loss_module_params['name']](**loss_module_params)
         self.save_hyperparameters()
 
     def on_fit_start(self):
