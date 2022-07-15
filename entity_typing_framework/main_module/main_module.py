@@ -188,10 +188,6 @@ class IncrementalMainModule(MainModule):
         self.test_incremental_only_exclusive_metric_manager = MetricManager(len(self.type2id_incremental), device=self.device, prefix='test_incremental_only_evolution')
 
 
-
-
-
-
     def on_fit_start(self):
         self.metric_manager.set_device(self.device)
         self.pretraining_metric_manager.set_device(self.device)
@@ -508,3 +504,11 @@ class IncrementalBoxEmbeddingMainModule(BoxEmbeddingMainModule, IncrementalMainM
     def get_output_for_loss(self, network_output):
         # return log probs by concatenating pretrained and incremental outputs
         return torch.concat(network_output, dim=1)
+
+class BoxEmbeddingMainModuleForOpt(BoxEmbeddingMainModule):
+    # def test_step(self, batch, batch_step):
+    #     pass
+
+    def on_fit_end(self) -> None:
+        with open('opt_losses.txt', 'a') as out:
+            out.write(f'{self.trainer.checkpoint_callback.best_model_score.item()}\n')
