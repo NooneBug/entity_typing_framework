@@ -1,6 +1,6 @@
 from typing import Optional
 from entity_typing_framework.EntityTypingNetwork_classes.box_embeddings_modules.box_embeddings_classes import CenterSigmoidBoxTensor
-from entity_typing_framework.EntityTypingNetwork_classes.projectors import ClassifierForIncrementalTraining, Projector, ProjectorForIncrementalTraining
+from entity_typing_framework.EntityTypingNetwork_classes.projectors import Projector, ProjectorForIncrementalTraining
 import torch.nn as nn
 import torch
 from entity_typing_framework.EntityTypingNetwork_classes.box_embeddings_modules.box_embeddings_classes import CenterSigmoidBoxTensor, BoxTensor, log1mexp
@@ -22,7 +22,7 @@ class BoxEmbeddingProjector(Projector):
                                                 output_dim=self.box_embedding_dimension * 2,
                                                 **projection_network_params)
         self.mc_box = CenterSigmoidBoxTensor
-        self.box_decoder = BoxDecoder(num_embeddings = type_number, embedding_dim = 109, **box_decoder_params)
+        self.box_decoder = BoxDecoder(num_embeddings = type_number, embedding_dim = self.box_embedding_dimension, **box_decoder_params)
 
     def forward(self, encoded_input):
         # use HigwayNetwork to project the encoded input to the joint space with Types' Box Embeddings  
@@ -364,6 +364,7 @@ class BoxDecoder(LightningModule):
   def get_state_dict(self, smart_save=True):
         return self.state_dict()
 
+
 class HighwayNetwork(LightningModule):
   def __init__(self,
                name,
@@ -390,72 +391,3 @@ class HighwayNetwork(LightningModule):
       inputs = gate_values * nonlinear + (1. - gate_values) * inputs
     return self.final_linear_layer(inputs)
 
-
-class BoxEmbeddingProjectorFixed(BoxEmbeddingProjector):
-  def __init__(self, type_number, input_dim, box_decoder_params, projection_network_params, box_embeddings_dimension=109, **kwargs) -> None:
-    super().__init__(type_number, input_dim, box_decoder_params, projection_network_params, box_embeddings_dimension, **kwargs)
-    self.box_decoder = BoxDecoderFixed(num_embeddings = type_number, embedding_dim = 109, **box_decoder_params)
-
-class BoxDecoderFixed(BoxDecoder):
-  def __init__(self, num_embeddings: int, 
-                      embedding_dim: int = 109, 
-                      box_type: str = 'CenterSigmoidBoxTensor', 
-                      padding_idx: Optional[int] = None, 
-                      max_norm: Optional[float] = None, 
-                      norm_type: float = 2, 
-                      scale_grad_by_freq: bool = False, 
-                      sparse: bool = False, 
-                      _weight: Optional[torch.Tensor] = None, 
-                      init_interval_delta: float = 0.5, 
-                      init_interval_center: float = 0.01, 
-                      inv_softplus_temp = 1.0, 
-                      softplus_scale: float = 1, 
-                      n_negatives: int = 0, 
-                      neg_temp: float = 0, 
-                      box_offset: float = 0.5, 
-                      pretrained_box: Optional[torch.Tensor] = None, 
-                      use_gumbel_baysian: bool = False, 
-                      gumbel_beta = nn.Parameter(torch.tensor(1.0))):
-     
-     super().__init__(num_embeddings, embedding_dim, box_type, padding_idx, max_norm, norm_type, scale_grad_by_freq, sparse, _weight, init_interval_delta, init_interval_center, inv_softplus_temp, softplus_scale, n_negatives, neg_temp, box_offset, pretrained_box, use_gumbel_baysian, gumbel_beta)
-     self.softplus = LearnedSoftPlus(beta=self.inv_softplus_temp)
-
-  def log_soft_volume(
-    self,
-    z: torch.Tensor,
-    Z: torch.Tensor,
-    temp: float = 1.,
-    scale: float = 1.,
-    gumbel_beta = None
-    ) -> torch.Tensor:
-    eps = torch.finfo(z.dtype).tiny  # type: ignore
-
-    if isinstance(scale, float):
-      s = torch.tensor(scale)
-    else:
-      s = scale
-
-    if gumbel_beta <= 0.:
-      return (torch.sum(
-        torch.log(self.softplus(Z - z).clamp_min(eps)),
-        dim=-1) + torch.log(s)
-              )  # need this eps to that the derivative of log does not blow
-    else:
-      return (torch.sum(
-        torch.log(
-          # self.softplus(Z - z - 2 * self.euler_gamma * gumbel_beta).clamp_min(
-          self.softplus(((Z - z) / gumbel_beta) - 2 * self.euler_gamma).clamp_min(
-            eps)),
-          dim=-1) + torch.log(s))
-
-
-class LearnedSoftPlus(torch.nn.Module):
-  def __init__(self, beta=1.0, threshold=20):
-    super().__init__()
-    # keep beta > 0
-    self.log_beta = torch.nn.Parameter(torch.tensor(float(beta)).log())
-    self.threshold = 20
-  def forward(self, x):
-    beta = self.log_beta.exp()
-    beta_x = beta * x
-    return torch.where(beta_x < self.threshold, torch.log1p(beta_x.exp()) / beta, x)
