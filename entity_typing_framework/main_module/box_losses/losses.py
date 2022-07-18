@@ -56,8 +56,10 @@ def log1mexp(x: torch.Tensor,
 
 class BCEWithLogProbLoss(nn.BCELoss):
 
-  def __init__(self, name, **kwargs) -> None:
-     super().__init__(**kwargs)
+  def __init__(self, **kwargs) -> None:
+    if 'name' in kwargs:
+      kwargs.pop('name')
+    super().__init__(**kwargs)
 
   def forward(self,
                             input: torch.Tensor,

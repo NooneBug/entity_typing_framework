@@ -467,6 +467,10 @@ class KENNMultilossMainModule(KENNMainModule):
         # return prekenn and postkenn output (same as returning the output as is...)
         return network_output[0], network_output[1]
 
+class BoxKENNMultilossMainModule(KENNMultilossMainModule):
+    def get_output_for_inference(self, network_output):
+        return torch.exp(super().get_output_for_inference(network_output))
+
 class IncrementalKENNMainModule(KENNMainModule, IncrementalMainModule):
     # NOTE: depth-first left-to-right MRO, do not change inheritance order!
     
