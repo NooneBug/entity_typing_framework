@@ -11,7 +11,8 @@ class LossModule(LightningModule):
 class BCELossModule(LossModule):
     def __init__(self, loss_params, **kwargs) -> None:
         super().__init__(loss_params)
-        self.loss = IMPLEMENTED_CLASSES_LVL1[loss_params['name']](**loss_params)
+        name = loss_params.pop('name')
+        self.loss = IMPLEMENTED_CLASSES_LVL1[name](**loss_params)
     
     def compute_loss(self, encoded_input, type_representation):
         return self.loss(encoded_input, type_representation)
