@@ -199,6 +199,7 @@ class DatasetManager(LightningDataModule):
         config_name += f"R{self.tokenizer_params['max_right_words']}"
         config_name += f"T{self.tokenizer_params['max_tokens']}"
         config_name += '_light' if self.rw_options['light'] else ''
+        config_name = config_name.replace('/', '__')
         return config_name
 
     def instance_tokenizer(self, bertlike_model_name):
