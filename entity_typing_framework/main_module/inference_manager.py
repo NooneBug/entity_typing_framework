@@ -87,7 +87,8 @@ class ThresholdOrMaxInferenceManager(BaseInferenceManager):
         return discrete_pred
 
 class IncrementalThresholdOrMaxInferenceManager(ThresholdOrMaxInferenceManager):
-    def discretize_output(self, network_output_pretraining, network_output_incremental):
+    def discretize_output(self, network_output):
+        network_output_pretraining, network_output_incremental = network_output
         # apply ThresholdOrMaxInferenceManager on the predictions of the pretrained classifier
         discrete_pred_pretraining = super().discretize_output(network_output_pretraining)
         # incremental inference: apply ThresholdOrMaxInferenceManager only for predictions that were empty

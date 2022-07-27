@@ -292,7 +292,7 @@ class IncrementalMainModule(MainModule):
         network_output_for_loss = self.get_output_for_loss(network_output)
         network_output_for_inference = self.get_output_for_inference(network_output)
         loss = self.loss.compute_loss(network_output_for_loss, type_representations)
-        inferred_types = self.inference_manager.infer_types(*network_output_for_inference)
+        inferred_types = self.inference_manager.infer_types(network_output_for_inference)
 
         if self.global_step > 0 or not self.avoid_sanity_logging:
         # collect predictions for all val_dataloaders
