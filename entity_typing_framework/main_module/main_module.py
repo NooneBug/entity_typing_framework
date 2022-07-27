@@ -17,7 +17,8 @@ class MainModule(LightningModule):
     inference_params : dict,
     checkpoint_to_load : str = None,
     avoid_sanity_logging : bool = False,
-    smart_save : bool = True
+    smart_save : bool = True,
+    learning_rate : float = 5e-4 # the default value is the one used in EMNLP 2022 experiments
     ):
 
         super().__init__()
@@ -27,6 +28,7 @@ class MainModule(LightningModule):
         self.type2id = type2id
         self.avoid_sanity_logging = avoid_sanity_logging
         self.smart_save = smart_save
+        self.learning_rate = learning_rate
 
         if not checkpoint_to_load:
             self.ET_Network = IMPLEMENTED_CLASSES_LVL0[self.ET_Network_params['name']](**self.ET_Network_params, type_number = self.type_number, type2id = self.type2id)
@@ -100,7 +102,7 @@ class MainModule(LightningModule):
         
         
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=5e-4) # TODO: customizable parameter
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         return optimizer
 
     def load_ET_Network(self, ET_Network_params, checkpoint_to_load):
