@@ -35,7 +35,7 @@ class MainModule(LightningModule):
         self.metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='dev')
         self.test_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test')
 
-        self.inference_manager = IMPLEMENTED_CLASSES_LVL0[inference_params['name']](**inference_params)
+        self.inference_manager = IMPLEMENTED_CLASSES_LVL0[inference_params['name']](type2id=self.type2id, **inference_params)
         self.loss = IMPLEMENTED_CLASSES_LVL0[loss_module_params['name']](**loss_module_params)
         self.save_hyperparameters()
 
@@ -466,6 +466,11 @@ class KENNMultilossMainModule(KENNMainModule):
     def get_output_for_loss(self, network_output):
         # return prekenn and postkenn output (same as returning the output as is...)
         return network_output[0], network_output[1]
+
+class ClassifierNFETCMainModule(MainModule):
+    def __init__(self, ET_Network_params: dict, type_number: int, type2id: dict, logger, loss_module_params, inference_params: dict, checkpoint_to_load: str = None, avoid_sanity_logging: bool = False, smart_save: bool = True):
+        super().__init__(ET_Network_params, type_number, type2id, logger, loss_module_params, inference_params, checkpoint_to_load, avoid_sanity_logging, smart_save)
+        self.loss.create_prior(self.type2id)
 
 class BoxKENNMultilossMainModule(KENNMultilossMainModule):
     def get_output_for_inference(self, network_output):

@@ -1,5 +1,5 @@
 from pytorch_lightning.core.lightning import LightningModule
-from torch.nn import Sigmoid, ModuleDict, ReLU, Linear, Dropout, BatchNorm1d
+from torch.nn import Sigmoid, ModuleDict, ReLU, Linear, Dropout, BatchNorm1d, Softmax
 import torch
 from copy import deepcopy
 
@@ -76,6 +76,8 @@ class Layer(LightningModule):
             return ReLU()
         elif activation_name == 'sigmoid':
             return Sigmoid()
+        elif activation_name == 'softmax':
+            return Softmax(dim=1)
         elif activation_name == 'none':
             return None
         else:
