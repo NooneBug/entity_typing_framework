@@ -19,7 +19,10 @@ class BaseInferenceManager():
         self.transitive = transitive
         # prepare map to fill missing predictions
         if self.transitive:
-            self.ancestors_map = self.get_ancestors_map(type2id)
+            if type2id:
+                self.transitive_inference_mat = self.get_transitive_inference_mat(type2id)
+            else:
+                raise Exception('Error: you must provide type2id when transitive=True')
 
     def infer_types(self, network_output):
         discrete_pred = self.discretize_output(network_output)
@@ -34,19 +37,18 @@ class BaseInferenceManager():
         zeros = torch.zeros(mask.shape).cuda()
         discrete_pred = torch.where(mask, ones, zeros)
         return discrete_pred
-
+    
     def apply_hierarchy(self, discrete_pred):
+        if discrete_pred.device.type == 'cuda' and self.transitive_inference_mat.device.type != 'cuda':
+            self.transitive_inference_mat = self.transitive_inference_mat.cuda()
         # apply transitivity to the ancestors in the hierarchy
-        for dp in discrete_pred:
-            for t, ancestors in self.ancestors_map.items():
-                idx_t = self.type2id[t]
-                for ancestor in ancestors:
-                    idx_ancestor = self.type2id[ancestor]
-                    if dp[idx_t] == 1 and dp[idx_ancestor] == 0:
-                        dp[idx_ancestor] = 1
+        discrete_pred = torch.matmul(discrete_pred, self.transitive_inference_mat)
+        # clip discret preds > 1 (deriving from consistent predictions)
+        discrete_pred = discrete_pred.clip(0, 1)
         return discrete_pred
     
-    def get_ancestors_map(self, type2id):
+    def get_transitive_inference_mat(self, type2id):
+        # create ancestors map
         ancestors_map = {}
         for t in type2id.keys():
             splitted_path = t.replace('/',' /').split(' ')[1:]
@@ -56,7 +58,18 @@ class BaseInferenceManager():
                 ancestor = prev_ancestor + ancestor
                 ancestors_map[t].append(ancestor)    
                 prev_ancestor = ancestor
-        return ancestors_map 
+        
+        # transform ancestors map into a matrix
+        n_types = len(type2id)
+        transitive_inference_mat = torch.zeros((n_types, n_types))
+        for t, ancestors in ancestors_map.items():
+            idx_t = type2id[t]
+            transitive_inference_mat[idx_t, idx_t] = 1
+            for ancestor in ancestors:
+                idx_ancestor =  type2id[ancestor]
+                transitive_inference_mat[idx_t,idx_ancestor] = 1
+        
+        return transitive_inference_mat 
 
 class MaxInferenceManager(BaseInferenceManager):
     def __init__(self, **kwargs):
