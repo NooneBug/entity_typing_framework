@@ -6,9 +6,10 @@ from entity_typing_framework.EntityTypingNetwork_classes.box_embeddings_modules.
 from entity_typing_framework.EntityTypingNetwork_classes.box_embeddings_modules.vector_projector import VectorEmbeddingIncrementalProjector, VectorEmbeddingProjector
 from entity_typing_framework.EntityTypingNetwork_classes.input_encoders import BERTEncoder, DistilBERTEncoder, AdapterDistilBERTEncoder, AdapterBERTEncoder
 from entity_typing_framework.EntityTypingNetwork_classes.projectors import Classifier, ClassifierForIncrementalTraining
+from entity_typing_framework.EntityTypingNetwork_classes.type2vec_modules.type2vec_projector import Type2VecProjector
 from entity_typing_framework.EntityTypingNetwork_classes.type_encoders import OneHotTypeEncoder
 from entity_typing_framework.main_module.box_losses.losses import BCEWithLogProbLoss
-from torch.nn import BCELoss
+from torch.nn import BCELoss, CosineEmbeddingLoss
 
 IMPLEMENTED_CLASSES_LVL1 = {
     'BERTEncoder' : BERTEncoder,
@@ -27,7 +28,9 @@ IMPLEMENTED_CLASSES_LVL1 = {
     'BoxEmbeddingIncrementalProjector' : BoxEmbeddingIncrementalProjector,
     'VectorEmbeddingIncrementalProjector' : VectorEmbeddingIncrementalProjector,
     'BoxEmbeddingKENNProjector' : BoxEmbeddingKENNProjector,
+    'Type2VecProjector' : Type2VecProjector,
     # 'NFETCClassifier' : NFETCClassifier,
     'BCELoss' : BCELoss,
-    'BCEWithLogProbLoss' : BCEWithLogProbLoss
+    'BCEWithLogProbLoss' : BCEWithLogProbLoss,
+    'CosineEmbeddingLoss' : CosineEmbeddingLoss
 }

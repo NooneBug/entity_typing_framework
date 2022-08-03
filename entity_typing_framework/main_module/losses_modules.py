@@ -1,11 +1,13 @@
 from entity_typing_framework.utils.implemented_classes_lvl1 import IMPLEMENTED_CLASSES_LVL1
 from pytorch_lightning.core.lightning import LightningModule
+from torchmetrics import LabelRankingLoss
+
 
 class LossModule(LightningModule):
     def __init__(self, loss_params, **kwargs) -> None:
         super().__init__()
 
-    def compute_loss():
+    def compute_loss(self):
         raise Exception('Implement this function')
 
 class BCELossModule(LossModule):
@@ -16,3 +18,11 @@ class BCELossModule(LossModule):
     
     def compute_loss(self, encoded_input, type_representation):
         return self.loss(encoded_input, type_representation)
+
+class RankingLossModule(LossModule):
+    def __init__(self, loss_params, **kwargs) -> None:
+        super().__init__(loss_params)
+        self.loss = LabelRankingLoss()
+    
+    def compute_loss(self, encoded_input, type_representation):
+        return self.loss(encoded_input, type_representation).requires_grad_(True)
