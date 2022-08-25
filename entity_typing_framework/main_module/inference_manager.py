@@ -1,4 +1,5 @@
 import torch
+from entity_typing_framework.utils.flat2hierarchy import get_type2id_original
 
 class BaseInferenceManager():
     '''
@@ -71,6 +72,9 @@ class BaseInferenceManager():
         
         return transitive_inference_mat 
 
+    def transform_true_types(self, true_types):
+        return true_types
+
 class MaxInferenceManager(BaseInferenceManager):
     def __init__(self, **kwargs):
         super().__init__(threshold=None, **kwargs)
@@ -98,6 +102,41 @@ class ThresholdOrMaxInferenceManager(BaseInferenceManager):
         for dp, i in zip(discrete_pred, max_values_and_indices.indices):
             dp[i] = 1
         return discrete_pred
+
+class FlatToHierarchyThresholdOrMaxInferenceManager(ThresholdOrMaxInferenceManager):
+    def __init__(self, name, threshold = .5, type2id = None):
+        if not type2id:
+            raise Exception('Error: you must provide type2id to perform inference on a flat dataset')
+
+        self.threshold = threshold
+        self.type2id_flat = type2id
+        self.type2id_original = get_type2id_original(type2id)
+        # using a flat dataset requires transitivity to ensure consistent predictions
+        self.transitive = True
+        # prepare map to fill missing predictions
+        self.transitive_inference_mat = self.get_transitive_inference_mat(self.type2id_original)
+
+    def infer_types(self, network_output):
+        # discretize flat predictions
+        discrete_pred_flat = self.discretize_output(network_output)
+        # convert flat predictions to match the original dataset
+        discrete_pred_original = torch.zeros((discrete_pred_flat.shape[0], len(self.type2id_original)))
+        for t_flat, idx_flat in self.type2id_flat.items():
+            # if the type is /*/NIL convert it to father type and assign value
+            if t_flat.endswith('/NIL'):
+                t = t_flat[:-4]
+            else: # the type is shared between flat dataset and original dataset
+                t = t_flat
+            # copy prediction
+            idx = self.type2id_original[t]
+            discrete_pred_original[:, idx] = discrete_pred_flat[:, idx_flat]
+        # complete the predictions according to the hierarchy
+        discrete_pred_original = self.apply_hierarchy(discrete_pred_original).cuda()
+        return discrete_pred_original
+
+    def transform_true_types(self, true_types):
+        return self.infer_types(true_types)
+
 
 class IncrementalThresholdOrMaxInferenceManager(ThresholdOrMaxInferenceManager):
     def discretize_output(self, network_output):

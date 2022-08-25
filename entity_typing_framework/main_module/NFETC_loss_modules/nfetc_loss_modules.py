@@ -2,8 +2,8 @@ from entity_typing_framework.main_module.losses_modules import BCELossModule
 import torch
 
 class BCENFETCLossModule(BCELossModule):
-  def __init__(self, beta, loss_params, **kwargs) -> None:
-    super().__init__(loss_params, **kwargs)
+  def __init__(self, beta, type2id, loss_params, **kwargs) -> None:
+    super().__init__(type2id, loss_params, **kwargs)
     self.beta = beta
     
   def create_prior(self, type2id):

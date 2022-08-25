@@ -38,7 +38,7 @@ class MainModule(LightningModule):
         self.test_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test')
 
         self.inference_manager = IMPLEMENTED_CLASSES_LVL0[inference_params['name']](type2id=self.type2id, **inference_params)
-        self.loss = IMPLEMENTED_CLASSES_LVL0[loss_module_params['name']](**loss_module_params)
+        self.loss = IMPLEMENTED_CLASSES_LVL0[loss_module_params['name']](type2id=self.type2id, **loss_module_params)
         self.save_hyperparameters()
 
     def on_fit_start(self):
@@ -52,7 +52,7 @@ class MainModule(LightningModule):
     def training_step(self, batch, batch_step):
         network_output, type_representations = self.ET_Network(batch)
         network_output_for_loss = self.get_output_for_loss(network_output)
-        loss = self.loss.compute_loss(network_output_for_loss, type_representations)
+        loss = self.loss.compute_loss_for_training_step(encoded_input=network_output_for_loss, type_representation=type_representations)
         return loss
 
     def training_epoch_end(self, out):
@@ -61,10 +61,14 @@ class MainModule(LightningModule):
 
     def validation_step(self, batch, batch_step):
         _, _, true_types = batch
+        true_types = self.get_true_types_for_metrics(true_types)
         network_output, type_representations = self.ET_Network(batch)
         network_output_for_loss = self.get_output_for_loss(network_output)
         network_output_for_inference = self.get_output_for_inference(network_output)
-        loss = self.loss.compute_loss(network_output_for_loss, type_representations)
+
+        # TODO: check if is the same for every projector
+        loss = self.loss.compute_loss_for_validation_step(encoded_input=network_output_for_loss, type_representation=true_types)
+        # loss = self.loss.compute_loss_for_validation_step(network_output_for_loss, type_representations)
 
         inferred_types = self.inference_manager.infer_types(network_output_for_inference)
         
@@ -89,6 +93,7 @@ class MainModule(LightningModule):
 
     def test_step(self, batch, batch_step):
         _, _, true_types = batch
+        true_types = self.get_true_types_for_metrics(true_types)
         network_output, _ = self.ET_Network(batch)
         network_output_for_inference = self.get_output_for_inference(network_output)
         inferred_types = self.inference_manager.infer_types(network_output_for_inference)
@@ -147,6 +152,9 @@ class MainModule(LightningModule):
     
     def get_output_for_inference(self, network_output):
         return network_output
+    
+    def get_true_types_for_metrics(self, true_types):
+        return self.inference_manager.transform_true_types(true_types)
 
 class IncrementalMainModule(MainModule):
 
@@ -266,7 +274,7 @@ class IncrementalMainModule(MainModule):
         for name, minibatch in zip(keys, batches): 
             network_output, type_representations = self.ET_Network(minibatch)
             network_output_for_loss = self.get_output_for_loss(network_output)
-            loss = self.loss.compute_loss(network_output_for_loss, type_representations)
+            loss = self.loss.compute_loss_for_training_step(encoded_input=network_output_for_loss, type_representation=type_representations)
             if name == 'pretraining':
                 pretraining_loss += loss
             else:
@@ -290,10 +298,11 @@ class IncrementalMainModule(MainModule):
         incremental_val_loss = 0
 
         _, _, true_types = batch
+        true_types = self.get_true_types_for_metrics(true_types)
         network_output, type_representations = self.ET_Network(batch)
         network_output_for_loss = self.get_output_for_loss(network_output)
         network_output_for_inference = self.get_output_for_inference(network_output)
-        loss = self.loss.compute_loss(network_output_for_loss, type_representations)
+        loss = self.loss.compute_loss_for_validation_step(encoded_input=network_output_for_loss, type_representation=type_representations)
         inferred_types = self.inference_manager.infer_types(network_output_for_inference)
 
         if self.global_step > 0 or not self.avoid_sanity_logging:
@@ -388,6 +397,7 @@ class IncrementalMainModule(MainModule):
     
     def test_step(self, batch, batch_idx):
         _, _, true_types = batch
+        true_types = self.get_true_types_for_metrics(true_types)
         network_output, type_representations = self.ET_Network(batch)
         network_output_for_inference = self.get_output_for_inference(network_output)
         inferred_types = self.inference_manager.infer_types(*network_output_for_inference)
