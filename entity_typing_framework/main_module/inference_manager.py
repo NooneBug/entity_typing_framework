@@ -15,7 +15,8 @@ class BaseInferenceManager():
             flag to apply the hierarchy to the discrete predictions to ensure consistency
     '''
     def __init__(self, name, threshold = .5, type2id = None, transitive = False):
-        self.threshold = threshold
+        
+        self.init_threshold(threshold)
         self.type2id = type2id
         self.transitive = transitive
         # prepare map to fill missing predictions
@@ -24,6 +25,14 @@ class BaseInferenceManager():
                 self.transitive_inference_mat = self.get_transitive_inference_mat(type2id)
             else:
                 raise Exception('Error: you must provide type2id when transitive=True')
+    
+    def init_threshold(self, threshold):
+        if str(threshold).lower() == 'auto':
+            self.threshold = .5
+            self.calibrate_threshold = True
+        else:
+            self.threshold = threshold
+            self.calibrate_threshold = False
 
     def infer_types(self, network_output):
         discrete_pred = self.discretize_output(network_output)
@@ -108,7 +117,7 @@ class FlatToHierarchyThresholdOrMaxInferenceManager(ThresholdOrMaxInferenceManag
         if not type2id:
             raise Exception('Error: you must provide type2id to perform inference on a flat dataset')
 
-        self.threshold = threshold
+        self.init_threshold(threshold)
         self.type2id_flat = type2id
         self.type2id_original = get_type2id_original(type2id)
         # using a flat dataset requires transitivity to ensure consistent predictions

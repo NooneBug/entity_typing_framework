@@ -6,6 +6,7 @@ from entity_typing_framework.utils.implemented_classes_lvl0 import IMPLEMENTED_C
 from pytorch_lightning.core.lightning import LightningModule
 import torch
 import time
+import numpy as np
 
 class MainModule(LightningModule):
     def __init__(self, 
@@ -40,14 +41,33 @@ class MainModule(LightningModule):
         self.inference_manager = IMPLEMENTED_CLASSES_LVL0[inference_params['name']](type2id=self.type2id, **inference_params)
         self.loss = IMPLEMENTED_CLASSES_LVL0[loss_module_params['name']](type2id=self.type2id, **loss_module_params)
         self.save_hyperparameters()
+        self.log_validation_metrics = True # this flag will be disabled during threshold calibration
 
     def on_fit_start(self):
         self.metric_manager.set_device(self.device)
         self.test_metric_manager.set_device(self.device)
 
     def on_test_start(self):
+        # set devices
         self.metric_manager.set_device(self.device)
         self.test_metric_manager.set_device(self.device)
+    #     # calibrate threshold if requested
+    #     if self.inference_manager.calibrate_threshold:
+    #         # disable validation metrics flag
+    #         self.log_validation_metrics = False
+    #         # iterate over thresholds and call validation routine
+    #         max_f1 = 0
+    #         max_t = 0
+    #         for t in np.arange(.05, 1, .5): # TODO: change to .05
+    #             self.inference_manager.threshold = t
+    #             self.trainer.validate(self.trainer.model, self.trainer.datamodule.val_dataloader())
+    #             f1 = self.last_validation_metrics['dev/macro_example/f1']
+    #             if f1 > max_f1:
+    #                 max_f1 = f1
+    #                 max_t = t
+            
+    #         # set optimal threshold
+    #         self.inference_manager.threshold = max_t
 
     def training_step(self, batch, batch_step):
         network_output, type_representations = self.ET_Network(batch)
@@ -80,16 +100,20 @@ class MainModule(LightningModule):
     def validation_epoch_end(self, out):
         if self.global_step > 0 or not self.avoid_sanity_logging:
             
-            self.logger_module.add(key = 'epoch', value = self.current_epoch)
 
             metrics = self.metric_manager.compute()
             
-            self.logger_module.log_all_metrics(metrics)
-            val_loss = torch.mean(torch.tensor(out))
-            self.logger_module.log_loss(name = 'val_loss', value = val_loss)
-            self.logger_module.log_all()
+            if self.log_validation_metrics:
+                self.logger_module.add(key = 'epoch', value = self.current_epoch)
+                self.logger_module.log_all_metrics(metrics)
+                val_loss = torch.mean(torch.tensor(out))
+                self.logger_module.log_loss(name = 'val_loss', value = val_loss)
+                self.logger_module.log_all()
+                self.log("val_loss", val_loss)
             
-            self.log("val_loss", val_loss)
+            # used for threshold calibration
+            self.last_validation_metrics = metrics
+                
 
     def test_step(self, batch, batch_step):
         _, _, true_types = batch
@@ -102,6 +126,7 @@ class MainModule(LightningModule):
     def test_epoch_end(self, out):
         metrics = self.test_metric_manager.compute()
         metrics = { k: v.item() for k,v in metrics.items()}
+        metrics['threshold'] = self.inference_manager.threshold
         self.logger_module.log_all_metrics(metrics)
         self.logger_module.log_all()
         
@@ -156,6 +181,7 @@ class MainModule(LightningModule):
     def get_true_types_for_metrics(self, true_types):
         return self.inference_manager.transform_true_types(true_types)
 
+# TODO: add threshold calibration
 class IncrementalMainModule(MainModule):
 
     # def __init__(self, ET_Network_params: dict, type_number: int, type2id: dict, logger, loss_params, checkpoint_to_load: str = None, new_type_number = None):
