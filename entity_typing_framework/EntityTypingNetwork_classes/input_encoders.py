@@ -31,6 +31,12 @@ class BaseBERTLikeEncoder(LightningModule):
         self.encoder = AutoModel.from_pretrained(self.bertlike_model_name)
         if freeze_encoder:
             self.freeze_encoder()
+            # unfreeze last n layers
+            if type(freeze_encoder) == int:
+                last_layers = self.encoder.encoder.layer[freeze_encoder:]
+                for layer in last_layers:
+                    for _, param in list(layer.named_parameters()):
+                        param.requires_grad = True
     
     def freeze_encoder(self):
         '''
