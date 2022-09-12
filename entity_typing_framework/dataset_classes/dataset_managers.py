@@ -119,7 +119,8 @@ class DatasetManager(LightningDataModule):
             self.load_tokenized_datasets()
         else: 
             # create
-            tokenizer = self.instance_tokenizer(bertlike_model_name = self.tokenizer_params['bertlike_model_name'])
+            # tokenizer = self.instance_tokenizer(bertlike_model_name = self.tokenizer_params['bertlike_model_name'])
+            tokenizer = self.instance_tokenizer(**self.tokenizer_params)
             self.tokenized_datasets = {partition_name: IMPLEMENTED_CLASSES_LVL0[self.tokenizer_params['name']](dataset,
                                                                                 self.type2id,
                                                                                 tokenizer,
@@ -202,7 +203,7 @@ class DatasetManager(LightningDataModule):
         config_name = config_name.replace('/', '__')
         return config_name
 
-    def instance_tokenizer(self, bertlike_model_name):
+    def instance_tokenizer(self, bertlike_model_name, **kwargs):
         '''
         instance a tokenizer with `huggingface AutoTokenizer <https://huggingface.co/docs/transformers/v4.15.0/en/model_doc/auto#transformers.AutoTokenizer>`_
 
@@ -363,3 +364,13 @@ class IncrementalDatasetManagerWithTestLog(IncrementalDatasetManager):
         '''
         loaders = self.dataloaders['test']
         return loaders
+
+from allennlp.modules.elmo import batch_to_ids
+
+class ELMoDatasetManager(DatasetManager):
+
+    def instance_tokenizer(self, **kwargs):
+        return batch_to_ids
+
+    def get_tokenizer_config_name(self):
+        return f"elmo_T{self.tokenizer_params['max_tokens']}"

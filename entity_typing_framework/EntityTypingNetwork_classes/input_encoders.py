@@ -1,3 +1,4 @@
+from typing import Any
 from transformers import AutoModel
 from pytorch_lightning.core.lightning import LightningModule
 from transformers import PfeifferConfig, HoulsbyConfig
@@ -270,3 +271,136 @@ class AdapterBERTEncoder(BERTEncoder):
         else:
             state_dict = self.state_dict()
         return state_dict
+
+from allennlp.modules.elmo import Elmo, _ElmoBiLm
+import torch
+from time import time
+ELMO_ENCODING_MODES = ['mmc', 'm_mc']
+class ELMoEncoder(LightningModule):
+    def __init__(self, name, option_file_path, weight_file_path, encoding_mode='mmc', *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+
+        print('Instantiating ELMo Encoder, it requires a lot of time')
+        t = time()
+
+        self.encoder = Elmo(options_file=option_file_path, 
+                            weight_file=weight_file_path, 
+                            num_output_representations = 1)
+
+        self.encoding_mode = encoding_mode
+        # NOTE: use only for debugging
+        # self.encoder = torch.load(option_file_path.replace('options.json', 'elmo.pt'))
+        elapsed_time = time() - t
+        hours, rem = divmod(elapsed_time, 3600)
+        minutes, seconds = divmod(rem, 60)
+        print("ELMo Encoder loaded in {:0>2}h{:0>2}m{:05.2f}s".format(int(hours),int(minutes),seconds))
+
+
+    def forward(self, batched_tokenized_sentence, mention_mask, *args, **kwargs) -> Any:
+
+        # batched_tokenized_sentence : [batch, max_len, 50]
+        # mention_mask : [batch, max_len]
+
+        elmo_representation = self.encoder(batched_tokenized_sentence)['elmo_representations'][0]
+        # elmo_representation : [batch, max_len, 1024]
+
+        # extract mc representation
+        mc_representation = torch.max(elmo_representation, dim=1)[0]
+        # mc_representation : [batch, 1024]
+
+        if self.encoding_mode == 'mmc':
+            # prepare mask to filter mention representation influenced by context
+            mention_mask_unsqueezed = mention_mask.unsqueeze(2)
+            shape = elmo_representation.shape
+            mention_mask_expanded = mention_mask_unsqueezed.expand(*shape)
+            # extract mention_representation
+            mention_representation = torch.max(mention_mask_expanded * elmo_representation, dim=1)[0]
+        elif self.encoding_mode == 'm_mc':
+            # prepare isolated mentions placed at the beginning of the input
+            batched_tokenized_mention = torch.zeros_like(batched_tokenized_sentence)
+            for i, x in enumerate(batched_tokenized_sentence):
+                nz = mention_mask[i].nonzero()
+                mention_len = len(nz)
+                # TODO: better to avoid...
+                if mention_len > 0:
+                    start_index = nz[0]
+                    end_index = start_index + mention_len
+                    batched_tokenized_mention[i, 0:mention_len, :] = x[start_index:end_index]
+                else:
+                    print(f'Found an example with missing mention: try to set max_tokens higher than {batched_tokenized_sentence.shape[1]}')
+            # extract mention representation
+            mention_elmo_representation = self.encoder(batched_tokenized_mention)['elmo_representations'][0]
+            mention_representation = torch.max(mention_elmo_representation, dim=1)[0]
+            # mention_representation : [batch, 1024]
+        else:
+            raise Exception(f"Please provide a valid encoding_mode value. '{self.encoding_mode}' given, accepted : {ELMO_ENCODING_MODES} ")
+
+        # concatanate mention and mc representations
+        mention_mc_representation = torch.hstack([mention_representation, mc_representation])
+
+        return mention_mc_representation
+
+    def get_representation_dim(self):
+        # 2048 = 1024 (mention) + 1024 (mention_context)
+        return 2048
+
+    def get_state_dict(self, smart_save=True):
+        return self.state_dict()
+
+# IMPLEMENTED_POOLING_FUNCTIONS = ['min', 'max']
+
+# class ELMoEncoder(LightningModule):
+    
+#     def __init__(self, option_file_path, weight_file_path, return_format, pooling_function = 'max', *args: Any, **kwargs: Any) -> None:
+#         super().__init__(*args, **kwargs)
+
+#         self.return_format = return_format
+#         self.pooling_function_name = pooling_function
+
+#         if pooling_function == 'max':
+#             self.pooling_function = torch.max
+#         elif pooling_function == 'min':
+#             self.pooling_function = torch.min
+#         else:
+#             raise Exception(f'Please provide an implemented pooling_function name ({IMPLEMENTED_POOLING_FUNCTIONS}) or implement the given one {pooling_function}')
+
+        # print('Instantiating ELMo Encoder, it require a lot of time')
+        # t = time()
+        
+#         self.encoder = _ElmoBiLm(options_file=option_file_path,
+#                                 weight_file=weight_file_path)
+        
+        # elapsed_time = time() - t
+        # hours, rem = divmod(elapsed_time, 3600)
+        # minutes, seconds = divmod(rem, 60)
+        # print("ELMo Encoder loaded in {:0>2}h{:0>2}m{:05.2f}s".format(int(hours),int(minutes),seconds))
+    
+#     def extract_char_embedding(self, encoded_input):
+#         # return char embeddings excluding first and last chars (in ELMo BOS and EOS)
+#         return encoded_input[:, 1:, :]
+
+#     def pool_contextualized_embedding(self, encoded_input):
+#         # pool along the number of word in the sentence
+#         # max or min pooling can handle padding operated by ELMo tokenizer
+#         return self.pooling_function(encoded_input, dim = 1)
+        
+#     def forward(self, inputs) -> Any:
+#         encoded_input = self.encoder(inputs)['activations']
+        
+#         if type(self.return_format) == int and self.return_format < 3 and self.return_format >= 0:
+            
+#             # extract the embedding of interest
+#             filtered_encoded_input = encoded_input[self.return_format]
+            
+#             if self.return_format == 0:
+#                 return self.extract_char_embedding(filtered_encoded_input)
+
+#             elif self.return_format == 1 or self.return_format == 2:
+#                 return self.pool_contextualized_embedding(filtered_encoded_input)
+
+#         elif self.return_format == 'concat':
+#             char_embedding = self.extract_char_embedding(encoded_input[0])
+#             lvl1_embedding = self.pool_contextualized_embedding(encoded_input[1])
+#             lvl2_embedding = self.pool_contextualized_embedding(encoded_input[2])
+
+#             return torch.stack()
