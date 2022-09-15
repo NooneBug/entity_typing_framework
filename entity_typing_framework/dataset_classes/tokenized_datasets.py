@@ -111,7 +111,9 @@ class GeneralTokenizedDataset(Dataset):
         return:
             see `BatchEncoding <https://huggingface.co/docs/transformers/v4.15.0/en/main_classes/tokenizer#transformers.BatchEncoding>`_
         '''
-        max_len, avg_len = self.compute_max_length(sentences, max_tokens)
+        max_len, avg_len = self.compute_max_length(sentences, max_tokens) # JUAN
+        # max_len = 52
+        # avg_len = 29.31
         return self.tokenize_sentences(sentences, max_len), max_len, avg_len
     
     def compute_max_length(self, sent, max_tokens=80):
@@ -152,7 +154,7 @@ class ELMoTokenizedDataset(GeneralTokenizedDataset):
         self.mention_mask = self.create_mention_mask()
 
     def create_mention_mask(self):
-        mention_mask = torch.zeros(len(self.sentences), self.max_length)
+        mention_mask = torch.zeros((len(self.sentences), self.max_length), dtype=torch.int8)
         for i, s in enumerate(self.sentences):
             mention_start = len(s['left_context_tokens'].split())
             mention_end = mention_start + len(s['mention_span'].split())
@@ -163,6 +165,16 @@ class ELMoTokenizedDataset(GeneralTokenizedDataset):
         # create a fake sentence to force the tokenizer pad the sentence to tokenize
         # assuming to use allennlp.modules.elmo.batch_to_ids
         return torch.stack([self.tokenizer([s, ['a' for _ in range(max_len)]])[0][:max_len,:] for s in tqdm(sentences, desc=f'tokenize sentences with max_lenght: {max_len}')])
+
+    # def tokenize_sentences(self, max_len):
+    #     # create a fake sentence to force the tokenizer pad the sentence to tokenize
+    #     # assuming to use allennlp.modules.elmo.batch_to_ids
+    #     tokenized_sentences = []
+    #     fake_s = ['a' for _ in range(max_len)]
+    #     for _ in tqdm(range(len(self.sentences)), desc=f'tokenize sentences with max_lenght: {max_len}'):
+    #         s = self.sentences.pop(0)
+    #         tokenized_sentences.append(self.tokenizer([s, fake_s])[0][:max_len,:])
+    #     return torch.stack(tokenized_sentences)
 
     def tokenize_single_sentence(self, sentence):
         # assuming to use allennlp.modules.elmo.batch_to_ids
