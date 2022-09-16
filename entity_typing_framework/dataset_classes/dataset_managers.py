@@ -121,9 +121,11 @@ class DatasetManager(LightningDataModule):
             # create
             # tokenizer = self.instance_tokenizer(bertlike_model_name = self.tokenizer_params['bertlike_model_name'])
             tokenizer = self.instance_tokenizer(**self.tokenizer_params)
-            self.tokenized_datasets = {partition_name: IMPLEMENTED_CLASSES_LVL0[self.tokenizer_params['name']](dataset,
-                                                                                self.type2id,
-                                                                                tokenizer,
+            self.tokenized_datasets = {partition_name: IMPLEMENTED_CLASSES_LVL0[self.tokenizer_params['name']](
+                                                                                dataset=dataset,
+                                                                                type2id=self.type2id,
+                                                                                tokenizer=tokenizer,
+                                                                                partition_name=partition_name,
                                                                                 **self.tokenizer_params
                                                                                 ) for partition_name, dataset in self.datasets.partitions.items()
                                 }
