@@ -13,4 +13,10 @@ class DatasetManagerLarge(DatasetManager):
     self.tokenizer_params['slice_dirpath'] = slice_dirpath
     
 class ELMoDatasetManagerLarge(ELMoDatasetManager, DatasetManagerLarge):
-  pass
+  def get_tokenizer_config_name(self):
+        config_name = f"elmo_T{self.tokenizer_params['max_tokens']}"
+        if 'slice_dimension' in self.tokenizer_params:
+            config_name += f"_SD{self.tokenizer_params['slice_dimension']}"
+        config_name += '_light' if self.rw_options['light'] else ''
+
+        return config_name

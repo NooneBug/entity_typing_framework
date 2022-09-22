@@ -9,9 +9,9 @@ class GeneralTokenizedDataset(Dataset):
                 dataset : BaseDataset, 
                 type2id : dict,
                 tokenizer,
-                max_tokens,
-                name : str,
-                partition_name: str,
+                max_tokens = 80,
+                name : str = '',
+                partition_name: str = '',
                 **kwargs) -> None:
         super().__init__()
         
@@ -24,10 +24,11 @@ class GeneralTokenizedDataset(Dataset):
         self.partition_name = partition_name
 
         self.sentences = self.extract_sentences_from_dataset(dataset)
-        sentences = [self.create_sentence(s) for s in self.sentences]
-        self.max_len, self.avg_len = self.compute_max_length(sentences, self.max_tokens)
+        self.processed_sentences = [self.create_sentence(s) for s in self.sentences]
+        self.max_len, self.avg_len = self.compute_max_length()
+        # self.max_len, self.avg_len = 52, 26.4
 
-        self.tokenized_data = self.tokenize(sentences, self.dataset.labels) # è un dict, valutare se si vuole srotolare in variabili
+        self.tokenized_data = self.tokenize(self.sentences, self.processed_sentences, self.dataset.labels) # è un dict, valutare se si vuole srotolare in variabili
         
         
 
@@ -49,7 +50,7 @@ class GeneralTokenizedDataset(Dataset):
         return:
             a torch.tensor with shape :code:`len(types), num_types` containing one-hot encodings of types of each example in the dataset
         '''
-        one_hot = torch.zeros(len(types), num_types)
+        one_hot = torch.zeros(len(types), num_types, dtype=torch.int8)
         for id, t in enumerate(types):
             one_hot[id, t] = 1
         return one_hot
@@ -105,7 +106,7 @@ class GeneralTokenizedDataset(Dataset):
         self.sentences = None
 
     # TODO: modify documentation
-    def tokenize(self, sentences, types):
+    def tokenize(self, original_sentences, processed_sentences, types):
         '''
         tokenizes all sentences using the tokenizer instantiate by :code:`instance_tokenizer`
 
@@ -122,8 +123,9 @@ class GeneralTokenizedDataset(Dataset):
         '''
         
         # tokenize sentences
-        # JUAN: perchè non selfiamo questo?
-        tokenized_sentences = self.tokenize_sentences(sentences, self.max_len)
+        tokenized_sentences = self.tokenize_sentences(original_sentences = original_sentences, 
+                                                    processed_sentences = processed_sentences 
+                                                    )
 
         # tokenize types
         self.tokenized_types = self.tokenize_types(types)
@@ -138,7 +140,7 @@ class GeneralTokenizedDataset(Dataset):
         
 
     
-    def compute_max_length(self, sent, max_tokens=80):
+    def compute_max_length(self):
         '''
         compute the maximum number of tokens in the dataset. This method is used to set the :code:`max_length` parameters when calling the tokenizer.
 
@@ -152,12 +154,12 @@ class GeneralTokenizedDataset(Dataset):
 
         max_length = 0
         total_tokens = 0
-        for s in tqdm(sent, desc="computing max length"):
-            tokens = min(len(self.tokenize_single_sentence(s)), max_tokens)
+        for s in tqdm(self.processed_sentences, desc="computing max length"):
+            tokens = min(len(self.tokenize_single_sentence(s)), self.max_tokens)
             total_tokens += tokens
             if tokens > max_length:
                 max_length = tokens
-        avg_len = total_tokens/len(sent)
+        avg_len = total_tokens/len(self.processed_sentences)
         print('\nmax length : {} (special tokens may be included in the count)'.format(max_length))
         print('\navg length : {:.2f} (special tokens may be included in the count)'.format(avg_len))
         return max_length, avg_len
@@ -165,7 +167,7 @@ class GeneralTokenizedDataset(Dataset):
     def tokenize_single_sentence(self, sentence, max_tokens):
         raise Exception('Please, implement this function')
 
-    def tokenize_sentences(self, sentences):
+    def tokenize_sentences(self, original_sentences, processed_sentences, max_len):
         raise Exception('Please, implement this function')
 
     def __len__(self):
@@ -176,20 +178,20 @@ class ELMoTokenizedDataset(GeneralTokenizedDataset):
     def __init__(self, dataset: BaseDataset, type2id: dict, tokenizer, max_tokens, name: str, partition_name: str, **kwargs) -> None:
         super().__init__(dataset, type2id, tokenizer, max_tokens, name, partition_name)
 
-    def create_mention_mask(self):
-        mention_mask = torch.zeros((len(self.sentences), self.max_len), dtype=torch.int8)
-        for i, s in enumerate(self.sentences):
+    def create_mention_mask(self, original_sentence):
+        mention_mask = torch.zeros((len(original_sentence), self.max_len), dtype=torch.int8)
+        for i, s in enumerate(original_sentence):
             mention_start = len(s['left_context_tokens'].split())
             mention_end = mention_start + len(s['mention_span'].split())
             mention_mask[i][mention_start:mention_end] = 1
         return mention_mask
 
-    def tokenize_sentences(self, sentences, max_len):
+    def tokenize_sentences(self, original_sentences, processed_sentences):
         # create a fake sentence to force the tokenizer pad the sentence to tokenize
         # assuming to use allennlp.modules.elmo.batch_to_ids
-        fake_s = ['a' for _ in range(max_len)]
-        input_ids = torch.stack([self.tokenizer([s, fake_s])[0][:max_len,:] for s in tqdm(sentences, desc=f'tokenize sentences with max_lenght: {max_len}')])
-        mention_mask = self.create_mention_mask()
+        fake_s = ['a' for _ in range(self.max_len)]
+        input_ids = torch.stack([self.tokenizer([s, fake_s])[0][:self.max_len,:] for s in tqdm(processed_sentences, desc=f'tokenize sentences with max_lenght: {self.max_len}')]).to(torch.int16)
+        mention_mask = self.create_mention_mask(original_sentences)
         input_ids = {
             'input_ids' : input_ids,
             'mention_mask' : mention_mask
@@ -346,11 +348,12 @@ class BaseBERTTokenizedDataset(GeneralTokenizedDataset):
         else:
             return ' '.join(string) 
    
-    def tokenize_sentences(self, sentences, max_len):
-        tokenized_sentences = self.tokenizer(sentences, return_tensors='pt', max_length = max_len, padding = 'max_length', truncation=True)
+    def tokenize_sentences(self, processed_sentences, **kwargs):
+    # def tokenize_sentences(self, sentences, max_len):
+        tokenized_sentences = self.tokenizer(processed_sentences, return_tensors='pt', max_length = self.max_len, padding = 'max_length', truncation=True)
         tokenized_sentences = {
-            'input_ids' : tokenized_sentences['input_ids'],
-            'attention_mask' : tokenized_sentences['attention_mask']
+            'input_ids' : tokenized_sentences['input_ids'].to(torch.int16),
+            'attention_mask' : tokenized_sentences['attention_mask'].to(torch.int8)
         }
         return tokenized_sentences
 

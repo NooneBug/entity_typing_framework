@@ -375,4 +375,7 @@ class ELMoDatasetManager(DatasetManager):
         return batch_to_ids
 
     def get_tokenizer_config_name(self):
-        return f"elmo_T{self.tokenizer_params['max_tokens']}"
+        config_name = f"elmo_T{self.tokenizer_params['max_tokens']}"
+        config_name += '_light' if self.rw_options['light'] else ''
+
+        return config_name

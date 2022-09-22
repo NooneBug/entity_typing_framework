@@ -98,6 +98,8 @@ class BERTEncoder(BaseBERTLikeEncoder):
         Return:
             encoder_output: parameters processed by DistilBERT and aggregated by the method :code:`aggregate_function`
         '''
+        batched_tokenized_sentence = batched_tokenized_sentence.to(torch.int32)
+        batched_attn_masks = batched_attn_masks.to(torch.int32)
         return self.aggregate_function(self.encoder(batched_tokenized_sentence, batched_attn_masks))
 
     def aggregate_function(self, encoder_output):
@@ -150,6 +152,8 @@ class DistilBERTEncoder(BaseBERTLikeEncoder):
         Return:
             encoder_output: parameters processed by DistilBERT and aggregated by the method :code:`aggregate_function`
         '''
+        batched_tokenized_sentence = batched_tokenized_sentence.to(torch.int32)
+        batched_attn_masks = batched_attn_masks.to(torch.int32)
         return self.aggregate_function(self.encoder(batched_tokenized_sentence, batched_attn_masks))
 
     def aggregate_function(self, encoder_output):
@@ -300,6 +304,8 @@ class ELMoEncoder(LightningModule):
 
         # batched_tokenized_sentence : [batch, max_len, 50]
         # mention_mask : [batch, max_len]
+
+        batched_tokenized_sentence = batched_tokenized_sentence.to(torch.int32)
 
         elmo_representation = self.encoder(batched_tokenized_sentence)['elmo_representations'][0]
         # elmo_representation : [batch, max_len, 1024]

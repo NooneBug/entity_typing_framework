@@ -16,7 +16,7 @@ class SliceManager():
     self.n_examples = n_examples
     
 
-  def tokenize(self, sentences, types, tokenize_fn, save_slice_fn):
+  def tokenize(self, original_sentences, processed_sentences, types, tokenize_fn, save_slice_fn):
     
     # prepare empty directory for the slices
     slice_partition_dirpath = os.path.join(self.slice_dirpath, self.partition_name)
@@ -36,7 +36,9 @@ class SliceManager():
       start_idx = i * self.slice_dimension
       end_idx = start_idx + self.slice_dimension
 
-      slice_tokenized_data = tokenize_fn(sentences[start_idx:end_idx], types[start_idx:end_idx])
+      slice_tokenized_data = tokenize_fn(original_sentences = original_sentences[start_idx:end_idx], 
+                                          processed_sentences = processed_sentences[start_idx:end_idx], 
+                                          types = types[start_idx:end_idx])
 
       # save slice
       slice_mapping.update(save_slice_fn(slice_tokenized_data=slice_tokenized_data, slice_idx=i, slice_partition_dirpath=slice_partition_dirpath))
@@ -49,8 +51,12 @@ class ELMoTokenizedDatasetLarge(ELMoTokenizedDataset):
     self.slice_manager = SliceManager(partition_name=partition_name, slice_dirpath=slice_dirpath, slice_dimension=slice_dimension, n_examples=dataset.get_elements_number())
     super().__init__(dataset, type2id, tokenizer, max_tokens, name, partition_name, **kwargs)
 
-  def tokenize(self, sentences, types):
-    return self.slice_manager.tokenize(sentences=sentences, types=types, tokenize_fn=super().tokenize, save_slice_fn=self.save_slice)
+  def tokenize(self, original_sentences, processed_sentences, types):
+    return self.slice_manager.tokenize(original_sentences=original_sentences, 
+                                        processed_sentences=processed_sentences,
+                                        types=types, 
+                                        tokenize_fn=super().tokenize, 
+                                        save_slice_fn=self.save_slice)
 
   def save_slice(self, slice_tokenized_data, slice_idx, slice_partition_dirpath):
     # prepare dirs
@@ -97,8 +103,12 @@ class BaseBERTTokenizedDatasetLarge(BaseBERTTokenizedDataset):
     super().__init__(dataset, type2id, tokenizer, name, bertlike_model_name, max_mention_words, max_left_words, max_right_words, max_tokens, partition_name)
 
 
-  def tokenize(self, sentences, types):
-    return self.slice_manager.tokenize(sentences=sentences, types=types, tokenize_fn=super().tokenize, save_slice_fn=self.save_slice)
+  def tokenize(self, original_sentences, processed_sentences, types):
+    return self.slice_manager.tokenize(original_sentences=original_sentences, 
+                                        processed_sentences=processed_sentences,
+                                        types=types, 
+                                        tokenize_fn=super().tokenize, 
+                                        save_slice_fn=self.save_slice)
 
   def save_slice(self, slice_tokenized_data, slice_idx, slice_partition_dirpath):
     # prepare dirs

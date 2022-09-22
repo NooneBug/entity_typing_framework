@@ -38,7 +38,7 @@ class BCELossModule(LossModule):
         self.loss = IMPLEMENTED_CLASSES_LVL1[name](**loss_params)
     
     def compute_loss(self, encoded_input, type_representation):
-        return self.loss(encoded_input, type_representation)
+        return self.loss(encoded_input, type_representation.to(torch.float32))
 
 # class LabelRankingLoss(Metric):
 #     """Computes the label ranking loss for multilabel data [1]. The score is corresponds to the average number of
