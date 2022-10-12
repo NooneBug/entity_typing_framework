@@ -37,5 +37,6 @@ IMPLEMENTED_CLASSES_LVL0 = {
     'BERT_ET_DatasetLarge' : BERT_ET_DatasetLarge,
     'BaseBERTTokenizedDatasetLarge' : BaseBERTTokenizedDatasetLarge,
     'ELMoTokenizedDatasetLarge' : ELMoTokenizedDatasetLarge,
+    'GloVeTokenizedDataset' : GloVeTokenizedDataset
     # 'BoxEmbeddingBCELoss' : BoxEmbeddingLogProbBCELoss,
     }

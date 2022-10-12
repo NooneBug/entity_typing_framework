@@ -379,3 +379,88 @@ class ELMoDatasetManager(DatasetManager):
         config_name += '_light' if self.rw_options['light'] else ''
 
         return config_name
+
+from tqdm import tqdm
+import numpy as np
+
+class GloVeDatasetManager(DatasetManager):
+
+    def __init__(self, dataset_paths: dict, dataset_reader_params: dict, tokenizer_params: dict, dataset_params: dict, dataloader_params: dict, rw_options: dict):
+        
+        super().__init__(dataset_paths, dataset_reader_params, tokenizer_params, dataset_params, dataloader_params, rw_options)
+        
+        if self.rw_options['modality'] == 'load':
+
+            # we dont need glove vectors since we directly load a tokenized dataset
+
+            # folder_path = self.rw_options['dirpath']
+            # with open(os.path.join(folder_path, self.get_tokenizer_config_name() + '_glove_vectors.pkl'), 'rb') as inp:
+            #     glove_vectors = pickle.load(inp)
+
+            self.embs_npa = {}
+            self.vocab = {}
+
+        elif self.rw_options['modality'] == 'create' or self.rw_options['modality'] == 'createandsave':
+        
+            path = tokenizer_params['glove_path']
+
+            vocab,embeddings = [],[]
+
+            with open(path,'rt') as fi:
+                full_content = fi.read().strip().split('\n')
+
+            for i in tqdm(range(len(full_content)), desc=f'Reading GloVe vectors from {path}...'):
+                i_word = full_content[i].split(' ')[0]
+                i_embeddings = [float(val) for val in full_content[i].split(' ')[1:]]
+                vocab.append(i_word)
+                embeddings.append(i_embeddings)
+
+            embs_npa = np.array(embeddings)
+
+            #insert '<pad>' and '<unk>' tokens at start of vocab_npa.
+            vocab = ['<pad>', '<unk>'] + vocab
+
+            pad_emb_npa = np.zeros((1,embs_npa.shape[1]))   #embedding for '<pad>' token.
+            unk_emb_npa = np.mean(embs_npa,axis=0,keepdims=True)    #embedding for '<unk>' token.
+
+            #insert embeddings for pad and unk tokens at top of embs_npa.
+            self.embs_npa = np.vstack((pad_emb_npa, unk_emb_npa, embs_npa))
+            self.vocab = {k: i for i, k in enumerate(vocab)}
+
+            del embeddings, vocab
+            
+            if self.rw_options['modality'] == 'createandsave':
+                folder_path = self.rw_options['dirpath']
+                with open(os.path.join(folder_path, self.get_tokenizer_config_name() + '_glove_vectors.pkl'), 'wb') as out:
+                    pickle.dump({'embs_npa' : self.embs_npa, 'vocab' : self.vocab}, out, protocol=pickle.HIGHEST_PROTOCOL)
+                    
+
+    def instance_tokenizer(self, **kwargs):
+        return GloVeTokenizer(vectors=self.embs_npa, vocab = self.vocab)
+
+    def get_tokenizer_config_name(self):
+        config_name = f"glove_T{self.tokenizer_params['max_tokens']}"
+        config_name += '_light' if self.rw_options['light'] else ''
+
+        return config_name
+
+import torch
+
+class GloVeTokenizer():
+    def __init__(self, vectors, vocab) -> None:
+        self.global_vectors = vectors
+        self.vocab = vocab
+    
+    def tokenize(self, input_sentence, max_len):
+        tokenized = torch.full((max_len, 300), 0.)
+        for i, word in enumerate(input_sentence):
+            if i < max_len:
+                if word in self.vocab:
+                    tok = self.global_vectors[self.vocab[word]]
+                else:
+                    tok = self.global_vectors[self.vocab['<unk>']]
+                tokenized[i] = tokenized[i] + tok # since tokenized is initialized with 0s we can sum
+        return tokenized
+
+    def tokenize_single_sentence(self, input_sentence):
+        return input_sentence

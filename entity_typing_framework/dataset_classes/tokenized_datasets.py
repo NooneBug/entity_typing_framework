@@ -172,7 +172,6 @@ class GeneralTokenizedDataset(Dataset):
 
     def __len__(self):
         return self.n_examples
-
 class ELMoTokenizedDataset(GeneralTokenizedDataset):
 
     def __init__(self, dataset: BaseDataset, type2id: dict, tokenizer, max_tokens, name: str, partition_name: str, **kwargs) -> None:
@@ -214,6 +213,21 @@ class ELMoTokenizedDataset(GeneralTokenizedDataset):
 
     def create_sentence(self, sentence):
         return super().create_sentence(sentence).split()
+
+class GloVeTokenizedDataset(ELMoTokenizedDataset):
+    def tokenize_sentences(self, original_sentences, processed_sentences):
+        input_ids = torch.stack([self.tokenizer.tokenize(s, self.max_len) for s in tqdm(processed_sentences, desc=f'tokenize sentences with max_lenght: {self.max_len}')])
+        mention_mask = self.create_mention_mask(original_sentences)
+        input_ids = {
+            'input_ids' : input_ids,
+            'mention_mask' : mention_mask
+        }
+        return input_ids
+    
+    def tokenize_single_sentence(self, sentence):
+        return self.tokenizer.tokenize_single_sentence(sentence)
+
+
 
 class BaseBERTTokenizedDataset(GeneralTokenizedDataset):
     '''

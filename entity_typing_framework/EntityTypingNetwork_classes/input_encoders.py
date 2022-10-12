@@ -2,6 +2,7 @@ from typing import Any
 from transformers import AutoModel
 from pytorch_lightning.core.lightning import LightningModule
 from transformers import PfeifferConfig, HoulsbyConfig
+from torch.nn import LSTM, Dropout
 
 class BaseBERTLikeEncoder(LightningModule):
     '''
@@ -276,7 +277,98 @@ class AdapterBERTEncoder(BERTEncoder):
             state_dict = self.state_dict()
         return state_dict
 
-from allennlp.modules.elmo import Elmo, _ElmoBiLm
+class GloVeEncoder(LightningModule):
+
+    def __init__(self, name, **kwargs):
+        super().__init__(**kwargs)
+
+    def forward(self, batched_tokenized_sentence, mention_mask, **kwargs):
+        # mention average
+
+        mention_vectors = batched_tokenized_sentence * mention_mask.unsqueeze(dim = 2).expand(-1, -1, batched_tokenized_sentence.shape[-1]) 
+        
+        num = torch.sum(mention_vectors, dim = 1)
+        denom = torch.sum(mention_mask, dim = 1)
+
+        
+        averaged_mention = num/denom.unsqueeze(1).expand(-1, batched_tokenized_sentence.shape[-1])
+        zeros = torch.zeros_like(averaged_mention)
+        
+        averaged_mention = torch.where(torch.isnan(averaged_mention), zeros, averaged_mention)
+
+        return averaged_mention
+
+    def get_representation_dim(self):
+        return 300
+
+    def get_state_dict(self, smart_save):
+        return self.state_dict()
+
+class LSTMGloVeEncoder(GloVeEncoder):
+    def __init__(self, name, lstm_mention_window, **kwargs):
+        super().__init__(name, **kwargs)
+        self.lstm_mention_window = lstm_mention_window
+        self.LSTM = LSTM(input_size = 300, hidden_size = 180, num_layers = 1, dropout = .5)
+        self.glove_dropout = Dropout(.5)
+
+    def forward(self, batched_tokenized_sentence, mention_mask, **kwargs):
+        mention_representation = super().forward(batched_tokenized_sentence, mention_mask, **kwargs)
+
+        extended_mention = self.extract_extended_mention(batched_tokenized_sentence=batched_tokenized_sentence, mention_mask=mention_mask)
+
+        dropout_mention = self.glove_dropout(extended_mention)
+        extended_mention_representation = self.lstm_dropout(self.LSTM(dropout_mention))
+        return torch.hstack((mention_representation, extended_mention_representation))
+
+    def extract_extended_mention(self, batched_tokenized_sentence, mention_mask, offset = 1):
+        
+        batched_tokenized_mention = torch.zeros_like(batched_tokenized_sentence)
+        
+        for i, x in enumerate(batched_tokenized_sentence):
+            nz = mention_mask[i].nonzero()
+            mention_len = len(nz)
+            # TODO: better to avoid...
+            if mention_len > 0:
+                start_index = nz[0]
+                end_index = start_index + mention_len
+                batched_tokenized_mention[i, 0:mention_len + offset, :] = x[max(start_index - offset, 0) : end_index +1]
+            else:
+                print(f'Found an example with missing mention: try to set max_tokens higher than {batched_tokenized_sentence.shape[1]}')
+        
+        return batched_tokenized_mention
+
+import torch.nn.functional as F
+
+class NFETCEncoder(LSTMGloVeEncoder):
+    def __init__(self, name, context_window, **kwargs):
+        super().__init__(name, **kwargs)       
+        self.context_window = context_window
+        self.BiLSTM = LSTM(input_size = 300, hidden_size = 180, num_layers = 1, bidirectional = True, dropout = .5)
+
+    def forward(self, batched_tokenized_sentence, mention_mask, **kwargs):
+        mention_and_LSTM_repr = super().forward(batched_tokenized_sentence, mention_mask, **kwargs)
+
+        mention_and_context = self.extract_extended_mention(batched_tokenized_sentence, mention_mask, offset=self.context_window)
+
+        dropout_mention = self.glove_dropout(mention_and_context)
+        extended_mention_representation = self.apply_attention(self.BiLSTM(dropout_mention))
+
+        return torch.hstack((mention_and_LSTM_repr, extended_mention_representation))
+
+        
+    def apply_attention(self, encoder_out, final_hidden):
+        hidden = final_hidden.squeeze(0)
+        #M = torch.tanh(encoder_out)
+        attn_weights = torch.bmm(encoder_out, hidden.unsqueeze(2)).squeeze(2)
+        soft_attn_weights = F.softmax(attn_weights, 1)
+        new_hidden = torch.bmm(encoder_out.transpose(1,2), soft_attn_weights.unsqueeze(2)).squeeze(2)
+        #print (wt.shape, new_hidden.shape)
+        #new_hidden = torch.tanh(new_hidden)
+        #print ('UP:', new_hidden, new_hidden.shape)
+        
+        return new_hidden
+
+from allennlp.modules.elmo import Elmo
 import torch
 from time import time
 ELMO_ENCODING_MODES = ['mmc', 'm_mc']
