@@ -40,6 +40,23 @@ class BCELossModule(LossModule):
     def compute_loss(self, encoded_input, type_representation):
         return self.loss(encoded_input, type_representation.to(torch.float32))
 
+class WeightedBCELossModule(LossModule):
+    def __init__(self, type2id, loss_params, **kwargs) -> None:
+        super().__init__(type2id, loss_params)
+        name = loss_params.pop('name')
+
+        id2types = {v: k for k, v in type2id.items()}
+
+        self.type_weights = torch.tensor([float(len(id2types[i].split('/')) - 1) for i, t in enumerate(type2id)]).cuda()        
+
+        self.loss = IMPLEMENTED_CLASSES_LVL1[name](reduction = 'none', **loss_params)
+
+    def compute_loss(self, encoded_input, type_representation):
+        intermediate_losses = self.loss(encoded_input, type_representation.to(torch.float32))
+        final_loss = torch.mean(self.type_weights * intermediate_losses)
+
+        return final_loss
+
 # class LabelRankingLoss(Metric):
 #     """Computes the label ranking loss for multilabel data [1]. The score is corresponds to the average number of
 #     label pairs that are incorrectly ordered given some predictions weighted by the size of the label set and the
