@@ -17,7 +17,7 @@ class KENNModule(Projector):
     self.type2id = kwargs['type2id']
 
     if not clause_file_path:
-      clause_file_path = 'kenn_tmp/clause_file.txt'
+      clause_file_path = f'kenn_tmp/{kb_mode}_clause_file.txt'
       id2type = {v: k for k, v in self.type2id.items()}
       # generate and save KENN clauses
       self.automatic_build_clauses(types_list = [id2type[idx] for idx in range(len(id2type))], clause_file_path=clause_file_path,
@@ -28,6 +28,8 @@ class KENNModule(Projector):
                           activation=lambda x: x, # linear activation
                           initial_clause_weight=clause_weight
                           )
+    
+    self.kb_mode = kb_mode
   
   def apply_knowledge_enhancement(self, prekenn_input):
     # self.ke(prekenn)[0] -> output
@@ -79,7 +81,7 @@ class KENNClassifierForIncrementalTraining(ClassifierForIncrementalTraining):
     new_type_number = len(father_kwargs['type2id']) - kwargs['type_number']
     all_types = list(type2id.keys())
     new_types = all_types[-new_type_number:]
-    clause_file_path = 'kenn_tmp/incremental_clause_file_path.txt'
+    clause_file_path = f'kenn_tmp/{self.kb_mode}_incremental_clause_file.txt'
     cw = '_' if kwargs['learnable_clause_weight'] else kwargs['clause_weight']
     kenn_utils.generate_constraints_incremental(all_types=all_types,
                                                 new_types=new_types,
