@@ -19,7 +19,8 @@ class MainModule(LightningModule):
     checkpoint_to_load : str = None,
     avoid_sanity_logging : bool = False,
     smart_save : bool = True,
-    learning_rate : float = 5e-4 # the default value is the one used in EMNLP 2022 experiments
+    learning_rate : float = 5e-4, # the default value is the one used in EMNLP 2022 experiments
+    metric_manager_name : str = 'MetricManager'
     ):
 
         super().__init__()
@@ -35,8 +36,8 @@ class MainModule(LightningModule):
             self.ET_Network = IMPLEMENTED_CLASSES_LVL0[self.ET_Network_params['name']](**self.ET_Network_params, type_number = self.type_number, type2id = self.type2id)
         else:
             self.ET_Network = self.load_ET_Network(ET_Network_params=self.ET_Network_params, checkpoint_to_load=checkpoint_to_load)
-        self.metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='dev')
-        self.test_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test')
+        self.metric_manager = IMPLEMENTED_CLASSES_LVL0[metric_manager_name](num_classes=self.type_number, device=self.device, type2id = self.type2id, prefix='dev')
+        self.test_metric_manager = IMPLEMENTED_CLASSES_LVL0[metric_manager_name](num_classes=self.type_number, device=self.device, type2id = self.type2id, prefix='test')
 
         self.inference_manager = IMPLEMENTED_CLASSES_LVL0[inference_params['name']](type2id=self.type2id, **inference_params)
         self.loss = IMPLEMENTED_CLASSES_LVL0[loss_module_params['name']](type2id=self.type2id, **loss_module_params)
@@ -397,36 +398,38 @@ class IncrementalMainModule(MainModule):
             
         if self.global_step > 0 or not self.avoid_sanity_logging:
             # wandb log
-            self.logger_module.add(key = 'epoch', value = self.current_epoch)
 
             metrics = self.metric_manager.compute()
-            self.logger_module.log_all_metrics(metrics)
+            if self.log_validation_metrics:
+                self.logger_module.add(key = 'epoch', value = self.current_epoch)
+                self.logger_module.log_all_metrics(metrics)
 
-            pretraining_metrics = self.pretraining_metric_manager.compute()
-            self.logger_module.log_all_metrics(pretraining_metrics)
+                pretraining_metrics = self.pretraining_metric_manager.compute()
+                self.logger_module.log_all_metrics(pretraining_metrics)
 
-            incremental_metrics = self.incremental_metric_manager.compute()
-            self.logger_module.log_all_metrics(incremental_metrics)
-            
-            self.logger_module.log_loss(name = 'losses/val_loss', value = average_val_loss)
-            self.logger_module.log_loss(name = 'losses/pretraining_val_loss', value = average_pretraining_val_loss)
-            self.logger_module.log_loss(name = 'losses/incremental_val_loss', value = average_incremental_val_loss)
-            
-            self.log_test_metrics()
+                incremental_metrics = self.incremental_metric_manager.compute()
+                self.logger_module.log_all_metrics(incremental_metrics)
+                self.last_validation_metrics = incremental_metrics
+                
+                self.logger_module.log_loss(name = 'losses/val_loss', value = average_val_loss)
+                self.logger_module.log_loss(name = 'losses/pretraining_val_loss', value = average_pretraining_val_loss)
+                self.logger_module.log_loss(name = 'losses/incremental_val_loss', value = average_incremental_val_loss)
+                
+                self.log_test_metrics()
 
-            self.logger_module.log_all()
+                self.logger_module.log_all()
 
-            # callback log
-            self.log("losses/val_loss", average_val_loss)
-            self.log("losses/pretraining_val_loss", average_pretraining_val_loss)
-            self.log("losses/incremental_val_loss", average_incremental_val_loss)
+                # callback log
+                self.log("losses/val_loss", average_val_loss)
+                self.log("losses/pretraining_val_loss", average_pretraining_val_loss)
+                self.log("losses/incremental_val_loss", average_incremental_val_loss)
     
     def test_step(self, batch, batch_idx):
         _, _, true_types = batch
         true_types = self.get_true_types_for_metrics(true_types)
         network_output, type_representations = self.ET_Network(batch)
         network_output_for_inference = self.get_output_for_inference(network_output)
-        inferred_types = self.inference_manager.infer_types(*network_output_for_inference)
+        inferred_types = self.inference_manager.infer_types(network_output_for_inference)
 
         # collect predictions for incremental test_dataloaders
         self.test_metric_manager.update(inferred_types, true_types)

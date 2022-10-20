@@ -1,5 +1,6 @@
 import torch
 from entity_typing_framework.utils.flat2hierarchy import get_type2id_original
+import torch.nn.functional as F
 
 class BaseInferenceManager():
     '''
@@ -86,14 +87,34 @@ class BaseInferenceManager():
 
 class MaxInferenceManager(BaseInferenceManager):
     def __init__(self, **kwargs):
-        super().__init__(threshold=None, **kwargs)
+        super().__init__(threshold=0, **kwargs)
 
     def discretize_output(self, network_output):
-        max_values_and_indices = torch.max(network_output, dim = 1)
-        discrete_pred = torch.zeros_like(network_output, device=network_output.device)
-        for dp, i in zip(discrete_pred, max_values_and_indices.indices):
-            dp[i] = 1
+        ids = torch.argmax(network_output, dim = 1)
+        num_classes = network_output.shape[1]
+        discrete_pred = F.one_hot(ids, num_classes)
         return discrete_pred
+
+class MaxLeafInferenceManager(MaxInferenceManager):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.leaves_ids = self.get_leaves(self.type2id)
+    
+    def get_leaves(self, type2id):
+        leaves_ids = []
+        for t1 in type2id:
+            is_leaf = True
+            for t2 in type2id:
+                if t1 != t2 and t1 in t2:
+                    is_leaf = False
+                    break
+            if is_leaf:
+                leaves_ids.append(type2id[t1])
+        return leaves_ids
+    
+    def discretize_output(self, network_output):
+        network_output = network_output[:, self.leaves_ids]
+        return super().discretize_output(network_output)
 
 class ThresholdOrMaxInferenceManager(BaseInferenceManager):
     '''
@@ -105,11 +126,15 @@ class ThresholdOrMaxInferenceManager(BaseInferenceManager):
             threshold to use to discretize the output
     '''
     def discretize_output(self, network_output):
-        discrete_pred = super().discretize_output(network_output)
-        # perform max inference to avoid void predictions
-        max_values_and_indices = torch.max(network_output, dim = 1)
-        for dp, i in zip(discrete_pred, max_values_and_indices.indices):
-            dp[i] = 1
+        # threshold inference
+        discrete_pred_threshold = super().discretize_output(network_output)
+        # max inference to avoid void predictions
+        ids = torch.argmax(network_output, dim = 1)
+        num_classes = network_output.shape[1]
+        discrete_pred_max = F.one_hot(ids, num_classes)
+        # aggregate
+        discrete_pred = discrete_pred_threshold + discrete_pred_max
+        discrete_pred = torch.where(discrete_pred >= 1, 1, 0)
         return discrete_pred
 
 class FlatToHierarchyThresholdOrMaxInferenceManager(ThresholdOrMaxInferenceManager):

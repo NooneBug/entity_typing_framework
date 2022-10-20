@@ -15,7 +15,7 @@ class BaseDataset:
 
     the :code:`__init__` saves the parameters and automatic calls :code:`read_dataset_partitions()`
     '''
-    def __init__(self, name, dataset_paths, preexistent_type2id = None):
+    def __init__(self, name, dataset_paths, preexistent_type2id : dict = {}):
         self.dataset_paths = dataset_paths
         self.preexistent_type2id = preexistent_type2id
 
@@ -69,8 +69,7 @@ class DatasetPartition:
         right_contexts = []
         labels = []
 
-        if self.preexistent_type2id:
-            all_labels = set()
+        all_labels = set()
 
         with open(self.path, 'r') as inp:
             lines = [json.loads(l) for l in inp.readlines()]

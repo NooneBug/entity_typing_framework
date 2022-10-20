@@ -7,8 +7,9 @@ from torchmetrics.utilities.enums import AverageMethod, MDMCAverageMethod
 
 class MetricManager():
 
-    def __init__(self, num_classes, device, prefix = ''):
+    def __init__(self, num_classes, device, type2id, prefix = ''):
         self.prefix = prefix
+        self.type2id = type2id
 
         self.micro_p = PrecisionCustom(num_classes=num_classes, average='micro', mdmc_average='global').to(device=device)
         self.micro_r = RecallCustom(num_classes=num_classes, average='micro', mdmc_average='global').to(device=device)
@@ -125,6 +126,31 @@ class MetricManagerForIncrementalTypes():
 
     def compute_f1(self, p, r):
         return (2 * p * r) / (p + r)
+
+class LeavesMetricManager(MetricManager):
+
+    def __init__(self, num_classes, device, type2id, prefix=''):
+        self.leaves_ids = self.get_leaves(type2id=type2id)
+        
+        num_classes = len(self.leaves_ids) 
+        
+        super().__init__(num_classes=num_classes, device=device, type2id=type2id, prefix=prefix)
+    
+    def get_leaves(self, type2id):
+        leaves_ids = []
+        for t1 in type2id:
+            is_leaf = True
+            for t2 in type2id:
+                if t1 != t2 and t1 in t2:
+                    is_leaf = False
+                    break
+            if is_leaf:
+                leaves_ids.append(type2id[t1])
+        return leaves_ids
+
+    def update(self, pred, target):
+        target = target[:, self.leaves_ids]
+        return super().update(pred, target)
 
 class PrecisionCustom(Precision):
     def compute(self) -> Tensor:

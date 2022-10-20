@@ -1,4 +1,4 @@
-from entity_typing_framework.dataset_classes.datasets import BaseDataset
+from entity_typing_framework.dataset_classes.datasets import DatasetPartition
 from torch.utils.data import Dataset
 from tqdm import tqdm
 import torch
@@ -6,7 +6,7 @@ import torch
 
 class GeneralTokenizedDataset(Dataset):
     def __init__(self,
-                dataset : BaseDataset, 
+                dataset : DatasetPartition, 
                 type2id : dict,
                 tokenizer,
                 max_tokens = 80,
@@ -164,17 +164,17 @@ class GeneralTokenizedDataset(Dataset):
         print('\navg length : {:.2f} (special tokens may be included in the count)'.format(avg_len))
         return max_length, avg_len
     
-    def tokenize_single_sentence(self, sentence, max_tokens):
+    def tokenize_single_sentence(self, sentence):
         raise Exception('Please, implement this function')
 
-    def tokenize_sentences(self, original_sentences, processed_sentences, max_len):
+    def tokenize_sentences(self, original_sentences, processed_sentences):
         raise Exception('Please, implement this function')
 
     def __len__(self):
         return self.n_examples
 class ELMoTokenizedDataset(GeneralTokenizedDataset):
 
-    def __init__(self, dataset: BaseDataset, type2id: dict, tokenizer, max_tokens, name: str, partition_name: str, **kwargs) -> None:
+    def __init__(self, dataset: DatasetPartition, type2id: dict, tokenizer, max_tokens, name: str, partition_name: str, **kwargs) -> None:
         super().__init__(dataset, type2id, tokenizer, max_tokens, name, partition_name)
 
     def create_mention_mask(self, original_sentence):
@@ -276,7 +276,7 @@ class BaseBERTTokenizedDataset(GeneralTokenizedDataset):
 
     '''
     def __init__(self,
-                dataset : BaseDataset, 
+                dataset : DatasetPartition, 
                 type2id : dict,
                 tokenizer, 
                 name : str,
@@ -374,4 +374,10 @@ class BaseBERTTokenizedDataset(GeneralTokenizedDataset):
     def tokenize_single_sentence(self, sentence):
         return self.tokenizer(sentence, return_tensors='pt')['input_ids'][0]
 
-    
+class MentionSentenceBERTTokenizedDataset(BaseBERTTokenizedDataset):
+    def create_sentence(self, sent_dict):
+        return self.split_and_cut_mention(sent_dict['mention_span'], self.max_mention_words) + \
+        '[SEP]' + self.cut_context(sent_dict['left_context_tokens'], self.max_left_words, False) + \
+        self.split_and_cut_mention(sent_dict['mention_span'], self.max_mention_words) + \
+        self.cut_context(sent_dict['right_context_tokens'], self.max_right_words, True)
+        
