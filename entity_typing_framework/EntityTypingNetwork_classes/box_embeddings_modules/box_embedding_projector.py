@@ -84,6 +84,16 @@ class BoxEmbeddingIncrementalProjector(ProjectorForIncrementalTraining):
       self.additional_projector.projection_network.final_linear_layer.weight = torch.nn.Parameter(self.pretrained_projector.projection_network.final_linear_layer.weight.detach().clone())
       self.additional_projector.projection_network.final_linear_layer.bias = torch.nn.Parameter(self.pretrained_projector.projection_network.final_linear_layer.bias.detach().clone())
 
+      # copy BoxDecoder weights
+      # init new parameters to better exploit the hierarchy: the weights of the embedding of a new type are set to the values of the father's ones]
+      pretrained_box_decoder = self.pretrained_projector.box_decoder.box_embeddings
+      additional_box_decoder = self.additional_projector.box_decoder.box_embeddings
+      for t in self.new_types:
+          father = '/'.join(t.split('/')[:-1])
+          idx_father = self.pretrained_projector.type2id[father]
+          idx_t = self.additional_projector.type2id[t] - self.pretrained_projector.type_number
+          additional_box_decoder.weight.data[idx_t] = torch.nn.Parameter(pretrained_box_decoder.weight[idx_father].detach().clone())
+
 class BoxDecoder(LightningModule):
   def __init__(self,
                num_embeddings: int,

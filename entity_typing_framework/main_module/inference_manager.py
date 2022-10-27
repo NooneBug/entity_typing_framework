@@ -178,8 +178,8 @@ class IncrementalThresholdOrMaxInferenceManager(ThresholdOrMaxInferenceManager):
         # apply ThresholdOrMaxInferenceManager on the predictions of the pretrained classifier
         discrete_pred_pretraining = super().discretize_output(network_output_pretraining)
         # incremental inference: apply ThresholdOrMaxInferenceManager only for predictions that were empty
-        discrete_pred_pretraining_base = super(ThresholdOrMaxInferenceManager, self).discretize_output(network_output_pretraining)
-        discrete_pred_incremental = super(ThresholdOrMaxInferenceManager, self).discretize_output(network_output_incremental)
+        discrete_pred_pretraining_base = super().discretize_output(network_output_pretraining)
+        discrete_pred_incremental = super().discretize_output(network_output_incremental)
         for i in (torch.sum(discrete_pred_pretraining_base, dim=1) == 0).nonzero():
           if torch.sum(discrete_pred_incremental[i]) == 0:
             discrete_pred_incremental[i] = super().discretize_output(network_output_incremental[i])

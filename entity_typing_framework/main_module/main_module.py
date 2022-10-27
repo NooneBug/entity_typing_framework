@@ -52,23 +52,6 @@ class MainModule(LightningModule):
         # set devices
         self.metric_manager.set_device(self.device)
         self.test_metric_manager.set_device(self.device)
-    #     # calibrate threshold if requested
-    #     if self.inference_manager.calibrate_threshold:
-    #         # disable validation metrics flag
-    #         self.log_validation_metrics = False
-    #         # iterate over thresholds and call validation routine
-    #         max_f1 = 0
-    #         max_t = 0
-    #         for t in np.arange(.05, 1, .5): # TODO: change to .05
-    #             self.inference_manager.threshold = t
-    #             self.trainer.validate(self.trainer.model, self.trainer.datamodule.val_dataloader())
-    #             f1 = self.last_validation_metrics['dev/macro_example/f1']
-    #             if f1 > max_f1:
-    #                 max_f1 = f1
-    #                 max_t = t
-            
-    #         # set optimal threshold
-    #         self.inference_manager.threshold = max_t
 
     def training_step(self, batch, batch_step):
         network_output, type_representations = self.ET_Network(batch)
@@ -209,19 +192,19 @@ class IncrementalMainModule(MainModule):
         self.type2id_evaluation = { f : type2id_all[f] for f in fathers }
         self.type2id_evaluation.update(type2id_incremental)
 
-        self.metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='')
-        self.pretraining_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='pretraining')
-        self.incremental_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='incremental')
+        self.metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='', type2id=self.type2id)
+        self.pretraining_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='pretraining', type2id=self.type2id)
+        self.incremental_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='incremental', type2id=self.type2id)
 
-        self.test_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test_evolution')
-        self.test_pretraining_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test_pretraining_evolution')
-        self.test_incremental_metric_manager = MetricManager(num_classes=len(self.type2id_evaluation), device=self.device, prefix='test_incremental_evolution')
-        self.test_incremental_only_metric_manager = MetricManager(num_classes=len(self.type2id_incremental), device=self.device, prefix='test_incremental_only_evolution')
+        self.test_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test_evolution', type2id=self.type2id)
+        self.test_pretraining_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test_pretraining_evolution', type2id=self.type2id )
+        self.test_incremental_metric_manager = MetricManager(num_classes=len(self.type2id_evaluation), device=self.device, prefix='test_incremental_evolution', type2id=self.type2id_evaluation)
+        self.test_incremental_only_metric_manager = MetricManager(num_classes=len(self.type2id_incremental), device=self.device, prefix='test_incremental_only_evolution', type2id=self.type2id_incremental)
         
         self.test_incremental_specific_metric_manager = MetricManagerForIncrementalTypes(self.type_number, device=self.device, prefix='test_incremental_evolution')
 
-        self.test_incremental_exclusive_metric_manager = MetricManager(len(self.type2id_evaluation), device=self.device, prefix='test_incremental_evolution')
-        self.test_incremental_only_exclusive_metric_manager = MetricManager(len(self.type2id_incremental), device=self.device, prefix='test_incremental_only_evolution')
+        self.test_incremental_exclusive_metric_manager = MetricManager(len(self.type2id_evaluation), device=self.device, prefix='test_incremental_evolution', type2id=self.type2id_evaluation)
+        self.test_incremental_only_exclusive_metric_manager = MetricManager(len(self.type2id_incremental), device=self.device, prefix='test_incremental_only_evolution', type2id=self.type2id_incremental)
 
 
     def on_fit_start(self):
