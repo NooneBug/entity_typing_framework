@@ -17,7 +17,7 @@ class BaseInferenceManager():
     '''
     def __init__(self, name, threshold = .5, type2id = None, transitive = False):
         
-        self.init_threshold(threshold)
+        self.threshold = self.init_threshold(threshold)
         self.type2id = type2id
         self.transitive = transitive
         # prepare map to fill missing predictions
@@ -29,11 +29,11 @@ class BaseInferenceManager():
     
     def init_threshold(self, threshold):
         if str(threshold).lower() == 'auto':
-            self.threshold = .5
+            threshold = .5
             self.calibrate_threshold = True
         else:
-            self.threshold = threshold
             self.calibrate_threshold = False
+        return threshold
 
     def infer_types(self, network_output):
         discrete_pred = self.discretize_output(network_output)
@@ -47,7 +47,7 @@ class BaseInferenceManager():
         ones = torch.ones(mask.shape).cuda()
         zeros = torch.zeros(mask.shape).cuda()
         discrete_pred = torch.where(mask, ones, zeros)
-        return discrete_pred
+        return discrete_pred.type(torch.int8)
     
     def apply_hierarchy(self, discrete_pred):
         if discrete_pred.device.type == 'cuda' and self.transitive_inference_mat.device.type != 'cuda':
@@ -56,7 +56,7 @@ class BaseInferenceManager():
         discrete_pred = torch.matmul(discrete_pred, self.transitive_inference_mat)
         # clip discret preds > 1 (deriving from consistent predictions)
         discrete_pred = discrete_pred.clip(0, 1)
-        return discrete_pred
+        return discrete_pred.type(torch.int8)
     
     def get_transitive_inference_mat(self, type2id):
         # create ancestors map
@@ -93,7 +93,7 @@ class MaxInferenceManager(BaseInferenceManager):
         ids = torch.argmax(network_output, dim = 1)
         num_classes = network_output.shape[1]
         discrete_pred = F.one_hot(ids, num_classes)
-        return discrete_pred
+        return discrete_pred.type(torch.int8)
 
 class MaxLeafInferenceManager(MaxInferenceManager):
     def __init__(self, **kwargs):
@@ -135,14 +135,14 @@ class ThresholdOrMaxInferenceManager(BaseInferenceManager):
         # aggregate
         discrete_pred = discrete_pred_threshold + discrete_pred_max
         discrete_pred = torch.where(discrete_pred >= 1, 1, 0)
-        return discrete_pred
+        return discrete_pred.type(torch.int8)
 
 class FlatToHierarchyThresholdOrMaxInferenceManager(ThresholdOrMaxInferenceManager):
     def __init__(self, name, threshold = .5, type2id = None):
         if not type2id:
             raise Exception('Error: you must provide type2id to perform inference on a flat dataset')
 
-        self.init_threshold(threshold)
+        self.threshold = self.init_threshold(threshold)
         self.type2id_flat = type2id
         self.type2id_original = get_type2id_original(type2id)
         # using a flat dataset requires transitivity to ensure consistent predictions
@@ -178,11 +178,37 @@ class IncrementalThresholdOrMaxInferenceManager(ThresholdOrMaxInferenceManager):
         # apply ThresholdOrMaxInferenceManager on the predictions of the pretrained classifier
         discrete_pred_pretraining = super().discretize_output(network_output_pretraining)
         # incremental inference: apply ThresholdOrMaxInferenceManager only for predictions that were empty
-        discrete_pred_pretraining_base = super().discretize_output(network_output_pretraining)
-        discrete_pred_incremental = super().discretize_output(network_output_incremental)
+        discrete_pred_pretraining_base = BaseInferenceManager.discretize_output(self, network_output_pretraining)
+        discrete_pred_incremental = BaseInferenceManager.discretize_output(self, network_output_incremental)
         for i in (torch.sum(discrete_pred_pretraining_base, dim=1) == 0).nonzero():
           if torch.sum(discrete_pred_incremental[i]) == 0:
             discrete_pred_incremental[i] = super().discretize_output(network_output_incremental[i])
         # concatenate discretized predictions
         discrete_pred = torch.concat((discrete_pred_pretraining, discrete_pred_incremental), dim=1)
-        return discrete_pred
+        return discrete_pred.type(torch.int8)
+
+class IncrementalDoubleThresholdOrMaxInferenceManager(ThresholdOrMaxInferenceManager):
+    def __init__(self, name, threshold_pretraining=0.5, threshold_incremental=0.5, type2id=None, transitive=False):
+        super().__init__(name, None, type2id, transitive)
+        self.threshold_pretraining = self.init_threshold(threshold_pretraining)
+        self.threshold_incremental = self.init_threshold(threshold_incremental)
+
+    def discretize_output(self, network_output):
+        network_output_pretraining, network_output_incremental = network_output
+        
+        # SELECT threshold_pretraining
+        self.threshold = self.threshold_pretraining
+        # apply ThresholdOrMaxInferenceManager on the predictions of the pretrained classifier
+        discrete_pred_pretraining = super().discretize_output(network_output_pretraining)
+
+        # SELECT threshold_incremental
+        self.threshold = self.threshold_incremental
+        # incremental inference: apply ThresholdOrMaxInferenceManager only for predictions that were empty
+        discrete_pred_pretraining_base = BaseInferenceManager.discretize_output(self, network_output_pretraining)
+        discrete_pred_incremental = BaseInferenceManager.discretize_output(self, network_output_incremental)
+        for i in (torch.sum(discrete_pred_pretraining_base, dim=1) == 0).nonzero():
+          if torch.sum(discrete_pred_incremental[i]) == 0:
+            discrete_pred_incremental[i] = super().discretize_output(network_output_incremental[i])
+        # concatenate discretized predictions
+        discrete_pred = torch.concat((discrete_pred_pretraining, discrete_pred_incremental), dim=1)
+        return discrete_pred.type(torch.int8)

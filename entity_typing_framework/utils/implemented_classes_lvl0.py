@@ -3,7 +3,7 @@ from entity_typing_framework.dataset_classes.large_datasets.large_datasets_for_d
 from entity_typing_framework.dataset_classes.large_datasets.large_tokenized_datasets import BaseBERTTokenizedDatasetLarge, ELMoTokenizedDatasetLarge
 from entity_typing_framework.dataset_classes.tokenized_datasets import BaseBERTTokenizedDataset, ELMoTokenizedDataset, GloVeTokenizedDataset, MentionSentenceBERTTokenizedDataset
 from entity_typing_framework.main_module.NFETC_loss_modules.nfetc_loss_modules import BCENFETCCustomLossModule, BCENFETCLossModule
-from entity_typing_framework.main_module.inference_manager import BaseInferenceManager, FlatToHierarchyThresholdOrMaxInferenceManager, IncrementalThresholdOrMaxInferenceManager, MaxInferenceManager, MaxLeafInferenceManager, ThresholdOrMaxInferenceManager
+from entity_typing_framework.main_module.inference_manager import BaseInferenceManager, FlatToHierarchyThresholdOrMaxInferenceManager, IncrementalDoubleThresholdOrMaxInferenceManager, IncrementalThresholdOrMaxInferenceManager, MaxInferenceManager, MaxLeafInferenceManager, ThresholdOrMaxInferenceManager
 from entity_typing_framework.main_module.losses_modules import BCELossModule, FlatBCELossModule, FlatRankingLossModule, RankingLossModule, WeightedBCELossModule
 from entity_typing_framework.main_module.KENN_loss_modules.kenn_loss_modules import BCEMultiLossModule
 from entity_typing_framework.main_module.metric_manager import MetricManager, LeavesMetricManager
@@ -22,6 +22,7 @@ IMPLEMENTED_CLASSES_LVL0 = {
     'MaxInference' : MaxInferenceManager,
     'ThresholdOrMaxInference' : ThresholdOrMaxInferenceManager,
     'IncrementalThresholdOrMaxInference' : IncrementalThresholdOrMaxInferenceManager,
+    'IncrementalDoubleThresholdOrMaxInference' : IncrementalDoubleThresholdOrMaxInferenceManager,
     'FlatToHierarchyThresholdOrMaxInference' : FlatToHierarchyThresholdOrMaxInferenceManager,
     'BCELossModule' : BCELossModule,
     'BCEMultiLossModule' : BCEMultiLossModule,

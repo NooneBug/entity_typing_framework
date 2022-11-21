@@ -81,13 +81,19 @@ class KENNClassifierForIncrementalTraining(ClassifierForIncrementalTraining):
     new_type_number = len(father_kwargs['type2id']) - kwargs['type_number']
     all_types = list(type2id.keys())
     new_types = all_types[-new_type_number:]
-    clause_file_path = f'kenn_tmp/{self.kb_mode}_incremental_clause_file.txt'
+    
+    if 'clause_file_path' not in kwargs:
+      clause_file_path = f"kenn_tmp/{kwargs['kb_mode']}_incremental_clause_file.txt"
+    else:
+      clause_file_path = kwargs['clause_file_path']
     cw = '_' if kwargs['learnable_clause_weight'] else kwargs['clause_weight']
-    kenn_utils.generate_constraints_incremental(all_types=all_types,
-                                                new_types=new_types,
-                                                filepath=clause_file_path,
-                                                weight=cw,
-                                                mode=kwargs['kb_mode'])
+
+    if kwargs['kb_mode'].lower() != 'none':
+      kenn_utils.generate_constraints_incremental(all_types=all_types,
+                                                  new_types=new_types,
+                                                  filepath=clause_file_path,
+                                                  weight=cw,
+                                                  mode=kwargs['kb_mode'])
     
     # modify the kwargs to instantiate the correct ke by the super().__init__(call)
     incremental_kwargs = deepcopy(father_kwargs)
@@ -100,7 +106,11 @@ class KENNClassifierForIncrementalTraining(ClassifierForIncrementalTraining):
     # predict pretraining types
     pretrain_projected_input = self.pretrained_projector.project_input(input_representation)
     prekenn_pretrain = self.pretrained_projector.classify(pretrain_projected_input)
-    postkenn_pretrain = self.pretrained_projector.apply_knowledge_enhancement(prekenn_pretrain)
+
+    # TODO: pretrained classifier has an unused KENN knowledge enhancer, remove it with refactoring on IncrementalModel
+    # postkenn_pretrain = self.pretrained_projector.apply_knowledge_enhancement(prekenn_pretrain)
+
+    postkenn_pretrain = prekenn_pretrain
 
     # predict incremental types
     prekenn_incremental = self.additional_projector.classifier(input_representation)

@@ -76,13 +76,13 @@ class MainModule(LightningModule):
 
         inferred_types = self.inference_manager.infer_types(network_output_for_inference)
         
-        if self.global_step > 0 or not self.avoid_sanity_logging:
+        if self.trainer.state.status == 'running' or not self.avoid_sanity_logging:
             self.metric_manager.update(inferred_types, true_types)
 
         return loss
     
     def validation_epoch_end(self, out):
-        if self.global_step > 0 or not self.avoid_sanity_logging:
+        if self.trainer.state.status == 'running' or not self.avoid_sanity_logging:
             
 
             metrics = self.metric_manager.compute()
@@ -195,22 +195,26 @@ class IncrementalMainModule(MainModule):
         self.metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='', type2id=self.type2id)
         self.pretraining_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='pretraining', type2id=self.type2id)
         self.incremental_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='incremental', type2id=self.type2id)
+        self.incremental_only_metric_manager = MetricManager(num_classes=len(self.type2id_incremental), device=self.device, prefix='incremental_only', type2id=self.type2id_incremental)
 
-        self.test_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test_evolution', type2id=self.type2id)
-        self.test_pretraining_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test_pretraining_evolution', type2id=self.type2id )
-        self.test_incremental_metric_manager = MetricManager(num_classes=len(self.type2id_evaluation), device=self.device, prefix='test_incremental_evolution', type2id=self.type2id_evaluation)
-        self.test_incremental_only_metric_manager = MetricManager(num_classes=len(self.type2id_incremental), device=self.device, prefix='test_incremental_only_evolution', type2id=self.type2id_incremental)
+
+        self.test_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test', type2id=self.type2id)
+        self.test_pretraining_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test_pretraining', type2id=self.type2id )
+        self.test_incremental_metric_manager = MetricManager(num_classes=len(self.type2id_evaluation), device=self.device, prefix='test_incremental', type2id=self.type2id_evaluation)
+        self.test_incremental_only_metric_manager = MetricManager(num_classes=len(self.type2id_incremental), device=self.device, prefix='test_incremental_only', type2id=self.type2id_incremental)
         
-        self.test_incremental_specific_metric_manager = MetricManagerForIncrementalTypes(self.type_number, device=self.device, prefix='test_incremental_evolution')
+        self.test_incremental_specific_metric_manager = MetricManagerForIncrementalTypes(self.type_number, device=self.device, prefix='test_incremental')
 
-        self.test_incremental_exclusive_metric_manager = MetricManager(len(self.type2id_evaluation), device=self.device, prefix='test_incremental_evolution', type2id=self.type2id_evaluation)
-        self.test_incremental_only_exclusive_metric_manager = MetricManager(len(self.type2id_incremental), device=self.device, prefix='test_incremental_only_evolution', type2id=self.type2id_incremental)
+        self.test_incremental_exclusive_metric_manager = MetricManager(len(self.type2id_evaluation), device=self.device, prefix='test_incremental', type2id=self.type2id_evaluation)
+        self.test_incremental_only_exclusive_metric_manager = MetricManager(len(self.type2id_incremental), device=self.device, prefix='test_incremental_only', type2id=self.type2id_incremental)
 
 
     def on_fit_start(self):
         self.metric_manager.set_device(self.device)
         self.pretraining_metric_manager.set_device(self.device)
         self.incremental_metric_manager.set_device(self.device)
+        self.incremental_only_metric_manager.set_device(self.device)
+        
         
         self.test_metric_manager.set_device(self.device)
         self.test_pretraining_metric_manager.set_device(self.device)
@@ -315,11 +319,9 @@ class IncrementalMainModule(MainModule):
         loss = self.loss.compute_loss_for_validation_step(encoded_input=network_output_for_loss, type_representation=type_representations)
         inferred_types = self.inference_manager.infer_types(network_output_for_inference)
 
-        if self.global_step > 0 or not self.avoid_sanity_logging:
-        # collect predictions for all val_dataloaders
+        if self.trainer.state.status == 'running' or not self.avoid_sanity_logging:
+            # collect predictions for all val_dataloaders
             self.metric_manager.update(inferred_types, true_types)
-        
-        if self.global_step > 0 or not self.avoid_sanity_logging:
             if dataloader_idx == 0: # batches from pretraining val dataloader
                 # collect predictions for pretraining val_dataloaders
                 self.pretraining_metric_manager.update(inferred_types, true_types)
@@ -361,6 +363,14 @@ class IncrementalMainModule(MainModule):
             else: # batches from incremental val dataloaders
                 # collect predictions for incremental val_dataloaders
                 self.incremental_metric_manager.update(inferred_types, true_types)
+                # TODO: remove duplicate code...
+                # NOTE: exclude fathers from aggregation
+                # prepare filtered predictions with only incremental types
+                idx = torch.tensor(list(self.type2id_incremental.values()))
+                y_true_filtered = true_types.index_select(dim=1, index=idx.cuda())
+                inferred_types_filtered = inferred_types.index_select(dim=1, index=idx.cuda())
+                self.incremental_only_metric_manager.update(inferred_types_filtered.cuda(), y_true_filtered.cuda())
+                
                 incremental_val_loss += loss
         
         val_loss = pretraining_val_loss + incremental_val_loss   
@@ -379,33 +389,32 @@ class IncrementalMainModule(MainModule):
         
         average_val_loss, average_pretraining_val_loss, average_incremental_val_loss = average_losses
             
-        if self.global_step > 0 or not self.avoid_sanity_logging:
+        if self.trainer.state.status == 'running' or not self.avoid_sanity_logging:
             # wandb log
 
             metrics = self.metric_manager.compute()
+            pretraining_metrics = self.pretraining_metric_manager.compute()
+            incremental_metrics = self.incremental_metric_manager.compute()
+            incremental_only_metrics = self.incremental_only_metric_manager.compute()
+
             if self.log_validation_metrics:
                 self.logger_module.add(key = 'epoch', value = self.current_epoch)
                 self.logger_module.log_all_metrics(metrics)
-
-                pretraining_metrics = self.pretraining_metric_manager.compute()
                 self.logger_module.log_all_metrics(pretraining_metrics)
-
-                incremental_metrics = self.incremental_metric_manager.compute()
                 self.logger_module.log_all_metrics(incremental_metrics)
-                self.last_validation_metrics = incremental_metrics
-                
+                self.logger_module.log_all_metrics(incremental_only_metrics)
                 self.logger_module.log_loss(name = 'losses/val_loss', value = average_val_loss)
                 self.logger_module.log_loss(name = 'losses/pretraining_val_loss', value = average_pretraining_val_loss)
                 self.logger_module.log_loss(name = 'losses/incremental_val_loss', value = average_incremental_val_loss)
-                
-                self.log_test_metrics()
-
                 self.logger_module.log_all()
 
                 # callback log
                 self.log("losses/val_loss", average_val_loss)
                 self.log("losses/pretraining_val_loss", average_pretraining_val_loss)
                 self.log("losses/incremental_val_loss", average_incremental_val_loss)
+
+            # used for threshold calibration
+            self.last_validation_metrics = incremental_only_metrics
     
     def test_step(self, batch, batch_idx):
         _, _, true_types = batch
@@ -444,8 +453,6 @@ class IncrementalMainModule(MainModule):
         if torch.sum(y_true_filtered):
             inferred_types_filtered = inferred_types_filtered.index_select(dim=0, index=idx.cuda())
             self.test_incremental_exclusive_metric_manager.update(inferred_types_filtered, y_true_filtered)
-
-
     
     def test_epoch_end(self, out):
         self.log_test_metrics()
@@ -473,6 +480,11 @@ class IncrementalMainModule(MainModule):
         test_incremental_only_exclusive_metrics = self.test_incremental_only_exclusive_metric_manager.compute()
         metrics_test_incremental_only_exclusive_aggregated = {k.replace('macro_example', 'macro_example_exclusive'): v.item() for k,v in test_incremental_only_exclusive_metrics.items() if 'macro_example' in k}
         self.logger_module.log_all_metrics(metrics_test_incremental_only_exclusive_aggregated)
+        
+        thresholds = {'threshold_incremental' : self.inference_manager.threshold_incremental, 'threshold_pretraining' : self.inference_manager.threshold_pretraining}
+        self.logger_module.log_all_metrics(thresholds)
+        self.logger_module.log_all()
+
     
     def get_output_for_loss(self, network_output):
         return torch.concat(network_output, dim=1)
