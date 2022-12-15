@@ -42,7 +42,9 @@ class MainModule(LightningModule):
         self.inference_manager = IMPLEMENTED_CLASSES_LVL0[inference_params['name']](type2id=self.type2id, **inference_params)
         self.loss = IMPLEMENTED_CLASSES_LVL0[loss_module_params['name']](type2id=self.type2id, **loss_module_params)
         self.save_hyperparameters()
-        self.log_validation_metrics = True # this flag will be disabled during threshold calibration
+        self.is_calibrating_threshold = False # this flag will be disabled during threshold calibration
+        self.dev_network_output = None
+        self.dev_true_types = None
 
     def on_fit_start(self):
         self.metric_manager.set_device(self.device)
@@ -79,6 +81,16 @@ class MainModule(LightningModule):
         if self.trainer.state.status == 'running' or not self.avoid_sanity_logging:
             self.metric_manager.update(inferred_types, true_types)
 
+        # accumulate dev network output for threshold calibration
+        if self.is_calibrating_threshold:
+            if self.dev_network_output:
+                self.dev_network_output = torch.vstack([self.dev_network_output, network_output_for_inference])
+                self.dev_true_types = torch.vstack([self.dev_true_types, true_types])
+            else:
+                self.dev_network_output = network_output_for_inference
+                self.dev_true_types = true_types
+
+
         return loss
     
     def validation_epoch_end(self, out):
@@ -87,7 +99,7 @@ class MainModule(LightningModule):
 
             metrics = self.metric_manager.compute()
             
-            if self.log_validation_metrics:
+            if not self.is_calibrating_threshold:
                 self.logger_module.add(key = 'epoch', value = self.current_epoch)
                 self.logger_module.log_all_metrics(metrics)
                 val_loss = torch.mean(torch.tensor(out))
@@ -95,7 +107,7 @@ class MainModule(LightningModule):
                 self.logger_module.log_all()
                 self.log("val_loss", val_loss)
             
-            # used for threshold calibration
+            # was used for threshold calibration
             self.last_validation_metrics = metrics
                 
 
@@ -186,7 +198,8 @@ class IncrementalMainModule(MainModule):
         fathers = set()
         for t in type2id_incremental.keys():
             f = t.replace(f"/{t.split('/')[-1]}", "")
-            fathers.add(f)
+            if f:
+                fathers.add(f)
         
         fathers = list(fathers)
         self.type2id_evaluation = { f : type2id_all[f] for f in fathers }
@@ -328,36 +341,37 @@ class IncrementalMainModule(MainModule):
                 pretraining_val_loss += loss
             elif dataloader_idx == self.test_index:
 
-                # collect predictions for incremental test_dataloaders
-                self.test_metric_manager.update(inferred_types, true_types)
-                self.test_pretraining_metric_manager.update(inferred_types, true_types)
-                self.test_incremental_specific_metric_manager.update(inferred_types, true_types)
+                pass
+                # # collect predictions for incremental test_dataloaders
+                # self.test_metric_manager.update(inferred_types, true_types)
+                # self.test_pretraining_metric_manager.update(inferred_types, true_types)
+                # self.test_incremental_specific_metric_manager.update(inferred_types, true_types)
 
-                # NOTE: exclude fathers from aggregation
-                # prepare filtered predictions with only incremental types
-                idx = torch.tensor(list(self.type2id_incremental.values()))
-                y_true_filtered = true_types.index_select(dim=1, index=idx.cuda())
-                inferred_types_filtered = inferred_types.index_select(dim=1, index=idx.cuda())
-                self.test_incremental_only_metric_manager.update(inferred_types_filtered.cuda(), y_true_filtered.cuda())
-                # prepare filtered predictions with only incremental types and using only the examples that has at least one of the types of interes as true type 
-                idx = torch.sum(y_true_filtered, dim=1).nonzero().squeeze()
-                y_true_filtered = y_true_filtered.index_select(dim=0, index=idx.cuda())
-                if torch.sum(y_true_filtered):
-                    inferred_types_filtered = inferred_types_filtered.index_select(dim=0, index=idx.cuda())
-                    self.test_incremental_only_exclusive_metric_manager.update(inferred_types_filtered, y_true_filtered)
+                # # NOTE: exclude fathers from aggregation
+                # # prepare filtered predictions with only incremental types
+                # idx = torch.tensor(list(self.type2id_incremental.values()))
+                # y_true_filtered = true_types.index_select(dim=1, index=idx.cuda())
+                # inferred_types_filtered = inferred_types.index_select(dim=1, index=idx.cuda())
+                # self.test_incremental_only_metric_manager.update(inferred_types_filtered.cuda(), y_true_filtered.cuda())
+                # # prepare filtered predictions with only incremental types and using only the examples that has at least one of the types of interes as true type 
+                # idx = torch.sum(y_true_filtered, dim=1).nonzero().squeeze()
+                # y_true_filtered = y_true_filtered.index_select(dim=0, index=idx.cuda())
+                # if torch.sum(y_true_filtered):
+                #     inferred_types_filtered = inferred_types_filtered.index_select(dim=0, index=idx.cuda())
+                #     self.test_incremental_only_exclusive_metric_manager.update(inferred_types_filtered, y_true_filtered)
 
-                # NOTE: include fathers in aggregation
-                # prepare filtered predictions with only incremental types and their fathers
-                idx = torch.tensor(list(self.type2id_evaluation.values()))
-                y_true_filtered = true_types.index_select(dim=1, index=idx.cuda())
-                inferred_types_filtered = inferred_types.index_select(dim=1, index=idx.cuda())
-                self.test_incremental_metric_manager.update(inferred_types_filtered, y_true_filtered)
-                # prepare filtered predictions with only incremental types and their fathers and using only the examples that has at least one of the types of interes as true type 
-                idx = torch.sum(y_true_filtered, dim=1).nonzero().squeeze()
-                y_true_filtered = y_true_filtered.index_select(dim=0, index=idx.cuda())
-                if torch.sum(y_true_filtered):
-                    inferred_types_filtered = inferred_types_filtered.index_select(dim=0, index=idx.cuda())
-                    self.test_incremental_exclusive_metric_manager.update(inferred_types_filtered, y_true_filtered)
+                # # NOTE: include fathers in aggregation
+                # # prepare filtered predictions with only incremental types and their fathers
+                # idx = torch.tensor(list(self.type2id_evaluation.values()))
+                # y_true_filtered = true_types.index_select(dim=1, index=idx.cuda())
+                # inferred_types_filtered = inferred_types.index_select(dim=1, index=idx.cuda())
+                # self.test_incremental_metric_manager.update(inferred_types_filtered, y_true_filtered)
+                # # prepare filtered predictions with only incremental types and their fathers and using only the examples that has at least one of the types of interes as true type 
+                # idx = torch.sum(y_true_filtered, dim=1).nonzero().squeeze()
+                # y_true_filtered = y_true_filtered.index_select(dim=0, index=idx.cuda())
+                # if torch.sum(y_true_filtered):
+                #     inferred_types_filtered = inferred_types_filtered.index_select(dim=0, index=idx.cuda())
+                #     self.test_incremental_exclusive_metric_manager.update(inferred_types_filtered, y_true_filtered)
 
 
             else: # batches from incremental val dataloaders
@@ -372,6 +386,16 @@ class IncrementalMainModule(MainModule):
                 self.incremental_only_metric_manager.update(inferred_types_filtered.cuda(), y_true_filtered.cuda())
                 
                 incremental_val_loss += loss
+
+                # accumulate dev network output for threshold calibration
+                if self.is_calibrating_threshold:
+                    if self.dev_network_output:
+                        self.dev_network_output = (torch.vstack([self.dev_network_output[0], network_output_for_inference[0]]),
+                                                    torch.vstack([self.dev_network_output[1], network_output_for_inference[1]]))
+                        self.dev_true_types = torch.vstack([self.dev_true_types, y_true_filtered])
+                    else:
+                        self.dev_network_output = network_output_for_inference
+                        self.dev_true_types = y_true_filtered
         
         val_loss = pretraining_val_loss + incremental_val_loss   
 
@@ -397,7 +421,7 @@ class IncrementalMainModule(MainModule):
             incremental_metrics = self.incremental_metric_manager.compute()
             incremental_only_metrics = self.incremental_only_metric_manager.compute()
 
-            if self.log_validation_metrics:
+            if not self.is_calibrating_threshold:
                 self.logger_module.add(key = 'epoch', value = self.current_epoch)
                 self.logger_module.log_all_metrics(metrics)
                 self.logger_module.log_all_metrics(pretraining_metrics)
@@ -413,7 +437,7 @@ class IncrementalMainModule(MainModule):
                 self.log("losses/pretraining_val_loss", average_pretraining_val_loss)
                 self.log("losses/incremental_val_loss", average_incremental_val_loss)
 
-            # used for threshold calibration
+            # was used for threshold calibration
             self.last_validation_metrics = incremental_only_metrics
     
     def test_step(self, batch, batch_idx):
