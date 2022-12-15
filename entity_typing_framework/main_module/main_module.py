@@ -185,7 +185,7 @@ class IncrementalMainModule(MainModule):
         super().__init__(ET_Network_params=ET_Network_params, type_number=type_number, type2id=type2id, inference_params=inference_params, **kwargs)
         
         # test_index is always equal to the number of incremental types + 1 since we have a dev set for each incremental type
-        self.test_index = test_index
+        # self.test_index = test_index
 
         ### prepare type2ids for incremental metrics
         # filter incremental types
@@ -339,51 +339,49 @@ class IncrementalMainModule(MainModule):
                 # collect predictions for pretraining val_dataloaders
                 self.pretraining_metric_manager.update(inferred_types, true_types)
                 pretraining_val_loss += loss
-            elif dataloader_idx == self.test_index:
+            # elif dataloader_idx == self.test_index:
 
-                pass
-                # # collect predictions for incremental test_dataloaders
-                # self.test_metric_manager.update(inferred_types, true_types)
-                # self.test_pretraining_metric_manager.update(inferred_types, true_types)
-                # self.test_incremental_specific_metric_manager.update(inferred_types, true_types)
+            #     pass
+            #     # # collect predictions for incremental test_dataloaders
+            #     # self.test_metric_manager.update(inferred_types, true_types)
+            #     # self.test_pretraining_metric_manager.update(inferred_types, true_types)
+            #     # self.test_incremental_specific_metric_manager.update(inferred_types, true_types)
 
-                # # NOTE: exclude fathers from aggregation
-                # # prepare filtered predictions with only incremental types
-                # idx = torch.tensor(list(self.type2id_incremental.values()))
-                # y_true_filtered = true_types.index_select(dim=1, index=idx.cuda())
-                # inferred_types_filtered = inferred_types.index_select(dim=1, index=idx.cuda())
-                # self.test_incremental_only_metric_manager.update(inferred_types_filtered.cuda(), y_true_filtered.cuda())
-                # # prepare filtered predictions with only incremental types and using only the examples that has at least one of the types of interes as true type 
-                # idx = torch.sum(y_true_filtered, dim=1).nonzero().squeeze()
-                # y_true_filtered = y_true_filtered.index_select(dim=0, index=idx.cuda())
-                # if torch.sum(y_true_filtered):
-                #     inferred_types_filtered = inferred_types_filtered.index_select(dim=0, index=idx.cuda())
-                #     self.test_incremental_only_exclusive_metric_manager.update(inferred_types_filtered, y_true_filtered)
+            #     # # NOTE: exclude fathers from aggregation
+            #     # # prepare filtered predictions with only incremental types
+            #     # idx = torch.tensor(list(self.type2id_incremental.values()))
+            #     # y_true_filtered = true_types.index_select(dim=1, index=idx.cuda())
+            #     # inferred_types_filtered = inferred_types.index_select(dim=1, index=idx.cuda())
+            #     # self.test_incremental_only_metric_manager.update(inferred_types_filtered.cuda(), y_true_filtered.cuda())
+            #     # # prepare filtered predictions with only incremental types and using only the examples that has at least one of the types of interes as true type 
+            #     # idx = torch.sum(y_true_filtered, dim=1).nonzero().squeeze()
+            #     # y_true_filtered = y_true_filtered.index_select(dim=0, index=idx.cuda())
+            #     # if torch.sum(y_true_filtered):
+            #     #     inferred_types_filtered = inferred_types_filtered.index_select(dim=0, index=idx.cuda())
+            #     #     self.test_incremental_only_exclusive_metric_manager.update(inferred_types_filtered, y_true_filtered)
 
-                # # NOTE: include fathers in aggregation
-                # # prepare filtered predictions with only incremental types and their fathers
-                # idx = torch.tensor(list(self.type2id_evaluation.values()))
-                # y_true_filtered = true_types.index_select(dim=1, index=idx.cuda())
-                # inferred_types_filtered = inferred_types.index_select(dim=1, index=idx.cuda())
-                # self.test_incremental_metric_manager.update(inferred_types_filtered, y_true_filtered)
-                # # prepare filtered predictions with only incremental types and their fathers and using only the examples that has at least one of the types of interes as true type 
-                # idx = torch.sum(y_true_filtered, dim=1).nonzero().squeeze()
-                # y_true_filtered = y_true_filtered.index_select(dim=0, index=idx.cuda())
-                # if torch.sum(y_true_filtered):
-                #     inferred_types_filtered = inferred_types_filtered.index_select(dim=0, index=idx.cuda())
-                #     self.test_incremental_exclusive_metric_manager.update(inferred_types_filtered, y_true_filtered)
-
-
+            #     # # NOTE: include fathers in aggregation
+            #     # # prepare filtered predictions with only incremental types and their fathers
+            #     # idx = torch.tensor(list(self.type2id_evaluation.values()))
+            #     # y_true_filtered = true_types.index_select(dim=1, index=idx.cuda())
+            #     # inferred_types_filtered = inferred_types.index_select(dim=1, index=idx.cuda())
+            #     # self.test_incremental_metric_manager.update(inferred_types_filtered, y_true_filtered)
+            #     # # prepare filtered predictions with only incremental types and their fathers and using only the examples that has at least one of the types of interes as true type 
+            #     # idx = torch.sum(y_true_filtered, dim=1).nonzero().squeeze()
+            #     # y_true_filtered = y_true_filtered.index_select(dim=0, index=idx.cuda())
+            #     # if torch.sum(y_true_filtered):
+            #     #     inferred_types_filtered = inferred_types_filtered.index_select(dim=0, index=idx.cuda())
+            #     #     self.test_incremental_exclusive_metric_manager.update(inferred_types_filtered, y_true_filtered)
             else: # batches from incremental val dataloaders
                 # collect predictions for incremental val_dataloaders
                 self.incremental_metric_manager.update(inferred_types, true_types)
                 # TODO: remove duplicate code...
                 # NOTE: exclude fathers from aggregation
                 # prepare filtered predictions with only incremental types
-                idx = torch.tensor(list(self.type2id_incremental.values()))
-                y_true_filtered = true_types.index_select(dim=1, index=idx.cuda())
-                inferred_types_filtered = inferred_types.index_select(dim=1, index=idx.cuda())
-                self.incremental_only_metric_manager.update(inferred_types_filtered.cuda(), y_true_filtered.cuda())
+                idx = torch.tensor(list(self.type2id_incremental.values()), device=self.device)
+                y_true_filtered = true_types.index_select(dim=1, index=idx)
+                inferred_types_filtered = inferred_types.index_select(dim=1, index=idx)
+                self.incremental_only_metric_manager.update(inferred_types_filtered, y_true_filtered)
                 
                 incremental_val_loss += loss
 
@@ -454,28 +452,28 @@ class IncrementalMainModule(MainModule):
 
         # NOTE: exclude fathers from aggregation
         # prepare filtered predictions with only incremental types
-        idx = torch.tensor(list(self.type2id_incremental.values()))
-        y_true_filtered = true_types.index_select(dim=1, index=idx.cuda())
-        inferred_types_filtered = inferred_types.index_select(dim=1, index=idx.cuda())
-        self.test_incremental_only_metric_manager.update(inferred_types_filtered.cuda(), y_true_filtered.cuda())
+        idx = torch.tensor(list(self.type2id_incremental.values()), device=self.device)
+        y_true_filtered = true_types.index_select(dim=1, index=idx)
+        inferred_types_filtered = inferred_types.index_select(dim=1, index=idx)
+        self.test_incremental_only_metric_manager.update(inferred_types_filtered, y_true_filtered)
         # prepare filtered predictions with only incremental types and using only the examples that has at least one of the types of interes as true type 
         idx = torch.sum(y_true_filtered, dim=1).nonzero().squeeze()
-        y_true_filtered = y_true_filtered.index_select(dim=0, index=idx.cuda())
+        y_true_filtered = y_true_filtered.index_select(dim=0, index=idx)
         if torch.sum(y_true_filtered):
-            inferred_types_filtered = inferred_types_filtered.index_select(dim=0, index=idx.cuda())
+            inferred_types_filtered = inferred_types_filtered.index_select(dim=0, index=idx)
             self.test_incremental_only_exclusive_metric_manager.update(inferred_types_filtered, y_true_filtered)
 
         # NOTE: include fathers in aggregation
         # prepare filtered predictions with only incremental types and their fathers
-        idx = torch.tensor(list(self.type2id_evaluation.values()))
-        y_true_filtered = true_types.index_select(dim=1, index=idx.cuda())
-        inferred_types_filtered = inferred_types.index_select(dim=1, index=idx.cuda())
+        idx = torch.tensor(list(self.type2id_evaluation.values()), device=self.device)
+        y_true_filtered = true_types.index_select(dim=1, index=idx)
+        inferred_types_filtered = inferred_types.index_select(dim=1, index=idx)
         self.test_incremental_metric_manager.update(inferred_types_filtered, y_true_filtered)
         # prepare filtered predictions with only incremental types and their fathers and using only the examples that has at least one of the types of interes as true type 
         idx = torch.sum(y_true_filtered, dim=1).nonzero().squeeze()
-        y_true_filtered = y_true_filtered.index_select(dim=0, index=idx.cuda())
+        y_true_filtered = y_true_filtered.index_select(dim=0, index=idx)
         if torch.sum(y_true_filtered):
-            inferred_types_filtered = inferred_types_filtered.index_select(dim=0, index=idx.cuda())
+            inferred_types_filtered = inferred_types_filtered.index_select(dim=0, index=idx)
             self.test_incremental_exclusive_metric_manager.update(inferred_types_filtered, y_true_filtered)
     
     def test_epoch_end(self, out):

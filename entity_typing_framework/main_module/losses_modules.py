@@ -47,7 +47,7 @@ class WeightedBCELossModule(LossModule):
 
         id2types = {v: k for k, v in type2id.items()}
 
-        self.type_weights = torch.tensor([float(len(id2types[i].split('/')) - 1) for i, t in enumerate(type2id)]).cuda()        
+        self.type_weights = torch.tensor([float(len(id2types[i].split('/')) - 1) for i, t in enumerate(type2id)], device=self.device)
 
         self.loss = IMPLEMENTED_CLASSES_LVL1[name](reduction = 'none', **loss_params)
 

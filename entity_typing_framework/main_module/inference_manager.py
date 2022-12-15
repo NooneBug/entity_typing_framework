@@ -43,9 +43,9 @@ class BaseInferenceManager():
         return discrete_pred
 
     def discretize_output(self, network_output):
-        mask = (network_output > self.threshold).cuda()
-        ones = torch.ones(mask.shape).cuda()
-        zeros = torch.zeros(mask.shape).cuda()
+        mask = network_output > self.threshold
+        ones = torch.ones(mask.shape, device=network_output.device.type)
+        zeros = torch.zeros(mask.shape, device=network_output.device.type)
         discrete_pred = torch.where(mask, ones, zeros)
         return discrete_pred.type(torch.int8)
     
@@ -154,7 +154,7 @@ class FlatToHierarchyThresholdOrMaxInferenceManager(ThresholdOrMaxInferenceManag
         # discretize flat predictions
         discrete_pred_flat = self.discretize_output(network_output)
         # convert flat predictions to match the original dataset
-        discrete_pred_original = torch.zeros((discrete_pred_flat.shape[0], len(self.type2id_original)))
+        discrete_pred_original = torch.zeros((discrete_pred_flat.shape[0], len(self.type2id_original)), device=discrete_pred_flat.device.type)
         for t_flat, idx_flat in self.type2id_flat.items():
             # if the type is /*/NIL convert it to father type and assign value
             if t_flat.endswith('/NIL'):
@@ -165,7 +165,7 @@ class FlatToHierarchyThresholdOrMaxInferenceManager(ThresholdOrMaxInferenceManag
             idx = self.type2id_original[t]
             discrete_pred_original[:, idx] = discrete_pred_flat[:, idx_flat]
         # complete the predictions according to the hierarchy
-        discrete_pred_original = self.apply_hierarchy(discrete_pred_original).cuda()
+        discrete_pred_original = self.apply_hierarchy(discrete_pred_original)
         return discrete_pred_original
 
     def transform_true_types(self, true_types):

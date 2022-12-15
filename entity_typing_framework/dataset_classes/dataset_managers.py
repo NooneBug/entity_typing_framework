@@ -355,7 +355,7 @@ class IncrementalDatasetManagerWithTestLog(IncrementalDatasetManager):
         '''
         '''
         loaders = [self.dataloaders['pretraining_dev']] + [v for k,v in self.dataloaders.items() if 'incremental_dev' in k]
-        loaders += [self.dataloaders['test']]
+        # loaders += [self.dataloaders['test']]
         return loaders
     
     def test_dataloader(self):
