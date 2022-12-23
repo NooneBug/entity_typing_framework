@@ -83,7 +83,7 @@ class MainModule(LightningModule):
 
         # accumulate dev network output for threshold calibration
         if self.is_calibrating_threshold:
-            if self.dev_network_output:
+            if self.dev_network_output != None:
                 self.dev_network_output = torch.vstack([self.dev_network_output, network_output_for_inference])
                 self.dev_true_types = torch.vstack([self.dev_true_types, true_types])
             else:
@@ -387,7 +387,7 @@ class IncrementalMainModule(MainModule):
 
                 # accumulate dev network output for threshold calibration
                 if self.is_calibrating_threshold:
-                    if self.dev_network_output:
+                    if self.dev_network_output != None:
                         self.dev_network_output = (torch.vstack([self.dev_network_output[0], network_output_for_inference[0]]),
                                                     torch.vstack([self.dev_network_output[1], network_output_for_inference[1]]))
                         self.dev_true_types = torch.vstack([self.dev_true_types, y_true_filtered])

@@ -5,7 +5,7 @@ import numpy as np
 def calibrate_threshold(trainer, step=.025, metric='dev/macro_example/f1', patience=1000, incremental=False):
   if trainer.model.inference_manager.calibrate_threshold:
       # compute patience as 10% of the total number of steps
-      if type(patience) == 'auto':
+      if patience == 'auto':
         patience = int(1000 // (step*1000) * .1)
 
       counter = 0
