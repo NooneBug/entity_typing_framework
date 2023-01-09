@@ -133,3 +133,11 @@ class KENNClassifierForIncrementalTrainingOntonotes(KENNClassifierForIncremental
 
   def get_class_for_pretrained_projector(self):
     return Classifier
+  
+  # TODO: remove method!!! wrong initialization
+  def copy_pretrained_parameters_into_incremental_module(self):
+        # assuming that pretrained_projector and additional_projector have the same architecture
+        for pretrained_l, incremental_l in zip(list(self.pretrained_projector.layers.values())[:-1], 
+                                                list(self.additional_projector.classifier.layers.values())[:-1]):
+            incremental_l.linear.weight = torch.nn.Parameter(pretrained_l.linear.weight.detach().clone())
+            incremental_l.linear.bias = torch.nn.Parameter(pretrained_l.linear.bias.detach().clone())

@@ -1,4 +1,4 @@
-from entity_typing_framework.EntityTypingNetwork_classes.KENN_networks.kenn_network import KENNClassifier, KENNClassifierForIncrementalTraining
+from entity_typing_framework.EntityTypingNetwork_classes.KENN_networks.kenn_network import KENNClassifier, KENNClassifierForIncrementalTraining, KENNClassifierForIncrementalTrainingOntonotes
 # from entity_typing_framework.EntityTypingNetwork_classes.NFETC_modules.nfetc_classifier import NFETCClassifier
 from entity_typing_framework.EntityTypingNetwork_classes.box_embeddings_kenn_modules.box_embeddings_kenn import BoxEmbeddingKENNProjector
 from entity_typing_framework.EntityTypingNetwork_classes.box_embeddings_modules.box_embedding_projector import BoxEmbeddingProjector, BoxEmbeddingIncrementalProjector
@@ -20,6 +20,7 @@ IMPLEMENTED_CLASSES_LVL1 = {
     'Classifier' : Classifier,
     'KENNClassifier' : KENNClassifier,
     'KENNClassifierForIncrementalTraining' : KENNClassifierForIncrementalTraining,
+    'KENNClassifierForIncrementalTrainingOntonotes' : KENNClassifierForIncrementalTrainingOntonotes,
     'BoxEmbeddingProjector': BoxEmbeddingProjector,
     'BoxEmbeddingProjectorFixed': BoxEmbeddingProjectorFixed,
     'BoxEmbeddingProjectorFixedConstrained': BoxEmbeddingProjectorFixedConstrained,

@@ -53,7 +53,7 @@ class BaseInferenceManager():
         if discrete_pred.device.type == 'cuda' and self.transitive_inference_mat.device.type != 'cuda':
             self.transitive_inference_mat = self.transitive_inference_mat.cuda()
         # apply transitivity to the ancestors in the hierarchy
-        discrete_pred = torch.matmul(discrete_pred, self.transitive_inference_mat)
+        discrete_pred = torch.matmul(discrete_pred.to(torch.float32), self.transitive_inference_mat)
         # clip discret preds > 1 (deriving from consistent predictions)
         discrete_pred = discrete_pred.clip(0, 1)
         return discrete_pred.type(torch.int8)
