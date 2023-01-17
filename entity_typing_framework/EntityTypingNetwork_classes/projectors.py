@@ -1,7 +1,9 @@
+import time
 from pytorch_lightning.core.lightning import LightningModule
 from torch.nn import Sigmoid, ModuleDict, ReLU, Linear, Dropout, BatchNorm1d, Softmax
 import torch
 from copy import deepcopy
+import json
 
 class Layer(LightningModule):
     '''
@@ -341,4 +343,77 @@ class ClassifierForIncrementalTraining(ProjectorForIncrementalTraining):
             idx_father = self.pretrained_projector.type2id[father]
             idx_t = self.additional_projector.type2id[t] - self.pretrained_projector.type_number
             last_incremental_layer.linear.weight.data[idx_t] = torch.nn.Parameter(last_pretrained_layer.linear.weight[idx_father].detach().clone())
-            last_incremental_layer.linear.bias.data[idx_t] = torch.nn.Parameter(last_pretrained_layer.linear.bias[idx_father].detach().clone())
+            last_incremental_layer.linear.bias.data[idx_t] = torch.nn.Parameter(last_pretrained_layer.linear.bias[idx_father].detach().clone())  
+    
+
+class ClassifierForCrossDatasetTraining(LightningModule):
+    def __init__(self, layers_parameters, src_ckpt, tgt2src_filepath, **kwargs):
+        super().__init__()
+        self.tgt_classifier = Classifier(layers_parameters, **kwargs)
+        self.src_classifier = self.load_src_ckpt(src_ckpt)
+        self.tgt2src = self.read_tgt2src(tgt2src_filepath)
+        self.src_type2id = self.src_classifier.type2id
+        self.tgt_type2id = self.tgt_classifier.type2id
+        self.copy_src_parameters_into_tgt_module()
+
+    # NOTE: this is a bit duplicate code from MainModule.load_ET_network_for_test_(...)
+    # TODO: fix
+    def load_src_ckpt(self, checkpoint_to_load):
+        print('Loading model with torch.load ...')
+        start = time.time()
+        ckpt_state_dict = torch.load(checkpoint_to_load)
+        print('Loaded in {:.2f} seconds'.format(time.time() - start))
+        
+        ET_Network_params = ckpt_state_dict['hyper_parameters']['ET_Network_params']
+        type_number = ckpt_state_dict['hyper_parameters']['type_number']
+        type2id = ckpt_state_dict['hyper_parameters']['type2id']
+        
+        print('Instantiating {} class to copy classifier...'.format(ET_Network_params['name']))
+        start = time.time()
+        classifier_params = ET_Network_params['network_params']['input_projector_params']
+        classifier_state_dict = {k.replace('input_projector.', ''):v for k,v in ckpt_state_dict['state_dict'].items() if 'input_projector' in k}
+        classifier_ckpt = Classifier(**classifier_params,
+                            input_dim=classifier_params['layers_parameters']['0']['in_features'],
+                            type_number=type_number,
+                            type2id=type2id)
+        classifier_ckpt.load_state_dict(classifier_state_dict)
+        print('Instantiated in {:.2f} seconds'.format(time.time() - start))
+        
+        return classifier_ckpt
+    
+    # def get_new_type_number(self, **kwargs):
+    #     new_type_number = len(kwargs['type2id']) - kwargs['type_number']
+        
+    #     return new_type_number
+
+    def read_tgt2src(self, filepath):
+        return json.loads(open(filepath, 'r').read())
+
+    def forward(self, input_representation):
+        return self.tgt_classifier(input_representation)
+
+    def copy_src_parameters_into_tgt_module(self):
+        src_layers = list(self.src_classifier.layers.values())
+        tgt_layers = list(self.tgt_classifier.layers.values())
+
+        # init new parameters to exploit previous knwoledge: initial layers
+        for src_layer, tgt_layer in zip(src_layers[:-1], tgt_layers[:-1]):
+            tgt_layer.linear.weight.data = torch.nn.Parameter(src_layer.linear.weight.detach().clone())
+            tgt_layer.linear.bias.data = torch.nn.Parameter(src_layer.linear.bias.detach().clone())
+                
+        # last layer: the weights of a logit of a type of the target dataset is set to the value of the corresponding type of the source dataset
+        last_src_layer = src_layers[-1]
+        last_tgt_layer = tgt_layers[-1]
+        for t_tgt, t_src in self.tgt2src.items():
+            # if there is an equivalence or generalization mapping
+            if t_src:
+                idx_src = self.src_classifier.type2id[t_src]
+                idx_dst = self.tgt_classifier.type2id[t_tgt]
+                last_tgt_layer.linear.weight.data[idx_dst] = torch.nn.Parameter(last_src_layer.linear.weight[idx_src].detach().clone())
+                last_tgt_layer.linear.bias.data[idx_dst] = torch.nn.Parameter(last_src_layer.linear.bias[idx_src].detach().clone())
+
+    def freeze_src_classifier(self):
+        self.src_classifier.freeze()
+    
+    def get_state_dict(self, smart_save=True):
+        return self.state_dict()

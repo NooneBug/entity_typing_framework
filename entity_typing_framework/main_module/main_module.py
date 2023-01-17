@@ -177,7 +177,6 @@ class MainModule(LightningModule):
     def get_true_types_for_metrics(self, true_types):
         return self.inference_manager.transform_true_types(true_types)
 
-# TODO: add threshold calibration
 class IncrementalMainModule(MainModule):
 
     # def __init__(self, ET_Network_params: dict, type_number: int, type2id: dict, logger, loss_params, checkpoint_to_load: str = None, new_type_number = None):
@@ -578,3 +577,54 @@ class BoxEmbeddingMainModuleForOpt(BoxEmbeddingMainModule):
     def on_fit_end(self) -> None:
         with open('opt_losses.txt', 'a') as out:
             out.write(f'{self.trainer.checkpoint_callback.best_model_score.item()}\n')
+
+# TODO: tmp code... a bit duplicated...
+class CrossDatasetMainModule(MainModule):
+    # NOTE: depth-first left-to-right MRO, do not change inheritance order!
+    
+    def __init__(self, ET_Network_params, type_number, type2id, inference_params, **kwargs):
+        super().__init__(ET_Network_params=ET_Network_params, type_number=type_number, type2id=type2id, inference_params=inference_params, **kwargs)
+
+        # # dev
+        # self.metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='', type2id=self.type2id)
+        # # test
+        # self.test_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test', type2id=self.type2id)
+        # test per type
+        self.test_per_type_metric_manager = MetricManagerForIncrementalTypes(self.type_number, device=self.device, prefix='test')
+
+
+    def on_fit_start(self):
+        super().on_fit_start()
+        self.test_per_type_metric_manager.set_device(self.device)
+
+    def on_test_start(self):
+        super().on_test_start()
+        self.test_per_type_metric_manager.set_device(self.device)                
+
+    def test_step(self, batch, batch_step):
+        _, _, true_types = batch
+        true_types = self.get_true_types_for_metrics(true_types)
+        network_output, _ = self.ET_Network(batch)
+        network_output_for_inference = self.get_output_for_inference(network_output)
+        inferred_types = self.inference_manager.infer_types(network_output_for_inference)
+        self.test_metric_manager.update(inferred_types, true_types)
+        self.test_per_type_metric_manager.update(inferred_types, true_types)
+    
+    def test_epoch_end(self, out):
+        metrics = self.test_metric_manager.compute()
+        metrics.update(self.test_per_type_metric_manager.compute(self.type2id))
+        metrics = { k: v.item() for k,v in metrics.items()}
+        metrics['threshold'] = self.inference_manager.threshold
+        self.logger_module.log_all_metrics(metrics)
+        self.logger_module.log_all()
+
+# TODO: not using KENN inheritance...
+class CrossDatasetKENNMultilossMainModule(CrossDatasetMainModule):
+    
+    def get_output_for_inference(self, network_output):
+        # return postkenn output
+        return network_output[1]
+
+    def get_output_for_loss(self, network_output):
+        # return prekenn and postkenn output (same as returning the output as is...)
+        return network_output[0], network_output[1]

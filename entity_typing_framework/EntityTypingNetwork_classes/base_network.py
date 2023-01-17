@@ -194,3 +194,24 @@ class IncrementalEntityTypingNetwork(BaseEntityTypingNetwork):
 #         return log_probs, encoded_types
 
     
+class CrossDatasetEntityTypingNetwork(BaseEntityTypingNetwork):
+    def __init__(self, name, network_params, type_number, type2id):
+        super().__init__(name, network_params, type_number, type2id)
+        self.copy_pretrained_parameters_into_incremental_modules(network_params)
+    
+    def copy_pretrained_parameters_into_incremental_modules(self, network_params):
+        self.input_projector.copy_src_parameters_into_tgt_module()
+        self.copy_encoder(network_params)
+        self.freeze_pretrained_modules()
+
+        
+    # TODO: it should not be in this class
+    def copy_encoder(self, network_params):
+        ckpt = torch.load(network_params['input_projector_params']['src_ckpt'])
+        encoder_state_dict = {'.'.join(k.split('.')[1:]):v for k,v in ckpt['state_dict'].items() if 'adapters' in k}
+        self.encoder.load_state_dict(encoder_state_dict, strict=False)
+        
+
+    def freeze_pretrained_modules(self):
+        self.encoder.freeze()
+        self.input_projector.freeze_src_classifier()

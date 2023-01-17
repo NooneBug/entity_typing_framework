@@ -107,6 +107,48 @@ def generate_constraints_incremental(all_types, new_types, filepath = None, weig
 
     return save_kb(filepath, kb)
 
+def label2pred(t):
+    return f'P{t}'
+
+# def generate_constraints_cross_dataset(all_types, new_types, filepath = None, weight='_', tgt2src={}):
+#     # create ontology tree from all_types
+#     types_src = list(tgt2src.values())
+#     # create cross dataset clauses
+#     direct_clauses = [f'{weight}:{label2pred(t_src)},{label2pred(t_dst)}' for t_dst, t_src in tgt2src.items() if t_dst]
+#     # TODO: add trasversal (with tgt2src_clause parameter it would replace the line above)
+#     new_types_unmapped = list(set(new_types) - set(tgt2src.keys()))
+#     negative_clauses = [ f'{weight}:n{label2pred(t_src)},n{label2pred(t_dst)}' for t_src in types_src for t_dst in new_types_unmapped]
+#     # generate predicate list
+#     # TODO: check order
+#     predicates = generate_predicates(all_types)
+#     # print number of clauses
+#     clauses = direct_clauses + negative_clauses
+#     print(clauses.count('\n'), 'cross-dataset clauses created')
+#     # create kb
+#     kb = predicates + '\n\n' + '\n'.join(clauses) + '\n'
+
+#     return save_kb(filepath, kb)
+
+def generate_constraints_cross_dataset(all_types, new_types, filepath = None, weight='_', tgt2src={}):
+    # create ontology tree from all_types
+    types_src = list(tgt2src.values())
+    # create cross dataset clauses
+    direct_clauses = [f'{weight}:{label2pred(t_src)},{label2pred(t_dst)}' for t_dst, t_src in tgt2src.items() if t_dst]
+    # TODO: add trasversal (with tgt2src_disjoint parameter it would replace the line above)
+    new_types_unmapped = list(set(new_types) - set(tgt2src.keys()))
+    negative_clauses = [ f'{weight}:n{label2pred(t_src)},n{label2pred(t_dst)}' for t_src in types_src for t_dst in new_types_unmapped]
+    # generate predicate list
+    # TODO: check order
+    predicates = generate_predicates(all_types)
+    # print number of clauses
+    clauses = direct_clauses + negative_clauses
+    print(clauses.count('\n'), 'cross-dataset clauses created')
+    # create kb
+    kb = predicates + '\n\n' + '\n'.join(clauses) + '\n'
+
+    return save_kb(filepath, kb)
+
+
 def save_kb(filepath, kb):
     if filepath:
         folder_path = '/'.join(filepath.split('/')[:-1])
@@ -117,7 +159,7 @@ def save_kb(filepath, kb):
         return kb
 
 def generate_predicates(types_list):
-    return ','.join([f'P{t}' for t in types_list])
+    return ','.join([f'{label2pred(t)}' for t in types_list])
 
 
 def generate_bottom_up(tree, weight):

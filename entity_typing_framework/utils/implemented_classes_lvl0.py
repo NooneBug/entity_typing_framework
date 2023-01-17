@@ -1,4 +1,4 @@
-from entity_typing_framework.EntityTypingNetwork_classes.base_network import BaseEntityTypingNetwork, IncrementalEntityTypingNetwork
+from entity_typing_framework.EntityTypingNetwork_classes.base_network import BaseEntityTypingNetwork, CrossDatasetEntityTypingNetwork, IncrementalEntityTypingNetwork
 from entity_typing_framework.dataset_classes.large_datasets.large_datasets_for_dataloaders import BERT_ET_DatasetLarge, ELMo_ET_DatasetLarge, ET_DatasetLarge
 from entity_typing_framework.dataset_classes.large_datasets.large_tokenized_datasets import BaseBERTTokenizedDatasetLarge, ELMoTokenizedDatasetLarge
 from entity_typing_framework.dataset_classes.tokenized_datasets import BaseBERTTokenizedDataset, ELMoTokenizedDataset, GloVeTokenizedDataset, MentionSentenceBERTTokenizedDataset
@@ -14,6 +14,7 @@ from entity_typing_framework.dataset_classes.datasets import BaseDataset
 IMPLEMENTED_CLASSES_LVL0 = {
     'BaseDataset' : BaseDataset,
     'BaseEntityTypingNetwork' : BaseEntityTypingNetwork,
+    'CrossDatasetEntityTypingNetwork' : CrossDatasetEntityTypingNetwork,
     'IncrementalEntityTypingNetwork' : IncrementalEntityTypingNetwork,
     'BaseBERTTokenizedDataset' : BaseBERTTokenizedDataset,
     'torch.DataLoader' : DataLoader,

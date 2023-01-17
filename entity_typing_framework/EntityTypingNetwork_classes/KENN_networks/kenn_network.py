@@ -1,10 +1,11 @@
 from copy import deepcopy
-from entity_typing_framework.EntityTypingNetwork_classes.projectors import Classifier, ClassifierForIncrementalTraining, Projector
+from entity_typing_framework.EntityTypingNetwork_classes.projectors import Classifier, ClassifierForCrossDatasetTraining, ClassifierForIncrementalTraining, Projector
 from pytorch_lightning import LightningModule
 import torch
-from torch.nn import Sigmoid
+from torch.nn import Sigmoid, Linear
 from tqdm import tqdm
 import entity_typing_framework.EntityTypingNetwork_classes.KENN_networks.kenn_utils as kenn_utils
+import json
 
 import sys
 sys.path.append('./')
@@ -141,3 +142,41 @@ class KENNClassifierForIncrementalTrainingOntonotes(KENNClassifierForIncremental
                                                 list(self.additional_projector.classifier.layers.values())[:-1]):
             incremental_l.linear.weight = torch.nn.Parameter(pretrained_l.linear.weight.detach().clone())
             incremental_l.linear.bias = torch.nn.Parameter(pretrained_l.linear.bias.detach().clone())
+
+class KENNClassifierForCrossDatasetTraining(ClassifierForCrossDatasetTraining):
+  def __init__(self, clause_file_path=None, clause_weight = 0.5, **kwargs):
+    super().__init__(**kwargs)
+    # set linear activation function instead of sigmoid to give the correct input to the ke
+    last_idx = str(len(self.src_classifier.layers)-1)
+    self.src_classifier.layers[last_idx].activation = self.src_classifier.layers[last_idx].instance_activation('none')
+    self.sig = Sigmoid()
+
+    if clause_file_path:
+      print('KnowledgeEnhancer instantiated by using', clause_file_path)
+      self.ke = unary_parser(knowledge_file=clause_file_path,
+                      activation=lambda x: x, # linear activation
+                      initial_clause_weight=clause_weight
+                      )
+    else:
+      raise Exception('Clause file not provided!')
+
+  def forward(self, input_representation):
+    # compute prediction of src types to feed the ke
+    # use classifier.classify since they have linear activation function on the last layer
+    src_prekenn = self.src_classifier.classify(input_representation)
+    tgt_prekenn = self.tgt_classifier.classify(input_representation)
+    # build kenn input: NOTE: predicates = types(src) U types(tgt)
+    stacked_prekenn = torch.hstack((src_prekenn, tgt_prekenn))
+    stacked_postkenn = self.ke(stacked_prekenn)[0]
+    # keep only tgt predictions
+    tgt_postkenn = stacked_postkenn[:, -len(self.tgt_type2id):]
+    return self.sig(tgt_prekenn), self.sig(tgt_postkenn)
+
+  def copy_src_parameters_into_tgt_module(self):
+    src_layers = list(self.src_classifier.layers.values())
+    tgt_layers = list(self.tgt_classifier.layers.values())
+
+    # init new parameters to exploit previous knwoledge: initial layers
+    for src_layer, tgt_layer in zip(src_layers[:-1], tgt_layers[:-1]):
+        tgt_layer.linear.weight.data = torch.nn.Parameter(src_layer.linear.weight.detach().clone())
+        tgt_layer.linear.bias.data = torch.nn.Parameter(src_layer.linear.bias.detach().clone())
