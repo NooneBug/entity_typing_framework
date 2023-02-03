@@ -163,8 +163,8 @@ class KENNClassifierForCrossDatasetTraining(ClassifierForCrossDatasetTraining):
   def forward(self, input_representation):
     # compute prediction of src types to feed the ke
     # use classifier.classify since they have linear activation function on the last layer
-    src_prekenn = self.src_classifier.classify(input_representation)
-    tgt_prekenn = self.tgt_classifier.classify(input_representation)
+    src_prekenn = self.src_classifier(input_representation)
+    tgt_prekenn = self.tgt_classifier(input_representation)
     # build kenn input: NOTE: predicates = types(src) U types(tgt)
     stacked_prekenn = torch.hstack((src_prekenn, tgt_prekenn))
     stacked_postkenn = self.ke(stacked_prekenn)[0]
@@ -172,11 +172,11 @@ class KENNClassifierForCrossDatasetTraining(ClassifierForCrossDatasetTraining):
     tgt_postkenn = stacked_postkenn[:, -len(self.tgt_type2id):]
     return self.sig(tgt_prekenn), self.sig(tgt_postkenn)
 
-  def copy_src_parameters_into_tgt_module(self):
-    src_layers = list(self.src_classifier.layers.values())
-    tgt_layers = list(self.tgt_classifier.layers.values())
+  # def copy_src_parameters_into_tgt_module(self):
+  #   src_layers = list(self.src_classifier.layers.values())
+  #   tgt_layers = list(self.tgt_classifier.layers.values())
 
-    # init new parameters to exploit previous knwoledge: initial layers
-    for src_layer, tgt_layer in zip(src_layers[:-1], tgt_layers[:-1]):
-        tgt_layer.linear.weight.data = torch.nn.Parameter(src_layer.linear.weight.detach().clone())
-        tgt_layer.linear.bias.data = torch.nn.Parameter(src_layer.linear.bias.detach().clone())
+  #   # init new parameters to exploit previous knwoledge: initial layers
+  #   for src_layer, tgt_layer in zip(src_layers[:-1], tgt_layers[:-1]):
+  #       tgt_layer.linear.weight.data = torch.nn.Parameter(src_layer.linear.weight.detach().clone())
+  #       tgt_layer.linear.bias.data = torch.nn.Parameter(src_layer.linear.bias.detach().clone())

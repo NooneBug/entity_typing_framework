@@ -10,10 +10,10 @@ from fast_soft_sort.pytorch_ops import soft_rank
 
 from typing import Any, Optional
 from torch import Tensor
-from torchmetrics.functional.classification.ranking import (
-    _label_ranking_loss_compute,
-    _label_ranking_loss_update,
-)
+# from torchmetrics.functional.classification.ranking import (
+#     _label_ranking_loss_compute,
+#     _label_ranking_loss_update,
+# )
 from torchmetrics.metric import Metric
 
 

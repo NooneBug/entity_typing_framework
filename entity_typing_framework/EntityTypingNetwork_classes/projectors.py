@@ -166,12 +166,13 @@ class Classifier(Projector):
             see the documentation of :code:`Layer` for the format of these parameters 
     '''
 
-    def __init__(self, layers_parameters, **kwargs):
+    def __init__(self, layers_parameters, check_parameters=True, **kwargs):
         super().__init__(**kwargs)
         self.layers_parameters = layers_parameters
         
         self.add_parameters()
-        self.check_parameters()
+        if check_parameters:
+            self.check_parameters()
         
         self.layers = ModuleDict({layer_name: Layer(**layer_parameters) for layer_name, layer_parameters in self.layers_parameters.items()})
     
@@ -347,14 +348,18 @@ class ClassifierForIncrementalTraining(ProjectorForIncrementalTraining):
     
 
 class ClassifierForCrossDatasetTraining(LightningModule):
-    def __init__(self, layers_parameters, src_ckpt, tgt2src_filepath, **kwargs):
+    def __init__(self, layers_parameters, src_ckpt, src2tgt_filepath, tgt2src_filepath, **kwargs):
         super().__init__()
-        self.tgt_classifier = Classifier(layers_parameters, **kwargs)
         self.src_classifier = self.load_src_ckpt(src_ckpt)
-        self.tgt2src = self.read_tgt2src(tgt2src_filepath)
         self.src_type2id = self.src_classifier.type2id
+        self.tgt_classifier = self.instance_tgt_classifier(layers_parameters, **kwargs)
+        self.src2tgt = self.read_mappings(src2tgt_filepath)
+        self.tgt2src = self.read_mappings(tgt2src_filepath)
         self.tgt_type2id = self.tgt_classifier.type2id
         self.copy_src_parameters_into_tgt_module()
+
+    def instance_tgt_classifier(self, layers_parameters, **kwargs):
+        return Classifier(layers_parameters, **kwargs)
 
     # NOTE: this is a bit duplicate code from MainModule.load_ET_network_for_test_(...)
     # TODO: fix
@@ -386,7 +391,7 @@ class ClassifierForCrossDatasetTraining(LightningModule):
         
     #     return new_type_number
 
-    def read_tgt2src(self, filepath):
+    def read_mappings(self, filepath):
         return json.loads(open(filepath, 'r').read())
 
     def forward(self, input_representation):
@@ -404,9 +409,9 @@ class ClassifierForCrossDatasetTraining(LightningModule):
         # last layer: the weights of a logit of a type of the target dataset is set to the value of the corresponding type of the source dataset
         last_src_layer = src_layers[-1]
         last_tgt_layer = tgt_layers[-1]
-        for t_tgt, t_src in self.tgt2src.items():
+        for t_src, t_tgt in self.src2tgt.items():
             # if there is an equivalence or generalization mapping
-            if t_src:
+            if t_tgt and t_src == self.tgt2src[t_tgt]:
                 idx_src = self.src_classifier.type2id[t_src]
                 idx_dst = self.tgt_classifier.type2id[t_tgt]
                 last_tgt_layer.linear.weight.data[idx_dst] = torch.nn.Parameter(last_src_layer.linear.weight[idx_src].detach().clone())

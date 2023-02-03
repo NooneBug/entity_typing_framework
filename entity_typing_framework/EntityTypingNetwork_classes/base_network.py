@@ -200,7 +200,7 @@ class CrossDatasetEntityTypingNetwork(BaseEntityTypingNetwork):
         self.copy_pretrained_parameters_into_incremental_modules(network_params)
     
     def copy_pretrained_parameters_into_incremental_modules(self, network_params):
-        self.input_projector.copy_src_parameters_into_tgt_module()
+        # self.input_projector.copy_src_parameters_into_tgt_module()
         self.copy_encoder(network_params)
         self.freeze_pretrained_modules()
 

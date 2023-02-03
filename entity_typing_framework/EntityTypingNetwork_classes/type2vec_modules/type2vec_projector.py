@@ -6,14 +6,15 @@ from typing import Tuple
 from pytorch_lightning.core.lightning import LightningModule
 
 class Type2VecProjector(Projector):
-  def __init__(self, embeddings_path, layers_parameters, **kwargs) -> None:
+  def __init__(self, embeddings_path, layers_parameters, check_parameters=True, **kwargs) -> None:
     super().__init__(**kwargs)
     # prepare type2vec vectors
     self.vector_decoder = VectorDecoder(embeddings_path)
     # prepare projection network
     self.layers_parameters = layers_parameters
     self.add_parameters()
-    self.check_parameters()
+    if check_parameters:
+      self.check_parameters()
     self.layers = ModuleDict({layer_name: Layer(**layer_parameters) for layer_name, layer_parameters in self.layers_parameters.items()})     
 
   # TODO documentation
