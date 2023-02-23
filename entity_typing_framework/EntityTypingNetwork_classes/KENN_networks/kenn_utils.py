@@ -30,7 +30,8 @@ def create_tree(labels, label2pred = False):
 
 ### KENN CONSTRAINTS ###
 # mode in ['bottom_up','top_down','hybrid','hybrid_in','hybrid_out','bottom_up_skip', 'top_down_skip']
-def generate_constraints(types_list, mode, filepath = None, weight='_'):
+def generate_constraints(types_list, mode, filepath = None, learnable_clause_weight = True, clause_weight='_'):
+    weight = '_' if learnable_clause_weight else clause_weight
     # create ontology tree
     tree = create_tree(types_list, label2pred = True)
     # generate predicate list

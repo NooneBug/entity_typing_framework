@@ -548,6 +548,13 @@ class IncrementalKENNMultilossMainModule(KENNMultilossMainModule, IncrementalMai
         # return prekenn and postkenn output (same as returning the output as is...)
         return torch.concat(network_output[0], dim=1), torch.concat(network_output[1], dim=1)
 
+class IncrementalBoxKENNMultilossMainModule(IncrementalKENNMultilossMainModule):
+    # NOTE: depth-first left-to-right MRO, do not change inheritance order!
+    
+    def get_output_for_inference(self, network_output):
+        # network_output is logprob
+        return torch.exp(network_output[1][0]), torch.exp(network_output[1][1])
+
 class BoxEmbeddingMainModule(MainModule):
     def get_output_for_inference(self, network_output):
         return torch.exp(network_output[1])
