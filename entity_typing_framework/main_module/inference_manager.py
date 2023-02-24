@@ -204,7 +204,7 @@ class IncrementalDoubleThresholdOrMaxInferenceManager(ThresholdOrMaxInferenceMan
         # SELECT threshold_incremental
         self.threshold = self.threshold_incremental
         # incremental inference: apply ThresholdOrMaxInferenceManager only for predictions that were empty
-        discrete_pred_pretraining_base = BaseInferenceManager.discretize_output(self, network_output_pretraining)
+        discrete_pred_pretraining_base = BaseInferenceManager.discretize_output(self, network_output_pretraining) # TODO: move this line before the incremental threshold is set
         discrete_pred_incremental = BaseInferenceManager.discretize_output(self, network_output_incremental)
         for i in (torch.sum(discrete_pred_pretraining_base, dim=1) == 0).nonzero():
           if torch.sum(discrete_pred_incremental[i]) == 0:
