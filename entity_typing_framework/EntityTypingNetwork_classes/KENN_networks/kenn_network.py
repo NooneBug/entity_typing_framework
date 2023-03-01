@@ -87,13 +87,13 @@ class KENNClassifierForIncrementalTraining(ClassifierForIncrementalTraining):
       clause_file_path = f"kenn_tmp/{kwargs['kb_mode']}_incremental.txt"
     else:
       clause_file_path = kwargs['clause_file_path']
-    cw = '_' if kwargs['learnable_clause_weight'] else kwargs['clause_weight']
 
     if kwargs['kb_mode'].lower() != 'none':
       kenn_utils.generate_constraints_incremental(all_types=all_types,
                                                   new_types=new_types,
                                                   filepath=clause_file_path,
-                                                  weight=cw,
+                                                  learnable_clause_weight=kwargs['learnable_clause_weight'],
+                                                  clause_weight=kwargs['clause_weight'],
                                                   mode=kwargs['kb_mode'])
     
     # modify the kwargs to instantiate the correct ke by the super().__init__(call)
@@ -122,26 +122,46 @@ class KENNClassifierForIncrementalTraining(ClassifierForIncrementalTraining):
 
     return (self.sig(postkenn_pretrain), self.sig(prekenn_incremental)), (self.sig(postkenn_pretrain), self.sig(postkenn_incremental))
 
-  # TODO: remove method!!! wrong initialization
   def copy_pretrained_parameters_into_incremental_module(self):
-        # assuming that pretrained_projector and additional_projector have the same architecture
-        for pretrained_l, incremental_l in zip(list(self.pretrained_projector.classifier.layers.values())[:-1], 
-                                                list(self.additional_projector.classifier.layers.values())[:-1]):
-            incremental_l.linear.weight = torch.nn.Parameter(pretrained_l.linear.weight.detach().clone())
-            incremental_l.linear.bias = torch.nn.Parameter(pretrained_l.linear.bias.detach().clone())
+    # assuming that pretrained_projector and additional_projector have the same architecture
+    # copy shared parameters
+    for pretrained_l, incremental_l in zip(list(self.pretrained_projector.classifier.layers.values())[:-1], 
+                                          list(self.additional_projector.classifier.layers.values())[:-1]):
+      incremental_l.linear.weight = torch.nn.Parameter(pretrained_l.linear.weight.detach().clone())
+      incremental_l.linear.bias = torch.nn.Parameter(pretrained_l.linear.bias.detach().clone())
+    # init new parameters to better exploit the hierarchy: the weights of a logit of a new type are set to the values of the father's ones
+    last_pretrained_layer = list(self.pretrained_projector.classifier.layers.values())[-1]
+    last_incremental_layer = list(self.additional_projector.classifier.layers.values())[-1]
+    for t in self.new_types:
+      father = '/'.join(t.split('/')[:-1])
+      idx_father = self.pretrained_projector.type2id[father]
+      idx_t = self.additional_projector.type2id[t] - self.pretrained_projector.type_number
+      last_incremental_layer.linear.weight.data[idx_t] = torch.nn.Parameter(last_pretrained_layer.linear.weight[idx_father].detach().clone())
+      last_incremental_layer.linear.bias.data[idx_t] = torch.nn.Parameter(last_pretrained_layer.linear.bias[idx_father].detach().clone())  
+
 
 class KENNClassifierForIncrementalTrainingOntonotes(KENNClassifierForIncrementalTraining):
 
   def get_class_for_pretrained_projector(self):
     return Classifier
   
-  # TODO: remove method!!! wrong initialization
   def copy_pretrained_parameters_into_incremental_module(self):
-        # assuming that pretrained_projector and additional_projector have the same architecture
-        for pretrained_l, incremental_l in zip(list(self.pretrained_projector.layers.values())[:-1], 
-                                                list(self.additional_projector.classifier.layers.values())[:-1]):
-            incremental_l.linear.weight = torch.nn.Parameter(pretrained_l.linear.weight.detach().clone())
-            incremental_l.linear.bias = torch.nn.Parameter(pretrained_l.linear.bias.detach().clone())
+    # assuming that pretrained_projector and additional_projector have the same architecture
+    # copy shared parameters
+    for pretrained_l, incremental_l in zip(list(self.pretrained_projector.layers.values())[:-1], 
+                                          list(self.additional_projector.classifier.layers.values())[:-1]):
+      incremental_l.linear.weight = torch.nn.Parameter(pretrained_l.linear.weight.detach().clone())
+      incremental_l.linear.bias = torch.nn.Parameter(pretrained_l.linear.bias.detach().clone())
+    # init new parameters to better exploit the hierarchy: the weights of a logit of a new type are set to the values of the father's ones
+    last_pretrained_layer = list(self.pretrained_projector.layers.values())[-1]
+    last_incremental_layer = list(self.additional_projector.classifier.layers.values())[-1]
+    for t in self.new_types:
+      father = '/'.join(t.split('/')[:-1])
+      idx_father = self.pretrained_projector.type2id[father]
+      idx_t = self.additional_projector.type2id[t] - self.pretrained_projector.type_number
+      last_incremental_layer.linear.weight.data[idx_t] = torch.nn.Parameter(last_pretrained_layer.linear.weight[idx_father].detach().clone())
+      last_incremental_layer.linear.bias.data[idx_t] = torch.nn.Parameter(last_pretrained_layer.linear.bias[idx_father].detach().clone())  
+
 
 class KENNClassifierForCrossDatasetTraining(ClassifierForCrossDatasetTraining):
   def __init__(self, clause_file_path=None, clause_weight = 0.5, **kwargs):

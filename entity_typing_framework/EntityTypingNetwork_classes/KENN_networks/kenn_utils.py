@@ -77,7 +77,8 @@ def generate_constraints(types_list, mode, filepath = None, learnable_clause_wei
 
     return save_kb(filepath, kb)
 
-def generate_constraints_incremental(all_types, new_types, filepath = None, weight='_', mode='top_down'):
+def generate_constraints_incremental(all_types, new_types, filepath = None, learnable_clause_weight = True, clause_weight='_', mode='top_down'):
+    weight = '_' if learnable_clause_weight else clause_weight
     # create ontology tree from all_types
     tree = create_tree(all_types, label2pred = True)
     # create specialization clauses
