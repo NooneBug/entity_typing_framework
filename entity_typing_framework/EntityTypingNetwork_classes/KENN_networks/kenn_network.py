@@ -1,11 +1,8 @@
 from copy import deepcopy
 from entity_typing_framework.EntityTypingNetwork_classes.projectors import Classifier, ClassifierForCrossDatasetTraining, ClassifierForIncrementalTraining, Projector
-from pytorch_lightning import LightningModule
 import torch
-from torch.nn import Sigmoid, Linear
-from tqdm import tqdm
+from torch.nn import Sigmoid
 import entity_typing_framework.EntityTypingNetwork_classes.KENN_networks.kenn_utils as kenn_utils
-import json
 
 import sys
 sys.path.append('./')
@@ -129,15 +126,17 @@ class KENNClassifierForIncrementalTraining(ClassifierForIncrementalTraining):
                                           list(self.additional_projector.classifier.layers.values())[:-1]):
       incremental_l.linear.weight = torch.nn.Parameter(pretrained_l.linear.weight.detach().clone())
       incremental_l.linear.bias = torch.nn.Parameter(pretrained_l.linear.bias.detach().clone())
+
     # init new parameters to better exploit the hierarchy: the weights of a logit of a new type are set to the values of the father's ones
-    last_pretrained_layer = list(self.pretrained_projector.classifier.layers.values())[-1]
-    last_incremental_layer = list(self.additional_projector.classifier.layers.values())[-1]
-    for t in self.new_types:
-      father = '/'.join(t.split('/')[:-1])
-      idx_father = self.pretrained_projector.type2id[father]
-      idx_t = self.additional_projector.type2id[t] - self.pretrained_projector.type_number
-      last_incremental_layer.linear.weight.data[idx_t] = torch.nn.Parameter(last_pretrained_layer.linear.weight[idx_father].detach().clone())
-      last_incremental_layer.linear.bias.data[idx_t] = torch.nn.Parameter(last_pretrained_layer.linear.bias[idx_father].detach().clone())  
+    if self.copy_father_parameters:
+      last_pretrained_layer = list(self.pretrained_projector.classifier.layers.values())[-1]
+      last_incremental_layer = list(self.additional_projector.classifier.layers.values())[-1]
+      for t in self.new_types:
+        father = '/'.join(t.split('/')[:-1])
+        idx_father = self.pretrained_projector.type2id[father]
+        idx_t = self.additional_projector.type2id[t] - self.pretrained_projector.type_number
+        last_incremental_layer.linear.weight.data[idx_t] = torch.nn.Parameter(last_pretrained_layer.linear.weight[idx_father].detach().clone())
+        last_incremental_layer.linear.bias.data[idx_t] = torch.nn.Parameter(last_pretrained_layer.linear.bias[idx_father].detach().clone())  
 
 
 class KENNClassifierForIncrementalTrainingOntonotes(KENNClassifierForIncrementalTraining):
