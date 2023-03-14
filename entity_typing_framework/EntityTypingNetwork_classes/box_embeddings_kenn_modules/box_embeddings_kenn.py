@@ -195,6 +195,9 @@ class BoxEmbeddingKENNProjectorForIncrementalTraining(BoxEmbeddingIncrementalPro
     # keep only enhanced incremental predictions
     postkenn_incremental = postkenn_all_types[:,-self.additional_projector.type_number:]
 
+    # clip presigmoid to avoid torch.log(torch.sig(X)) = -inf
+    postkenn_incremental = torch.clamp(postkenn_incremental, min=-85)
+
     # convert output from preactivations to logprobs
     logprob_postkenn_incremental = torch.log(self.sig(postkenn_incremental))
     logprob_postkenn_pretrain = logprob_prekenn_pretrain # only for readability of return
