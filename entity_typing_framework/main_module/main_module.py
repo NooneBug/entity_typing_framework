@@ -578,25 +578,17 @@ class IncrementalBoxEmbeddingMainModule(BoxEmbeddingMainModule, IncrementalMainM
         return torch.concat(network_output, dim=1)
 
 class BoxEmbeddingMainModuleForOpt(BoxEmbeddingMainModule):
-    # def test_step(self, batch, batch_step):
-    #     pass
 
     def on_fit_end(self) -> None:
         with open('opt_losses.txt', 'a') as out:
             out.write(f'{self.trainer.checkpoint_callback.best_model_score.item()}\n')
 
-# TODO: tmp code... a bit duplicated...
 class CrossDatasetMainModule(MainModule):
     # NOTE: depth-first left-to-right MRO, do not change inheritance order!
     
     def __init__(self, ET_Network_params, type_number, type2id, inference_params, **kwargs):
         super().__init__(ET_Network_params=ET_Network_params, type_number=type_number, type2id=type2id, inference_params=inference_params, **kwargs)
-
-        # # dev
-        # self.metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='', type2id=self.type2id)
-        # # test
-        # self.test_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test', type2id=self.type2id)
-        # test per type
+        
         self.test_per_type_metric_manager = MetricManagerForIncrementalTypes(self.type_number, device=self.device, prefix='test')
 
 
@@ -625,7 +617,6 @@ class CrossDatasetMainModule(MainModule):
         self.logger_module.log_all_metrics(metrics)
         self.logger_module.log_all()
 
-# TODO: not using KENN inheritance...
 class CrossDatasetKENNMultilossMainModule(CrossDatasetMainModule):
     
     def get_output_for_inference(self, network_output):

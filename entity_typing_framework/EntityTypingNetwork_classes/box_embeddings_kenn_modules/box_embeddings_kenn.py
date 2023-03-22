@@ -149,26 +149,9 @@ class BoxEmbeddingKENNProjectorForIncrementalTraining(BoxEmbeddingIncrementalPro
     # get kwargs of father class
     father_kwargs = super().get_kwargs_incremental_projector(**kwargs)
     
-    new_type_number = self.get_new_type_number(**kwargs)
-
-    # get clauses only for incremental types
-    # type2id = father_kwargs['type2id']
-    new_type_number = len(father_kwargs['type2id']) - kwargs['type_number']
-    # all_types = list(type2id.keys())
-    # new_types = all_types[-new_type_number:]
-    # # TODO: modify next three lines to be consistent with newer classes
-    # clause_file_path = f"kenn_tmp/{kwargs['kb_mode']}_incremental_clause_file.txt"
-    # cw = '_' if kwargs['learnable_clause_weight'] else kwargs['clause_weight']
-    # kenn_utils.generate_constraints_incremental(all_types=all_types,
-    #                                             new_types=new_types,
-    #                                             filepath=clause_file_path,
-    #                                             weight=cw,
-    #                                             mode=kwargs['kb_mode'])
-    
-    # # modify the kwargs to instantiate the correct ke by the super().__init__(call)
+    # modify the kwargs to instantiate the correct ke by the super().__init__(call)
     incremental_kwargs = deepcopy(father_kwargs)
-    # incremental_kwargs['clause_file_path'] = clause_file_path
-    incremental_kwargs['type_number'] = new_type_number    
+    incremental_kwargs['type_number'] = self.get_new_type_number(**kwargs)
 
     return incremental_kwargs
     

@@ -3,27 +3,6 @@ import torch.nn as nn
 import torch
 import math 
 
-# class BCELossForET(LossModule):
-#     def __init__(self, name, **kwargs) -> None:
-#         super().__init__()
-#         self.loss = BCELoss(**kwargs)
-    
-#     def compute_loss(self, encoded_input, type_representation):
-#         return self.loss(encoded_input, type_representation)
-
-# class BoxEmbeddingLogProbBCELoss(Loss):
-#     def __init__(self, name):
-#         super().__init__()
-#         self.loss_func = BCEWithLogProbLoss()
-
-#     def compute_loss(self,
-#                     logits: torch.Tensor,
-#                     targets: torch.Tensor,
-#                     ) -> torch.Tensor:
-
-#         loss = self.loss_func(logits, targets)
-#         return loss
-
 _log1mexp_switch = math.log(0.5)
 
 def log1mexp(x: torch.Tensor,

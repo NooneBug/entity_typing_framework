@@ -36,7 +36,6 @@ class KENNModule(Projector):
   
   def automatic_build_clauses(self, types_list, clause_file_path = None, learnable_clause_weight = False, clause_weight = 0.5, kb_mode = 'top_down'):
     # generate and save KENN clauses
-    # cw = '_' if learnable_clause_weight else clause_weight
     kenn_utils.generate_constraints(types_list, kb_mode, clause_file_path, learnable_clause_weight, clause_weight)
 
 class KENNClassifier(KENNModule):
@@ -106,7 +105,6 @@ class KENNClassifierForIncrementalTraining(ClassifierForIncrementalTraining):
     prekenn_pretrain = self.pretrained_projector.classify(pretrain_projected_input)
 
     # TODO: pretrained classifier has an unused KENN knowledge enhancer, remove it with refactoring on IncrementalModel
-    # postkenn_pretrain = self.pretrained_projector.apply_knowledge_enhancement(prekenn_pretrain)
 
     postkenn_pretrain = prekenn_pretrain
 

@@ -1,10 +1,7 @@
 from entity_typing_framework.dataset_classes.dataset_managers import DatasetManager, ELMoDatasetManager
 import os
 
-# TODO: 1) implement ELMo specializtion (multiple inheritance?)
-# or
-# TODO: 2) delete class and use the yaml to specify slice_dirpath, 
-# and move get_tokenizer_config_name into tokenized_dataset
+
 class DatasetManagerLarge(DatasetManager):
 
   def __init__(self, dataset_paths: dict, dataset_reader_params: dict, tokenizer_params: dict, dataset_params: dict, dataloader_params: dict, rw_options: dict):
