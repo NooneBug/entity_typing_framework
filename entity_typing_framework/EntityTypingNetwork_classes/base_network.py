@@ -208,7 +208,10 @@ class CrossDatasetEntityTypingNetwork(BaseEntityTypingNetwork):
     # TODO: it should not be in this class
     def copy_encoder(self, network_params):
         ckpt = torch.load(network_params['input_projector_params']['src_ckpt'])
-        encoder_state_dict = {'.'.join(k.split('.')[1:]):v for k,v in ckpt['state_dict'].items() if 'adapters' in k}
+        if any(['adapter' in k for k in ckpt.keys()]) and hasattr(self.encoder, 'reduction_factor'):
+            encoder_state_dict = {'.'.join(k.split('.')[1:]):v for k,v in ckpt['state_dict'].items() if 'adapters' in k}
+        else:
+            encoder_state_dict = ckpt['state_dict']
         self.encoder.load_state_dict(encoder_state_dict, strict=False)
         
 

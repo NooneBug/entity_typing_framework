@@ -153,6 +153,17 @@ class RankingLossModule(LossModule):
     def compute_loss(self, encoded_input, type_representation):
         return self.loss(encoded_input, type_representation)
 
+class CELossModule(LossModule):
+    def __init__(self, type2id, loss_params, **kwargs) -> None:
+        super().__init__(type2id, loss_params)
+        name = loss_params.pop('name')
+        self.loss = IMPLEMENTED_CLASSES_LVL1[name](**loss_params)
+    
+    def compute_loss(self, encoded_input, type_representation):
+        argmax = type_representation.argmax(axis = -1)
+        return self.loss(encoded_input, argmax)
+
+
 class FlatRankingLossModule(RankingLossModule):
     def __init__(self, type2id, loss_params, **kwargs) -> None:
         super().__init__(type2id, loss_params, **kwargs)
