@@ -380,4 +380,18 @@ class MentionSentenceBERTTokenizedDataset(BaseBERTTokenizedDataset):
         '[SEP]' + self.cut_context(sent_dict['left_context_tokens'], self.max_left_words, False) + \
         self.split_and_cut_mention(sent_dict['mention_span'], self.max_mention_words) + \
         self.cut_context(sent_dict['right_context_tokens'], self.max_right_words, True)
+
+class ALIGNIEPromptTokenizedDataset(BaseBERTTokenizedDataset):
+    def create_sentence(self, sent_dict):
+        original_sentence = self.cut_context(sent_dict['left_context_tokens'], self.max_left_words, False) + ' ' + \
+            self.split_and_cut_mention(sent_dict['mention_span'], self.max_mention_words) + ' ' + \
+                self.cut_context(sent_dict['right_context_tokens'], self.max_right_words, True)
         
+        if original_sentence[-1] == '.':
+            prompt = ''
+        else:
+            prompt = '.'
+
+        prompt += self.split_and_cut_mention(sent_dict['mention_span'], self.max_mention_words) + ' is a ' + self.tokenizer.mask_token + '.'
+
+        return original_sentence + prompt

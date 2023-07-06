@@ -69,7 +69,7 @@ class DatasetManager(LightningDataModule):
 
     '''
     def __init__(self, dataset_paths : dict, dataset_reader_params : dict, tokenizer_params : dict, dataset_params : dict, dataloader_params : dict,
-                rw_options : dict, ):
+                rw_options : dict, truncation_side = ''):
         self.dataset_paths = dataset_paths
         self.dataset_reader_params = dataset_reader_params
         self.tokenizer_params = tokenizer_params
@@ -85,6 +85,9 @@ class DatasetManager(LightningDataModule):
             raise Exception(f"Error: the value of data.rw_options.modality must be in {RW_OPTIONS_MODALITY}")
         self.type_number = self.get_type_number()
         self.tokenizer_config_name = self.get_tokenizer_config_name()
+        self.truncation_side = truncation_side
+        tokenizer = self.instance_tokenizer(**self.tokenizer_params)
+        self.mask_token_id = tokenizer.mask_token
 
     def read_datasets(self):
         '''
@@ -217,7 +220,10 @@ class DatasetManager(LightningDataModule):
             an instance of `huggingface AutoTokenizer <https://huggingface.co/docs/transformers/v4.15.0/en/model_doc/auto#transformers.AutoTokenizer>`_
 
         '''
-        return AutoTokenizer.from_pretrained(bertlike_model_name)
+        if self.truncation_side:
+            return AutoTokenizer.from_pretrained(bertlike_model_name, truncation_side = self.truncation_side)
+        else:
+            return AutoTokenizer.from_pretrained(bertlike_model_name)
 
 
     def setup(self, **kwargs):

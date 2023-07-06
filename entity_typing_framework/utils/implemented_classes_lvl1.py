@@ -43,4 +43,4 @@ IMPLEMENTED_CLASSES_LVL1 = {
     'ELMoEncoder' : ELMoEncoder,
     'GloVeEncoder' : GloVeEncoder,
     'LSTMGloVeEncoder' : LSTMGloVeEncoder
-}
+    }

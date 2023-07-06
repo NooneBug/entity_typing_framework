@@ -45,6 +45,7 @@ class MainModule(LightningModule):
         self.is_calibrating_threshold = False # this flag will be disabled during threshold calibration
         self.dev_network_output = None
         self.dev_true_types = None
+        
 
     def on_fit_start(self):
         self.metric_manager.set_device(self.device)
@@ -590,16 +591,67 @@ class CrossDatasetMainModule(MainModule):
         # # test
         # self.test_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test', type2id=self.type2id)
         # test per type
+        self.val_per_type_metric_manager = MetricManagerForIncrementalTypes(self.type_number, device=self.device, prefix='val')
         self.test_per_type_metric_manager = MetricManagerForIncrementalTypes(self.type_number, device=self.device, prefix='test')
 
 
     def on_fit_start(self):
         super().on_fit_start()
+        self.val_per_type_metric_manager.set_device(self.device)
         self.test_per_type_metric_manager.set_device(self.device)
 
     def on_test_start(self):
         super().on_test_start()
+        self.val_per_type_metric_manager.set_device(self.device)                
         self.test_per_type_metric_manager.set_device(self.device)                
+
+    def validation_step(self, batch, batch_step):
+        _, _, true_types = batch
+        true_types = self.get_true_types_for_metrics(true_types)
+        network_output, type_representations = self.ET_Network(batch)
+        network_output_for_loss = self.get_output_for_loss(network_output)
+        network_output_for_inference = self.get_output_for_inference(network_output)
+
+        # TODO: check if is the same for every projector
+        loss = self.loss.compute_loss_for_validation_step(encoded_input=network_output_for_loss, type_representation=true_types)
+        # loss = self.loss.compute_loss_for_validation_step(network_output_for_loss, type_representations)
+
+        inferred_types = self.inference_manager.infer_types(network_output_for_inference)
+        
+        if self.trainer.state.status == 'running' or not self.avoid_sanity_logging:
+            self.metric_manager.update(inferred_types, true_types)
+            self.val_per_type_metric_manager.update(inferred_types, true_types)
+
+        # accumulate dev network output for threshold calibration
+        if self.is_calibrating_threshold:
+            if self.dev_network_output != None:
+                self.dev_network_output = torch.vstack([self.dev_network_output, network_output_for_inference])
+                self.dev_true_types = torch.vstack([self.dev_true_types, true_types])
+            else:
+                self.dev_network_output = network_output_for_inference
+                self.dev_true_types = true_types
+
+
+        return loss
+    
+    def validation_epoch_end(self, out):
+        if self.trainer.state.status == 'running' or not self.avoid_sanity_logging:
+            
+
+            metrics = self.metric_manager.compute()
+            metrics.update(self.val_per_type_metric_manager.compute(self.type2id))
+        
+            
+            if not self.is_calibrating_threshold:
+                self.logger_module.add(key = 'epoch', value = self.current_epoch)
+                self.logger_module.log_all_metrics(metrics)
+                val_loss = torch.mean(torch.tensor(out))
+                self.logger_module.log_loss(name = 'val_loss', value = val_loss)
+                self.logger_module.log_all()
+                self.log("val_loss", val_loss)
+            
+            # was used for threshold calibration
+            self.last_validation_metrics = metrics
 
     def test_step(self, batch, batch_step):
         _, _, true_types = batch
@@ -628,3 +680,28 @@ class CrossDatasetKENNMultilossMainModule(CrossDatasetMainModule):
     def get_output_for_loss(self, network_output):
         # return prekenn and postkenn output (same as returning the output as is...)
         return network_output[0], network_output[1]
+    
+class ALIGNIEMainModule(MainModule):
+
+    def __init__(self, ET_Network_params: dict, type_number: int, type2id: dict, logger, loss_module_params, inference_params: dict, checkpoint_to_load: str = None, avoid_sanity_logging: bool = False, smart_save: bool = True, learning_rate: float = 0.0005, metric_manager_name: str = 'MetricManager', mask_token_id = ''):
+        super().__init__(ET_Network_params, type_number, type2id, logger, loss_module_params, inference_params, checkpoint_to_load, avoid_sanity_logging, smart_save, learning_rate, metric_manager_name)
+        self.mask_token_id = mask_token_id
+
+    def configure_optimizers(self):
+        # forse aggiungere scheduler
+        param_optimizer = list(self.named_parameters())
+
+        no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
+        optimizer_grouped_parameters = [
+            {'params': [p for n, p in param_optimizer
+                        if not any(nd in n for nd in no_decay)], 'weight_decay': 0.01},
+            {'params': [p for n, p in param_optimizer
+                        if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}]
+
+
+        optimizer = torch.optim.AdamW(optimizer_grouped_parameters, lr=self.learning_rate)
+        return optimizer
+    
+    def training_epoch_end(self, out):
+        x = 1/0
+        return super().training_epoch_end(out)
