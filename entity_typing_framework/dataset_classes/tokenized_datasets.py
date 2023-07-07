@@ -366,7 +366,7 @@ class BaseBERTTokenizedDataset(GeneralTokenizedDataset):
     # def tokenize_sentences(self, sentences, max_len):
         tokenized_sentences = self.tokenizer(processed_sentences, return_tensors='pt', max_length = self.max_len, padding = 'max_length', truncation=True)
         tokenized_sentences = {
-            'input_ids' : tokenized_sentences['input_ids'].to(torch.int16),
+            'input_ids' : tokenized_sentences['input_ids'].to(torch.int32),
             'attention_mask' : tokenized_sentences['attention_mask'].to(torch.int8)
         }
         return tokenized_sentences

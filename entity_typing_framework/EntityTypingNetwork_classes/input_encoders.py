@@ -1,5 +1,5 @@
 from typing import Any
-from transformers import AutoModel
+from transformers import AutoModel, AutoModelForMaskedLM, BartForConditionalGeneration
 from pytorch_lightning.core.lightning import LightningModule
 from transformers import PfeifferConfig, HoulsbyConfig
 from torch.nn import LSTM, Dropout
@@ -27,10 +27,16 @@ class BaseBERTLikeEncoder(LightningModule):
             this param has to be specified in the :code:`yaml` configuration file with key :code:`model.network_params.encoder_params.freeze_encoder`
 
     '''
-    def __init__(self, name: str, bertlike_model_name : str, freeze_encoder : bool = False) -> None:
+    def __init__(self, name: str, bertlike_model_name : str, freeze_encoder : bool = False, 
+                 is_mlm = False, is_bart = False) -> None:
         super().__init__()
         self.bertlike_model_name = bertlike_model_name
-        self.encoder = AutoModel.from_pretrained(self.bertlike_model_name)
+        if is_bart:
+            self.encoder = BartForConditionalGeneration.from_pretrained(self.bertlike_model_name)
+        if is_mlm:
+            self.encoder = AutoModelForMaskedLM.from_pretrained(self.bertlike_model_name)
+        else:
+            self.encoder = AutoModel.from_pretrained(self.bertlike_model_name)
         if freeze_encoder:
             self.freeze_encoder()
             # unfreeze last n layers
@@ -502,3 +508,26 @@ class ELMoEncoder(LightningModule):
 #             lvl2_embedding = self.pool_contextualized_embedding(encoded_input[2])
 
 #             return torch.stack()
+
+class MLMBERTEncoder(BERTEncoder):
+    def __init__(self, bertlike_model_name: str = 'bert-base-uncased', **kwargs) -> None:
+        super().__init__(bertlike_model_name, is_mlm = True, **kwargs)
+    
+    def forward(self, batched_tokenized_sentence, batched_attn_masks):
+
+        batched_tokenized_sentence = batched_tokenized_sentence.to(torch.int32)
+        batched_attn_masks = batched_attn_masks.to(torch.int32)
+
+        # mlm_output = self.encoder(batched_tokenized_sentence, batched_attn_masks, output_attentions = False, output_hidden_states = False)
+        mlm_output = self.encoder(batched_tokenized_sentence, batched_attn_masks)
+
+class BARTEncoder(BERTEncoder):
+    def __init__(self, bertlike_model_name: str = 'facebook/bart-base', **kwargs) -> None:
+        super().__init__(bertlike_model_name, is_bart = True, **kwargs)
+    
+    def forward(self, batched_tokenized_sentence, batched_attn_masks):
+
+        batched_tokenized_sentence = batched_tokenized_sentence.to(torch.int32)
+        batched_attn_masks = batched_attn_masks.to(torch.int32)
+
+        mlm_output = self.encoder(batched_tokenized_sentence, batched_attn_masks)
