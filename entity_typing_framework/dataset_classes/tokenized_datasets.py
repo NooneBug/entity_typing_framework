@@ -388,10 +388,37 @@ class ALIGNIEPromptTokenizedDataset(BaseBERTTokenizedDataset):
                 self.cut_context(sent_dict['right_context_tokens'], self.max_right_words, True)
         
         if original_sentence[-1] == '.':
-            prompt = ''
+            prompt = ' '
         else:
-            prompt = '.'
+            prompt = '. '
 
-        prompt += self.split_and_cut_mention(sent_dict['mention_span'], self.max_mention_words) + ' is a ' + self.tokenizer.mask_token + '.'
+        prompt += self.split_and_cut_mention(sent_dict['mention_span'], self.max_mention_words) + ' is a ' + self.tokenizer.mask_token + ' .'
 
         return original_sentence + prompt
+    
+    def tokenize_sentences(self, processed_sentences, **kwargs):
+        tokenized_sentences = {'input_ids' : [],
+                               'attention_mask' : []}
+        for p in tqdm(processed_sentences, desc='tokenizing_sentences'):
+            tokenized_sentence = self.tokenizer(p)
+            if len(tokenized_sentence['input_ids']) < self.max_len:
+                # padding
+                pad = [self.tokenizer.pad_token_id for _ in range(self.max_len - len(tokenized_sentence['input_ids']))]
+                zeros = [0 for _ in range(self.max_len - len(tokenized_sentence['input_ids']))]
+
+                tokenized_sentence['input_ids'].extend(pad)
+                tokenized_sentence['attention_mask'].extend(zeros)
+
+            elif len(tokenized_sentence['input_ids']) > self.max_len:
+                # left truncation
+                tokenized_sentence['input_ids'] = tokenized_sentence['input_ids'][-self.max_len:]
+                tokenized_sentence['attention_mask'] = tokenized_sentence['attention_mask'][-self.max_len:]
+            tokenized_sentences['input_ids'].append(tokenized_sentence['input_ids'])
+            tokenized_sentences['attention_mask'].append(tokenized_sentence['attention_mask'])
+
+        
+        tokenized_sentences = {
+            'input_ids' : torch.tensor(tokenized_sentences['input_ids']).to(torch.int32),
+            'attention_mask' : torch.tensor(tokenized_sentences['attention_mask']).to(torch.int8)
+        }
+        return tokenized_sentences

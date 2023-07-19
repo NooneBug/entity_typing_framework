@@ -218,3 +218,26 @@ class CrossDatasetEntityTypingNetwork(BaseEntityTypingNetwork):
     def freeze_pretrained_modules(self):
         self.encoder.freeze()
         self.input_projector.freeze_src_classifier()
+
+class ALIGNIENetwork(BaseEntityTypingNetwork):
+
+    def __init__(self, name, network_params, type_number, type2id, mask_token_id, init_verbalizer):
+        self.mask_token_id = mask_token_id
+        self.init_verbalizer = init_verbalizer
+        super().__init__(name, network_params, type_number, type2id)
+
+    def instance_encoder(self, network_params):
+        encoder_params = network_params['encoder_params']
+        self.encoder = IMPLEMENTED_CLASSES_LVL1[encoder_params['name']](**encoder_params,
+                                                                        mask_token_id = self.mask_token_id)
+
+    def instance_input_projector(self, network_params):
+        input_projector_params = network_params['input_projector_params']
+        self.input_projector = IMPLEMENTED_CLASSES_LVL1[input_projector_params['name']](type_number=self.type_number, 
+                                            input_dim = self.encoder.get_representation_dim(), 
+                                            type2id = self.type2id,
+                                            verbalizer = self.init_verbalizer,
+                                            **input_projector_params)
+
+    def update_verbalizer(self, epoch_id):
+        return self.input_projector.update_verbalizer(epoch_id)

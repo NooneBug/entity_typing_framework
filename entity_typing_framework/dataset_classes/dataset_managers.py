@@ -87,7 +87,7 @@ class DatasetManager(LightningDataModule):
         self.tokenizer_config_name = self.get_tokenizer_config_name()
         self.truncation_side = truncation_side
         tokenizer = self.instance_tokenizer(**self.tokenizer_params)
-        self.mask_token_id = tokenizer.mask_token
+        self.mask_token_id = tokenizer.mask_token_id
 
     def read_datasets(self):
         '''
@@ -470,3 +470,30 @@ class GloVeTokenizer():
 
     def tokenize_single_sentence(self, input_sentence):
         return input_sentence
+    
+class ALIGNIEDatasetManager(DatasetManager):
+    def __init__(self, dataset_paths: dict, dataset_reader_params: dict, tokenizer_params: dict, dataset_params: dict, dataloader_params: dict, rw_options: dict, truncation_side='', verbalizer_path = ''):
+        super().__init__(dataset_paths, dataset_reader_params, tokenizer_params, dataset_params, dataloader_params, rw_options, truncation_side)
+        self.verbalizer_path = verbalizer_path
+        self.create_verbalizer()
+    
+    def create_verbalizer(self):
+        with open(self.verbalizer_path, 'r') as inp:
+            lines = [l.replace('\n', '').split(':') for l in inp.readlines()]
+
+        verbalizer = {l[0]: l[1].split(' ') for l in lines}
+        self.tokenizer = self.instance_tokenizer(**self.tokenizer_params)
+        
+        self.verbalizer = {}
+
+        for t in self.type2id:
+            if t in verbalizer:
+                values = verbalizer[t]
+                ids = [t[0] for t in self.tokenizer([' ' + v for v in values], add_special_tokens=False)['input_ids']]
+                self.verbalizer[self.type2id[t]] = ids
+                
+            else:
+                raise Exception(f'Type {t} not in verbalizer')
+
+        
+

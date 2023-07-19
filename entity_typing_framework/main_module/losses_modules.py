@@ -4,7 +4,10 @@ from pytorch_lightning.core.lightning import LightningModule
 from entity_typing_framework.utils.flat2hierarchy import get_type2id_original, get_descendants_map, get_loss_input
 import torch
 from torch.nn.modules.loss import _WeightedLoss
-
+from torch.nn import CrossEntropyLoss, KLDivLoss
+from collections import defaultdict
+from itertools import combinations
+from torch.nn.functional import cosine_similarity, log_softmax 
 
 from fast_soft_sort.pytorch_ops import soft_rank
 
@@ -162,6 +165,16 @@ class CELossModule(LossModule):
     def compute_loss(self, encoded_input, type_representation):
         argmax = type_representation.argmax(axis = -1)
         return self.loss(encoded_input, argmax)
+    
+class KLDivLossModule(LossModule):
+    def __init__(self, type2id, loss_params, **kwargs) -> None:
+        super().__init__(type2id, loss_params)
+        name = loss_params.pop('name')
+        self.loss = IMPLEMENTED_CLASSES_LVL1[name](**loss_params)
+    
+    def compute_loss(self, encoded_input, type_representation):
+        log_input = log_softmax(encoded_input, dim=-1)
+        return self.loss(log_input.double(), type_representation.double())
 
 
 class FlatRankingLossModule(RankingLossModule):
@@ -188,5 +201,113 @@ class FlatBCELossModule(BCELossModule):
         return self.compute_loss(encoded_input_original, type_representation_original)
 
                 
-            
+class ALIGNIELossModule(LossModule):
+    def __init__(self, type2id, loss_params, enable_hierarchic_losses = True, enable_verbalizer_losses = True, **kwargs) -> None:
+        super().__init__(type2id, loss_params, **kwargs)
+        # self.ce_loss = CELossModule(type2id=type2id, loss_params=loss_params)
+        self.kld = KLDivLossModule(type2id=type2id, loss_params=loss_params)
+        self.verbalizer_loss = VerbalizerLossModule(type2id=type2id, loss_params=loss_params)
+        self.hierarchic_loss = HierarchicLossModule(type2id=type2id, loss_params=loss_params)
 
+        self.enable_hierarchic_losses = enable_hierarchic_losses
+        self.enable_verbalizer_losses = enable_verbalizer_losses
+
+    def compute_loss_for_training_step(self, encoded_input, type_representation):
+        encoded_input, verbalizer_matrix, verbalizer = encoded_input
+        return self.compute_loss(encoded_input=encoded_input,
+                                 verbalizer_matrix=verbalizer_matrix,
+                                 verbalizer=verbalizer,
+                                 type_representation=type_representation,
+                                 )
+    
+    def compute_loss_for_validation_step(self, encoded_input, type_representation):
+        encoded_input, verbalizer_matrix, verbalizer = encoded_input
+        return self.compute_loss(encoded_input=encoded_input,
+                                 verbalizer_matrix=verbalizer_matrix,
+                                 verbalizer=verbalizer,
+                                 type_representation=type_representation,
+                                 )
+
+    def compute_loss(self, encoded_input, verbalizer_matrix, verbalizer, type_representation):
+        # ce_loss_value = self.ce_loss.compute_loss(encoded_input, type_representation)
+        ce_loss_value = self.kld.compute_loss(encoded_input, type_representation)
+        verbalizer_loss_value = 0.
+        incl_loss_value, excl_loss_value = 0., 0.
+
+        if self.enable_verbalizer_losses:
+            verbalizer_loss_value = self.verbalizer_loss.compute_loss(verbalizer_matrix.weight, verbalizer)
+            
+        if self.enable_hierarchic_losses:
+            incl_loss_value, excl_loss_value = self.hierarchic_loss.compute_loss(verbalizer_matrix.weight)
+        
+        return {'ce_loss': ce_loss_value, 
+                'verbalizer_loss' : verbalizer_loss_value, 
+                'incl_loss_value' : incl_loss_value, 
+                'excl_loss_value' : excl_loss_value}
+    
+class VerbalizerLossModule(LossModule):
+    def compute_loss(self, verbalizer_matrix, verbalizer):
+
+        all_keywords = []
+        keyword_class = []
+        for k, value in verbalizer.items():
+            all_keywords.extend(value)
+            keyword_class.extend([k for j in range(len(value))])        
+
+        keyword_class = torch.tensor(keyword_class).cuda()  
+        all_keywords = torch.tensor(all_keywords).cuda()
+        all_keywords = all_keywords.view(-1).repeat(len(verbalizer), 1)  
+        score = torch.gather(verbalizer_matrix, 1, all_keywords).T   
+
+
+        loss_fct = CrossEntropyLoss()
+        disc_loss = loss_fct(score, keyword_class)
+        return disc_loss
+
+class HierarchicLossModule(LossModule):
+    def __init__(self, type2id, loss_params, **kwargs) -> None:
+        super().__init__(type2id, loss_params, **kwargs)
+        father_son_dict = defaultdict(list)
+
+        fathers = []
+
+        for t in type2id.keys():
+            if t.split('/other')[-1] == '':
+                fathers.append(t.split('/other')[0])
+
+        for f in fathers:
+            for type2 in type2id.keys():
+                if f + '/other' != type2 and f + '/' in type2:
+                    father_son_dict[type2id[f + '/other']].append(type2id[type2])
+        
+        self.father_son_couples = []
+
+        for father, sons in father_son_dict.items():
+            for s in sons:
+                self.father_son_couples.append((father, s))
+        
+        self.siblings_couples = []
+        for sons in father_son_dict.values():
+            if len(sons) > 1:
+                self.siblings_couples.extend(list(combinations(sons, 2)))
+    
+    def compute_loss(self, verbalizer_matrix):
+        incl_loss_value = self.incl_loss(verbalizer_matrix)
+        excl_loss_value = self.excl_loss(verbalizer_matrix)
+
+        return incl_loss_value, excl_loss_value
+
+    def incl_loss(self, verbalizer_matrix):
+
+        similarities = torch.tensor(0.).cuda()
+        for f, s in self.father_son_couples:
+            similarities += 1 - cosine_similarity(verbalizer_matrix[f], verbalizer_matrix[s], dim = -1)
+
+        return similarities / len(self.father_son_couples)
+
+    def excl_loss(self, verbalizer_matrix):
+        similarities = torch.tensor(0.).cuda()
+        for s1, s2 in self.siblings_couples:
+            similarities += cosine_similarity(verbalizer_matrix[s1], verbalizer_matrix[s2], dim = -1)
+
+        return similarities / len(self.siblings_couples)

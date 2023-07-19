@@ -1,5 +1,5 @@
 from tabnanny import check
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 # from entity_typing_framework.main_module.inference_manager import BaseInferenceManager
 from entity_typing_framework.main_module.metric_manager import MetricManager, MetricManagerForIncrementalTypes
 from entity_typing_framework.utils.implemented_classes_lvl0 import IMPLEMENTED_CLASSES_LVL0
@@ -7,6 +7,8 @@ from pytorch_lightning.core.lightning import LightningModule
 import torch
 import time
 import numpy as np
+from transformers import AutoTokenizer, get_linear_schedule_with_warmup
+from collections import defaultdict
 
 class MainModule(LightningModule):
     def __init__(self, 
@@ -31,11 +33,7 @@ class MainModule(LightningModule):
         self.avoid_sanity_logging = avoid_sanity_logging
         self.smart_save = smart_save
         self.learning_rate = learning_rate
-
-        if not checkpoint_to_load:
-            self.ET_Network = IMPLEMENTED_CLASSES_LVL0[self.ET_Network_params['name']](**self.ET_Network_params, type_number = self.type_number, type2id = self.type2id)
-        else:
-            self.ET_Network = self.load_ET_Network(ET_Network_params=self.ET_Network_params, checkpoint_to_load=checkpoint_to_load)
+        self.checkpoint_to_load = checkpoint_to_load
         self.metric_manager = IMPLEMENTED_CLASSES_LVL0[metric_manager_name](num_classes=self.type_number, device=self.device, type2id = self.type2id, prefix='dev')
         self.test_metric_manager = IMPLEMENTED_CLASSES_LVL0[metric_manager_name](num_classes=self.type_number, device=self.device, type2id = self.type2id, prefix='test')
 
@@ -45,7 +43,18 @@ class MainModule(LightningModule):
         self.is_calibrating_threshold = False # this flag will be disabled during threshold calibration
         self.dev_network_output = None
         self.dev_true_types = None
+
+    def instance_ET_network(self):
+        return IMPLEMENTED_CLASSES_LVL0[self.ET_Network_params['name']](**self.ET_Network_params, type_number = self.type_number, type2id = self.type2id)
+
+    def setup(self, stage: str):
+        if not self.checkpoint_to_load:
+            self.ET_Network = self.instance_ET_network()
+        else:
+            self.ET_Network = self.load_ET_Network(ET_Network_params=self.ET_Network_params, checkpoint_to_load=self.checkpoint_to_load)
         
+        return super().setup(stage)        
+
 
     def on_fit_start(self):
         self.metric_manager.set_device(self.device)
@@ -683,9 +692,21 @@ class CrossDatasetKENNMultilossMainModule(CrossDatasetMainModule):
     
 class ALIGNIEMainModule(MainModule):
 
-    def __init__(self, ET_Network_params: dict, type_number: int, type2id: dict, logger, loss_module_params, inference_params: dict, checkpoint_to_load: str = None, avoid_sanity_logging: bool = False, smart_save: bool = True, learning_rate: float = 0.0005, metric_manager_name: str = 'MetricManager', mask_token_id = ''):
+    def __init__(self, ET_Network_params: dict, type_number: int, type2id: dict, logger, loss_module_params, inference_params: dict, checkpoint_to_load: str = None, avoid_sanity_logging: bool = False, smart_save: bool = True, learning_rate: float = 0.0005, metric_manager_name: str = 'MetricManager', mask_token_id = '', verbalizer = ''):
         super().__init__(ET_Network_params, type_number, type2id, logger, loss_module_params, inference_params, checkpoint_to_load, avoid_sanity_logging, smart_save, learning_rate, metric_manager_name)
         self.mask_token_id = mask_token_id
+        self.verbalizer = verbalizer
+        self.tokenizer = AutoTokenizer.from_pretrained(ET_Network_params['network_params']['encoder_params']['bertlike_model_name'])
+        self.id2type = {v:k for k, v in self.type2id.items()}
+        self.train_losses_for_log = defaultdict(list)
+        self.val_losses_for_log = defaultdict(list)
+
+    def instance_ET_network(self):
+        return IMPLEMENTED_CLASSES_LVL0[self.ET_Network_params['name']](**self.ET_Network_params, 
+                                                                        type_number = self.type_number, 
+                                                                        type2id = self.type2id, 
+                                                                        mask_token_id = self.mask_token_id,
+                                                                        init_verbalizer = self.verbalizer)
 
     def configure_optimizers(self):
         # forse aggiungere scheduler
@@ -700,8 +721,141 @@ class ALIGNIEMainModule(MainModule):
 
 
         optimizer = torch.optim.AdamW(optimizer_grouped_parameters, lr=self.learning_rate)
-        return optimizer
+        
+        N_EPOCHS = 30
+        BATCHES = 13
+        num_training_steps = N_EPOCHS * BATCHES
+        num_warmup_steps = int(0.1 * num_training_steps)
+        print(f"num training steps: {num_training_steps}")
+        print(f"num warmup steps: {num_warmup_steps}")
+        scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=num_warmup_steps, num_training_steps=num_training_steps)
+
+        # return optimizer
+        return {'optimizer' : optimizer, 
+                'lr_scheduler' : scheduler}
+    
+    def update_verbalizer(self):
+        self.verbalizer = self.ET_Network.update_verbalizer(epoch_id=self.current_epoch)
+        for type_name_id, type_words_ids in self.verbalizer.items():
+            print(f'{self.id2type[type_name_id]}: {[self.tokenizer.decode([id]) for id in type_words_ids]}')
+
+    def get_output_for_loss(self, network_output):
+        return super().get_output_for_loss((network_output[0], network_output[1], self.verbalizer))
+    
+    def get_output_for_inference(self, network_output):
+        return network_output[0]
+    
+    def load_ET_Network(self, ET_Network_params, checkpoint_to_load):
+        return IMPLEMENTED_CLASSES_LVL0[ET_Network_params['name']](**ET_Network_params, 
+                                                                    type_number = self.type_number,
+                                                                    type2id = self.type2id,
+                                                                    mask_token_id = self.mask_token_id,
+                                                                    init_verbalizer = self.verbalizer).load_from_checkpoint(checkpoint_to_load = checkpoint_to_load, 
+                                                                                                                            strict = False)
+
+    def load_ET_Network_for_test_(self, checkpoint_to_load):
+
+        print('Loading model with torch.load ...')
+        start = time.time()
+        ckpt_state_dict = torch.load(checkpoint_to_load)
+        print('Loaded in {:.2f} seconds'.format(time.time() - start))
+        
+        ET_Network_params = ckpt_state_dict['hyper_parameters']['ET_Network_params']
+        type_number = ckpt_state_dict['hyper_parameters']['type_number']
+        type2id = ckpt_state_dict['hyper_parameters']['type2id']
+        
+        print('Instantiating {} class ...'.format(ET_Network_params['name']))
+        start = time.time()
+        ckpt = IMPLEMENTED_CLASSES_LVL0[ET_Network_params['name']](**ET_Network_params, 
+                                                                    type_number=type_number,
+                                                                    type2id=type2id,
+                                                                    mask_token_id = self.mask_token_id,
+                                                                    init_verbalizer = self.verbalizer)
+        print('Instantiated in {:.2f} seconds'.format(time.time() - start))
+        
+        print('Loading from checkpoint with load_from_checkpoint...')
+        start = time.time()
+        ckpt.load_from_checkpoint(checkpoint_to_load = checkpoint_to_load, strict = False)
+        print('Loaded in {:.2f} seconds'.format(time.time() - start))
+        
+        return ckpt
+
+    def training_step(self, batch, batch_step):
+        network_output, type_representations = self.ET_Network(batch)
+        network_output_for_loss = self.get_output_for_loss(network_output)
+        loss = self.loss.compute_loss_for_training_step(encoded_input=network_output_for_loss, type_representation=type_representations)
+        self.train_losses_for_log['ce_loss'].append(loss['ce_loss'])
+        self.train_losses_for_log['verbalizer_loss'].append(loss['verbalizer_loss'])
+        self.train_losses_for_log['incl_loss_value'].append(loss['incl_loss_value'])
+        self.train_losses_for_log['excl_loss_value'].append(loss['excl_loss_value'])
+        if self.current_epoch == 0:
+            return loss['ce_loss'] + loss['incl_loss_value'] + loss['excl_loss_value']
+        else:
+            return loss['ce_loss'] + loss['verbalizer_loss'] + loss['incl_loss_value'] + loss['excl_loss_value']
     
     def training_epoch_end(self, out):
-        x = 1/0
+        losses = [v for elem in out for k, v in elem.items()]
+        self.logger_module.log_loss(name = 'train_loss', value = torch.mean(torch.tensor(losses)))
+        self.logger_module.log_loss(name = 'train_ce_loss', value = torch.mean(torch.tensor(self.train_losses_for_log['ce_loss'])))
+        self.logger_module.log_loss(name = 'train_verbalizer_loss', value = torch.mean(torch.tensor(self.train_losses_for_log['verbalizer_loss'])))
+        self.logger_module.log_loss(name = 'train_incl_loss', value = torch.mean(torch.tensor(self.train_losses_for_log['incl_loss_value'])))
+        self.logger_module.log_loss(name = 'train_excl_loss', value = torch.mean(torch.tensor(self.train_losses_for_log['excl_loss_value'])))
+        self.train_losses_for_log = defaultdict(list)
+        self.update_verbalizer()
         return super().training_epoch_end(out)
+    
+
+    def validation_step(self, batch, batch_step):
+        _, _, true_types = batch
+        true_types = self.get_true_types_for_metrics(true_types)
+        network_output, type_representations = self.ET_Network(batch)
+        network_output_for_loss = self.get_output_for_loss(network_output)
+        network_output_for_inference = self.get_output_for_inference(network_output)
+
+        # TODO: check if is the same for every projector
+        loss = self.loss.compute_loss_for_validation_step(encoded_input=network_output_for_loss, type_representation=true_types)
+        # loss = self.loss.compute_loss_for_validation_step(network_output_for_loss, type_representations)
+
+        inferred_types = self.inference_manager.infer_types(network_output_for_inference)
+        
+        if self.trainer.state.status == 'running' or not self.avoid_sanity_logging:
+            self.metric_manager.update(inferred_types, true_types)
+
+        # accumulate dev network output for threshold calibration
+        if self.is_calibrating_threshold:
+            if self.dev_network_output != None:
+                self.dev_network_output = torch.vstack([self.dev_network_output, network_output_for_inference])
+                self.dev_true_types = torch.vstack([self.dev_true_types, true_types])
+            else:
+                self.dev_network_output = network_output_for_inference
+                self.dev_true_types = true_types
+
+        self.val_losses_for_log['ce_loss'].append(loss['ce_loss'])
+        self.val_losses_for_log['verbalizer_loss'].append(loss['verbalizer_loss'])
+        self.val_losses_for_log['incl_loss_value'].append(loss['incl_loss_value'])
+        self.val_losses_for_log['excl_loss_value'].append(loss['excl_loss_value'])
+
+        return loss['ce_loss'] + loss['verbalizer_loss'] + loss['incl_loss_value'] + loss['excl_loss_value']
+    
+    def validation_epoch_end(self, out):
+        if self.trainer.state.status == 'running' or not self.avoid_sanity_logging:
+            
+            metrics = self.metric_manager.compute()
+            
+            if not self.is_calibrating_threshold:
+                self.logger_module.add(key = 'epoch', value = self.current_epoch)
+                self.logger_module.log_all_metrics(metrics)
+                val_loss = torch.mean(torch.tensor(out))
+                self.logger_module.log_loss(name = 'val_loss', value = val_loss)
+
+                self.logger_module.log_loss(name = 'val_ce_loss', value = torch.mean(torch.tensor(self.val_losses_for_log['ce_loss'])))
+                self.logger_module.log_loss(name = 'val_verbalizer_loss', value = torch.mean(torch.tensor(self.val_losses_for_log['verbalizer_loss'])))
+                self.logger_module.log_loss(name = 'val_incl_loss', value = torch.mean(torch.tensor(self.val_losses_for_log['incl_loss_value'])))
+                self.logger_module.log_loss(name = 'val_excl_loss', value = torch.mean(torch.tensor(self.val_losses_for_log['excl_loss_value'])))
+                self.val_losses_for_log = defaultdict(list)
+
+                self.logger_module.log_all()
+                self.log("val_loss", val_loss)
+            
+            # was used for threshold calibration
+            self.last_validation_metrics = metrics

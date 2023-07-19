@@ -1,10 +1,11 @@
-from entity_typing_framework.EntityTypingNetwork_classes.base_network import BaseEntityTypingNetwork, CrossDatasetEntityTypingNetwork, IncrementalEntityTypingNetwork
+from entity_typing_framework.EntityTypingNetwork_classes.base_network import ALIGNIENetwork, BaseEntityTypingNetwork, CrossDatasetEntityTypingNetwork, IncrementalEntityTypingNetwork
+from entity_typing_framework.EntityTypingNetwork_classes.projectors import ALIGNIEProjector
 from entity_typing_framework.dataset_classes.large_datasets.large_datasets_for_dataloaders import BERT_ET_DatasetLarge, ELMo_ET_DatasetLarge, ET_DatasetLarge
 from entity_typing_framework.dataset_classes.large_datasets.large_tokenized_datasets import BaseBERTTokenizedDatasetLarge, ELMoTokenizedDatasetLarge
 from entity_typing_framework.dataset_classes.tokenized_datasets import BaseBERTTokenizedDataset, ELMoTokenizedDataset, GloVeTokenizedDataset, MentionSentenceBERTTokenizedDataset, ALIGNIEPromptTokenizedDataset
 from entity_typing_framework.main_module.NFETC_loss_modules.nfetc_loss_modules import BCENFETCCustomLossModule, BCENFETCLossModule
 from entity_typing_framework.main_module.inference_manager import BaseInferenceManager, FlatToHierarchyThresholdOrMaxInferenceManager, IncrementalDoubleThresholdOrMaxInferenceManager, IncrementalThresholdOrMaxInferenceManager, MaxInferenceManager, MaxLeafInferenceManager, ThresholdOrMaxInferenceManager
-from entity_typing_framework.main_module.losses_modules import BCELossModule, FlatBCELossModule, FlatRankingLossModule, RankingLossModule, WeightedBCELossModule, CELossModule
+from entity_typing_framework.main_module.losses_modules import BCELossModule, FlatBCELossModule, FlatRankingLossModule, RankingLossModule, WeightedBCELossModule, CELossModule, ALIGNIELossModule, KLDivLossModule
 from entity_typing_framework.main_module.KENN_loss_modules.kenn_loss_modules import BCEMultiLossModule
 from entity_typing_framework.main_module.metric_manager import MetricManager, LeavesMetricManager
 from torch.utils.data.dataloader import DataLoader
@@ -47,5 +48,8 @@ IMPLEMENTED_CLASSES_LVL0 = {
     'MentionSentenceBERTTokenizedDataset' : MentionSentenceBERTTokenizedDataset,
     'CELossModule' : CELossModule,
     # 'BoxEmbeddingBCELoss' : BoxEmbeddingLogProbBCELoss,
-    'ALIGNIEPromptTokenizedDataset' : ALIGNIEPromptTokenizedDataset
+    'ALIGNIEPromptTokenizedDataset' : ALIGNIEPromptTokenizedDataset,
+    'ALIGNIENetwork' : ALIGNIENetwork,
+    'ALIGNIELossModule' : ALIGNIELossModule,
+    'KLDivLossModule' : KLDivLossModule
     }

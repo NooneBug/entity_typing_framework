@@ -428,3 +428,96 @@ class ClassifierForCrossDatasetTraining(LightningModule):
     
     def get_state_dict(self, smart_save=True):
         return self.state_dict()
+
+# class GradMultiplyFunction(torch.autograd.Function):
+#     @staticmethod
+#     def forward(ctx, tensor, scale):
+#         ctx.scale = scale
+#         return tensor
+    
+#     @staticmethod
+#     def backward(ctx, grad_output):
+#         # scale only during backward
+#         return grad_output * ctx.scale, None
+
+# class GradMultiplyLayer(torch.nn.Module):
+#     def __init__(self, scale):
+#         super(GradMultiplyLayer, self).__init__()
+#         self.scale = scale
+    
+#     def forward(self, x):
+#         return GradMultiplyFunction.apply(x, self.scale)
+
+class GradMultiply(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, x, lambd):
+        ctx.lambd = lambd
+        return x.view_as(x)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        return (grad_output * ctx.lambd), None
+
+
+def grad_multiply(x, lambd=1):
+    return GradMultiply.apply(x, lambd)
+
+
+class ALIGNIEProjector(Projector):
+
+    def __init__(self, verbalizer = {}, lambda_scale = 1e-7, **kwargs):
+        super().__init__(**kwargs)
+        self.verbalizer = verbalizer
+        self.lambda_scale = float(lambda_scale)
+
+        self.instance_correlation_matrix()
+        self.softmax = torch.nn.Softmax(dim=-1)
+        # self.grad_multiply_layer = GradMultiplyLayer(scale = float(lambda_scale))
+
+    def instance_correlation_matrix(self):
+        matrix = Linear(in_features=50265, out_features=len(self.type2id))
+        # matrix = Linear(in_features=30522, out_features=len(self.type2id))
+        torch.nn.init.zeros_(matrix.weight)
+
+        matrix.weight.requires_grad = False
+
+        for typ, words in self.verbalizer.items():
+            for w in words:
+                matrix.weight[typ][w] = 1. / len(words)
+
+        matrix.weight.requires_grad = True
+
+        self.verbalizer_matrix = matrix
+
+    def update_verbalizer(self, epoch_id):
+        all_kw = [kw for kw_sublist in list(self.verbalizer.values()) for kw in kw_sublist]
+        word_weights = self.softmax(self.verbalizer_matrix.weight)
+        for i in range(self.type_number):
+            ind = torch.argsort(-word_weights[i])[:epoch_id+2].cpu().numpy() # +2 epoch start 0
+            for j in range(len(ind)):
+                if ind[j] not in all_kw:
+                    self.verbalizer[i].append(ind[j])
+                    all_kw.append(ind[j])
+                    break
+        
+        return self.verbalizer
+
+    def forward(self, batched_logits_of_mask):
+        
+        softmax = self.softmax(batched_logits_of_mask)
+
+        # scaled_softmax = self.grad_multiply_layer(softmax)
+        scaled_softmax = grad_multiply(softmax, lambd=self.lambda_scale)
+        # scaled_logits = self.grad_multiply_layer(batched_logits_of_mask)
+
+        # linear logit -> classi using verbalier_matrix
+        class_likelihoods = self.verbalizer_matrix(scaled_softmax)
+        # class_likelihoods = self.verbalizer_matrix(softmax)
+        # class_likelihoods = self.verbalizer_matrix(scaled_logits)
+        # class_likelihoods = self.verbalizer_matrix(batched_logits_of_mask)
+        
+
+        return class_likelihoods.squeeze(), self.verbalizer_matrix
+    
+    def check_parameters(self):
+        pass
