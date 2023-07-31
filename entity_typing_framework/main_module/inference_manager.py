@@ -1,6 +1,7 @@
 import torch
 from entity_typing_framework.utils.flat2hierarchy import get_type2id_original
 import torch.nn.functional as F
+from collections import defaultdict
 
 class BaseInferenceManager():
     '''
@@ -212,3 +213,40 @@ class IncrementalDoubleThresholdOrMaxInferenceManager(ThresholdOrMaxInferenceMan
         # concatenate discretized predictions
         discrete_pred = torch.concat((discrete_pred_pretraining, discrete_pred_incremental), dim=1)
         return discrete_pred.type(torch.int8)
+    
+class ALIGNIEInferenceManager(BaseInferenceManager):
+    def __init__(self, **kwargs):
+        super().__init__(threshold=0, **kwargs)
+
+        son_father_dict = defaultdict(list)
+        father_labels = []
+        for flat_label in self.type2id.keys():
+            sub_label = flat_label.split('/')[1:]
+            father = '/'
+            for i in range(len(sub_label)-1):
+                father += sub_label[i] + '/'
+                son_father_dict[flat_label].append(father[:-1])
+                father_labels.append(father[:-1])
+        
+        extra_label = sorted(list(set(father_labels) - set(self.type2id.keys())))
+        all_labels = list(self.type2id.keys()) + extra_label
+        
+        self.type2id_inference = {label:i for i, label in enumerate(all_labels)}
+
+        self.inference_idx = {}
+        for k, v in son_father_dict.items():
+            self.inference_idx[self.type2id_inference[k]] = [self.type2id_inference[k]] + [self.type2id_inference[father] for father in v]
+            
+        self.num_class_inf = len(self.type2id_inference)
+
+    def discretize_output(self, network_output):
+        flat_ids = torch.argmax(network_output, dim = 1)
+        full_ids = flat_ids.new([self.inference_idx[idx.item()] for idx in flat_ids])
+        discrete_pred = F.one_hot(full_ids, len(self.type2id_inference)).sum(dim=1)
+        return discrete_pred.type(torch.int8)
+    
+    def transform_true_types(self, true_types):
+        flat_ids = torch.argmax(true_types, dim = 1)
+        full_ids = flat_ids.new([self.inference_idx[idx.item()] for idx in flat_ids])
+        transformed_types = F.one_hot(full_ids, len(self.type2id_inference)).sum(dim=1)
+        return transformed_types

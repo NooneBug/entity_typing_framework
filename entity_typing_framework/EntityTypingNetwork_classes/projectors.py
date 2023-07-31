@@ -429,60 +429,46 @@ class ClassifierForCrossDatasetTraining(LightningModule):
     def get_state_dict(self, smart_save=True):
         return self.state_dict()
 
-# class GradMultiplyFunction(torch.autograd.Function):
-#     @staticmethod
-#     def forward(ctx, tensor, scale):
-#         ctx.scale = scale
-#         return tensor
-    
-#     @staticmethod
-#     def backward(ctx, grad_output):
-#         # scale only during backward
-#         return grad_output * ctx.scale, None
-
-# class GradMultiplyLayer(torch.nn.Module):
-#     def __init__(self, scale):
-#         super(GradMultiplyLayer, self).__init__()
-#         self.scale = scale
-    
-#     def forward(self, x):
-#         return GradMultiplyFunction.apply(x, self.scale)
-
-class GradMultiply(torch.autograd.Function):
+class GradMultiplyFunction(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, x, lambd):
-        ctx.lambd = lambd
-        return x.view_as(x)
-
+    def forward(ctx, tensor, scale):
+        ctx.scale = scale
+        return tensor
+    
     @staticmethod
     def backward(ctx, grad_output):
-        return (grad_output * ctx.lambd), None
+        # scale only during backward
+        return grad_output * ctx.scale, None
 
-
-def grad_multiply(x, lambd=1):
-    return GradMultiply.apply(x, lambd)
-
+class GradMultiplyLayer(torch.nn.Module):
+    def __init__(self, scale):
+        super(GradMultiplyLayer, self).__init__()
+        self.scale = scale
+    
+    def forward(self, x):
+        return GradMultiplyFunction.apply(x, self.scale)
 
 class ALIGNIEProjector(Projector):
 
-    def __init__(self, verbalizer = {}, lambda_scale = 1e-7, **kwargs):
+    def __init__(self, verbalizer = {}, **kwargs):
         super().__init__(**kwargs)
         self.verbalizer = verbalizer
-        self.lambda_scale = float(lambda_scale)
-
         self.instance_correlation_matrix()
         self.softmax = torch.nn.Softmax(dim=-1)
-        # self.grad_multiply_layer = GradMultiplyLayer(scale = float(lambda_scale))
+        self.relu = torch.nn.ReLU()
 
     def instance_correlation_matrix(self):
         matrix = Linear(in_features=50265, out_features=len(self.type2id))
         # matrix = Linear(in_features=30522, out_features=len(self.type2id))
-        torch.nn.init.zeros_(matrix.weight)
+        torch.nn.init.uniform_(matrix.weight, 1/len(self.verbalizer), 1/len(self.verbalizer))
+        torch.nn.init.zeros_(matrix.bias)
 
         matrix.weight.requires_grad = False
 
         for typ, words in self.verbalizer.items():
             for w in words:
+                for types in self.verbalizer.keys():
+                    matrix.weight[types][w] = 0
                 matrix.weight[typ][w] = 1. / len(words)
 
         matrix.weight.requires_grad = True
@@ -505,18 +491,8 @@ class ALIGNIEProjector(Projector):
     def forward(self, batched_logits_of_mask):
         
         softmax = self.softmax(batched_logits_of_mask)
-
-        # scaled_softmax = self.grad_multiply_layer(softmax)
-        scaled_softmax = grad_multiply(softmax, lambd=self.lambda_scale)
-        # scaled_logits = self.grad_multiply_layer(batched_logits_of_mask)
-
-        # linear logit -> classi using verbalier_matrix
-        class_likelihoods = self.verbalizer_matrix(scaled_softmax)
-        # class_likelihoods = self.verbalizer_matrix(softmax)
-        # class_likelihoods = self.verbalizer_matrix(scaled_logits)
-        # class_likelihoods = self.verbalizer_matrix(batched_logits_of_mask)
+        class_likelihoods = self.verbalizer_matrix(softmax)
         
-
         return class_likelihoods.squeeze(), self.verbalizer_matrix
     
     def check_parameters(self):

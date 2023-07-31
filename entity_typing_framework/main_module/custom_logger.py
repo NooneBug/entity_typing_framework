@@ -47,3 +47,7 @@ class CustomLogger(WandbLogger, Callback):
     def log_all(self):
         wandb.log(self.to_log)
         self.to_log = {}
+        
+    def log_dataframe(self, df, prefix='test'):
+        log_df = wandb.Table(data=df)
+        wandb.log({f'{prefix}/final_metrics/table':log_df})

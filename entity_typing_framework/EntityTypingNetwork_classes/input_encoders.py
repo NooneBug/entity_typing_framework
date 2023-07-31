@@ -34,7 +34,7 @@ class BaseBERTLikeEncoder(LightningModule):
         if is_bart:
             self.encoder = BartForConditionalGeneration.from_pretrained(self.bertlike_model_name)
         if is_mlm:
-            self.encoder = AutoModelForMaskedLM.from_pretrained(self.bertlike_model_name)
+            self.encoder = AutoModelForMaskedLM.from_pretrained(self.bertlike_model_name, output_hidden_states=True)
         else:
             self.encoder = AutoModel.from_pretrained(self.bertlike_model_name)
         if freeze_encoder:
@@ -541,3 +541,24 @@ class BARTEncoder(BERTEncoder):
         batched_attn_masks = batched_attn_masks.to(torch.int32)
 
         mlm_output = self.encoder(batched_tokenized_sentence, batched_attn_masks)
+
+class PROMETBERTEncoder(BERTEncoder):
+    def __init__(self, mask_token_id, bertlike_model_name: str = 'bert-base-uncased', **kwargs) -> None:
+        super().__init__(bertlike_model_name, is_mlm = False, **kwargs)
+        self.mask_token_id = mask_token_id
+    
+    def forward(self, batched_tokenized_sentence, batched_attn_masks):
+
+        batched_tokenized_sentence = batched_tokenized_sentence.to(torch.int32)
+        batched_attn_masks = batched_attn_masks.to(torch.int32)
+
+        mlm_output = self.encoder(batched_tokenized_sentence, batched_attn_masks)['last_hidden_state']
+
+        input_shape = mlm_output.shape
+
+        masked_ids = torch.nonzero(batched_tokenized_sentence == self.mask_token_id, as_tuple=False)[:, 1].unsqueeze(1) 
+
+        masked_ids = masked_ids.repeat(1, 1, input_shape[2]).reshape(input_shape[0], 1, input_shape[2])
+        score = torch.gather(mlm_output, 1, masked_ids) # batch x 1 x encoder_dim
+
+        return score

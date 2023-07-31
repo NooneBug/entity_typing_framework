@@ -7,7 +7,7 @@ from pytorch_lightning.core.lightning import LightningModule
 import torch
 import time
 import numpy as np
-from transformers import AutoTokenizer, get_linear_schedule_with_warmup
+from transformers import AutoTokenizer, get_linear_schedule_with_warmup, AdamW
 from collections import defaultdict
 
 class MainModule(LightningModule):
@@ -48,10 +48,11 @@ class MainModule(LightningModule):
         return IMPLEMENTED_CLASSES_LVL0[self.ET_Network_params['name']](**self.ET_Network_params, type_number = self.type_number, type2id = self.type2id)
 
     def setup(self, stage: str):
-        if not self.checkpoint_to_load:
-            self.ET_Network = self.instance_ET_network()
-        else:
-            self.ET_Network = self.load_ET_Network(ET_Network_params=self.ET_Network_params, checkpoint_to_load=self.checkpoint_to_load)
+        if stage != 'test':
+            if not self.checkpoint_to_load:
+                self.ET_Network = self.instance_ET_network()
+            else:
+                self.ET_Network = self.load_ET_Network(ET_Network_params=self.ET_Network_params, checkpoint_to_load=self.checkpoint_to_load)
         
         return super().setup(stage)        
 
@@ -692,14 +693,22 @@ class CrossDatasetKENNMultilossMainModule(CrossDatasetMainModule):
     
 class ALIGNIEMainModule(MainModule):
 
-    def __init__(self, ET_Network_params: dict, type_number: int, type2id: dict, logger, loss_module_params, inference_params: dict, checkpoint_to_load: str = None, avoid_sanity_logging: bool = False, smart_save: bool = True, learning_rate: float = 0.0005, metric_manager_name: str = 'MetricManager', mask_token_id = '', verbalizer = ''):
+    def __init__(self, ET_Network_params: dict, type_number: int, type2id: dict, logger, loss_module_params, inference_params: dict, checkpoint_to_load: str = None, avoid_sanity_logging: bool = False, smart_save: bool = True, learning_rate: float = 0.0005, metric_manager_name: str = 'MetricManager', mask_token_id = '', verbalizer = '', lambda_scale=1e-3):
         super().__init__(ET_Network_params, type_number, type2id, logger, loss_module_params, inference_params, checkpoint_to_load, avoid_sanity_logging, smart_save, learning_rate, metric_manager_name)
         self.mask_token_id = mask_token_id
         self.verbalizer = verbalizer
+        self.lambda_scale = lambda_scale
         self.tokenizer = AutoTokenizer.from_pretrained(ET_Network_params['network_params']['encoder_params']['bertlike_model_name'])
         self.id2type = {v:k for k, v in self.type2id.items()}
         self.train_losses_for_log = defaultdict(list)
         self.val_losses_for_log = defaultdict(list)
+        self.inference_manager = IMPLEMENTED_CLASSES_LVL0[inference_params['name']](type2id=self.type2id, **inference_params)
+        self.metric_manager = IMPLEMENTED_CLASSES_LVL0[metric_manager_name](num_classes=self.inference_manager.num_class_inf, device=self.device, 
+                                                                            type2id = self.inference_manager.type2id_inference, prefix='dev')
+        self.test_metric_manager = IMPLEMENTED_CLASSES_LVL0[metric_manager_name](num_classes=self.inference_manager.num_class_inf, device=self.device, 
+                                                                            type2id = self.inference_manager.type2id_inference, prefix='test')
+        self.train_metric_manager = IMPLEMENTED_CLASSES_LVL0[metric_manager_name](num_classes=self.inference_manager.num_class_inf, device=self.device, 
+                                                                            type2id = self.inference_manager.type2id_inference, prefix='train')
 
     def instance_ET_network(self):
         return IMPLEMENTED_CLASSES_LVL0[self.ET_Network_params['name']](**self.ET_Network_params, 
@@ -709,30 +718,44 @@ class ALIGNIEMainModule(MainModule):
                                                                         init_verbalizer = self.verbalizer)
 
     def configure_optimizers(self):
-        # forse aggiungere scheduler
-        param_optimizer = list(self.named_parameters())
+    
+        param_encoder = list(self.ET_Network.encoder.named_parameters())
+        param_projector = list(self.ET_Network.input_projector.named_parameters())
 
         no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
         optimizer_grouped_parameters = [
-            {'params': [p for n, p in param_optimizer
-                        if not any(nd in n for nd in no_decay)], 'weight_decay': 0.01},
-            {'params': [p for n, p in param_optimizer
-                        if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}]
+            {'params': [p for n, p in param_encoder
+                        if not any(nd in n for nd in no_decay)], 'weight_decay': 0.01, 'lr': self.learning_rate*self.lambda_scale},
+            {'params': [p for n, p in param_encoder
+                        if any(nd in n for nd in no_decay)], 'weight_decay': 0.0, 'lr': self.learning_rate*self.lambda_scale},
+            {'params': [p for n, p in param_projector
+                        if not any(nd in n for nd in no_decay)], 'weight_decay': 0.01, 'lr': self.learning_rate},
+            {'params': [p for n, p in param_projector
+                        if any(nd in n for nd in no_decay)], 'weight_decay': 0.0, 'lr': self.learning_rate}]
+        
+        # param_model = list(self.named_parameters())
+        # no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
+        # optimizer_grouped_parameters = [
+        #     {'params': [p for n, p in param_model
+        #                 if not any(nd in n for nd in no_decay)], 'weight_decay': 0.01},
+        #     {'params': [p for n, p in param_model
+        #                 if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}]
 
-
+        # optimizer = AdamW(optimizer_grouped_parameters, lr=self.learning_rate, correct_bias=True)
         optimizer = torch.optim.AdamW(optimizer_grouped_parameters, lr=self.learning_rate)
         
-        N_EPOCHS = 30
-        BATCHES = 13
-        num_training_steps = N_EPOCHS * BATCHES
-        num_warmup_steps = int(0.1 * num_training_steps)
-        print(f"num training steps: {num_training_steps}")
-        print(f"num warmup steps: {num_warmup_steps}")
-        scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=num_warmup_steps, num_training_steps=num_training_steps)
+        # N_EPOCHS = 30
+        # BATCHES = 41.25
+        # num_training_steps = N_EPOCHS * BATCHES
+        # num_warmup_steps = int(0.1 * num_training_steps)
+        # print(f"num training steps: {num_training_steps}")
+        # print(f"num warmup steps: {num_warmup_steps}")
+        # scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=num_warmup_steps, num_training_steps=num_training_steps)
 
-        # return optimizer
-        return {'optimizer' : optimizer, 
-                'lr_scheduler' : scheduler}
+        return optimizer
+        # return {'optimizer' : optimizer, 
+        #         'lr_scheduler' : {'scheduler': scheduler,
+        #                           'interval': 'step'}}
     
     def update_verbalizer(self):
         self.verbalizer = self.ET_Network.update_verbalizer(epoch_id=self.current_epoch)
@@ -782,8 +805,13 @@ class ALIGNIEMainModule(MainModule):
 
     def training_step(self, batch, batch_step):
         network_output, type_representations = self.ET_Network(batch)
+        _, _, true_types = batch
+        true_types = self.get_true_types_for_metrics(true_types)
         network_output_for_loss = self.get_output_for_loss(network_output)
         loss = self.loss.compute_loss_for_training_step(encoded_input=network_output_for_loss, type_representation=type_representations)
+        network_output_for_inference = self.get_output_for_inference(network_output)
+        inferred_types = self.inference_manager.infer_types(network_output_for_inference)
+        self.train_metric_manager.update(inferred_types, true_types)
         self.train_losses_for_log['ce_loss'].append(loss['ce_loss'])
         self.train_losses_for_log['verbalizer_loss'].append(loss['verbalizer_loss'])
         self.train_losses_for_log['incl_loss_value'].append(loss['incl_loss_value'])
@@ -802,6 +830,8 @@ class ALIGNIEMainModule(MainModule):
         self.logger_module.log_loss(name = 'train_excl_loss', value = torch.mean(torch.tensor(self.train_losses_for_log['excl_loss_value'])))
         self.train_losses_for_log = defaultdict(list)
         self.update_verbalizer()
+        metrics = self.train_metric_manager.compute()
+        self.logger_module.log_all_metrics(metrics)
         return super().training_epoch_end(out)
     
 
@@ -813,8 +843,8 @@ class ALIGNIEMainModule(MainModule):
         network_output_for_inference = self.get_output_for_inference(network_output)
 
         # TODO: check if is the same for every projector
-        loss = self.loss.compute_loss_for_validation_step(encoded_input=network_output_for_loss, type_representation=true_types)
-        # loss = self.loss.compute_loss_for_validation_step(network_output_for_loss, type_representations)
+        # loss = self.loss.compute_loss_for_validation_step(encoded_input=network_output_for_loss, type_representation=true_types)
+        loss = self.loss.compute_loss_for_validation_step(network_output_for_loss, type_representations)
 
         inferred_types = self.inference_manager.infer_types(network_output_for_inference)
         
@@ -837,15 +867,26 @@ class ALIGNIEMainModule(MainModule):
 
         return loss['ce_loss'] + loss['verbalizer_loss'] + loss['incl_loss_value'] + loss['excl_loss_value']
     
+    def on_validation_start(self):
+        self.metric_manager.set_device(self.device)
+        self.test_metric_manager.set_device(self.device)
+    
+    def on_fit_start(self):
+        self.metric_manager.set_device(self.device)
+        self.test_metric_manager.set_device(self.device)
+        self.train_metric_manager.set_device(self.device)
+        
     def validation_epoch_end(self, out):
         if self.trainer.state.status == 'running' or not self.avoid_sanity_logging:
             
             metrics = self.metric_manager.compute()
+            df_metrics = self.metric_manager.df_metrics()
             
             if not self.is_calibrating_threshold:
                 self.logger_module.add(key = 'epoch', value = self.current_epoch)
                 self.logger_module.log_all_metrics(metrics)
                 val_loss = torch.mean(torch.tensor(out))
+                val_ce_loss = torch.mean(torch.tensor(self.val_losses_for_log['ce_loss']))
                 self.logger_module.log_loss(name = 'val_loss', value = val_loss)
 
                 self.logger_module.log_loss(name = 'val_ce_loss', value = torch.mean(torch.tensor(self.val_losses_for_log['ce_loss'])))
@@ -856,6 +897,195 @@ class ALIGNIEMainModule(MainModule):
 
                 self.logger_module.log_all()
                 self.log("val_loss", val_loss)
+                self.log("val_micro", list(metrics.values())[0])
+                self.log("val_ce_loss", val_ce_loss)
             
             # was used for threshold calibration
             self.last_validation_metrics = metrics
+    
+    def test_step(self, batch, batch_step):
+        _, _, true_types = batch
+        true_types = self.get_true_types_for_metrics(true_types)
+        network_output, type_representations = self.ET_Network(batch)
+        network_output_for_inference = self.get_output_for_inference(network_output)
+        inferred_types = self.inference_manager.infer_types(network_output_for_inference)
+        self.test_metric_manager.update(inferred_types, true_types)
+    
+    def test_epoch_end(self, out):
+        metrics = self.test_metric_manager.compute()
+        df_metrics = self.metric_manager.df_metrics()
+        self.logger_module.log_dataframe(df_metrics)
+        self.logger_module.log_all_metrics(metrics)
+        self.logger_module.log_all()
+
+        
+class PROMETMainModule(MainModule):
+
+    def __init__(self, ET_Network_params: dict, type_number: int, type2id: dict, logger, loss_module_params, inference_params: dict, checkpoint_to_load: str = None, avoid_sanity_logging: bool = False, smart_save: bool = True, learning_rate: float = 0.0005, metric_manager_name: str = 'MetricManager', mask_token_id = '', verbalizer = '', lambda_scale=1, wd=10):
+        super().__init__(ET_Network_params, type_number, type2id, logger, loss_module_params, inference_params, checkpoint_to_load, avoid_sanity_logging, smart_save, learning_rate, metric_manager_name)
+        self.mask_token_id = mask_token_id
+        self.id2type = {v:k for k, v in self.type2id.items()}
+        self.train_losses_for_log = defaultdict(list)
+        self.val_losses_for_log = defaultdict(list)
+        self.lambda_scale = lambda_scale
+        self.wd_proj = wd
+        self.inference_manager = IMPLEMENTED_CLASSES_LVL0[inference_params['name']](type2id=self.type2id, **inference_params)
+        self.metric_manager = IMPLEMENTED_CLASSES_LVL0[metric_manager_name](num_classes=self.inference_manager.num_class_inf, device=self.device, 
+                                                                            type2id = self.inference_manager.type2id_inference, prefix='dev')
+        self.test_metric_manager = IMPLEMENTED_CLASSES_LVL0[metric_manager_name](num_classes=self.inference_manager.num_class_inf, device=self.device, 
+                                                                            type2id = self.inference_manager.type2id_inference, prefix='test')
+        self.train_metric_manager = IMPLEMENTED_CLASSES_LVL0[metric_manager_name](num_classes=self.inference_manager.num_class_inf, device=self.device, 
+                                                                            type2id = self.inference_manager.type2id_inference, prefix='train')
+
+    def instance_ET_network(self):
+        return IMPLEMENTED_CLASSES_LVL0[self.ET_Network_params['name']](**self.ET_Network_params, 
+                                                                        type_number = self.type_number, 
+                                                                        type2id = self.type2id, 
+                                                                        mask_token_id = self.mask_token_id,)
+
+    def configure_optimizers(self):
+    
+        param_encoder = list(self.ET_Network.encoder.named_parameters())
+        param_projector = list(self.ET_Network.input_projector.named_parameters())
+
+        no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
+        optimizer_grouped_parameters = [
+            {'params': [p for n, p in param_encoder
+                        if not any(nd in n for nd in no_decay)], 'weight_decay': 0.01, 'lr': self.learning_rate*self.lambda_scale},
+            {'params': [p for n, p in param_encoder
+                        if any(nd in n for nd in no_decay)], 'weight_decay': 0.0, 'lr': self.learning_rate**self.lambda_scale},
+            {'params': [p for n, p in param_projector
+                        if not any(nd in n for nd in no_decay)], 'weight_decay': self.wd_proj, 'lr': self.learning_rate},
+            {'params': [p for n, p in param_projector
+                        if any(nd in n for nd in no_decay)], 'weight_decay': 0.0, 'lr': self.learning_rate}]
+        
+        optimizer = torch.optim.AdamW(optimizer_grouped_parameters, lr=self.learning_rate)
+
+        return optimizer
+    
+    def load_ET_Network(self, ET_Network_params, checkpoint_to_load):
+        return IMPLEMENTED_CLASSES_LVL0[ET_Network_params['name']](**ET_Network_params, 
+                                                                    type_number = self.type_number,
+                                                                    type2id = self.type2id,
+                                                                    mask_token_id = self.mask_token_id).load_from_checkpoint(checkpoint_to_load = checkpoint_to_load, 
+                                                                                                                            strict = False)
+
+    def load_ET_Network_for_test_(self, checkpoint_to_load):
+
+        print('Loading model with torch.load ...')
+        start = time.time()
+        ckpt_state_dict = torch.load(checkpoint_to_load)
+        print('Loaded in {:.2f} seconds'.format(time.time() - start))
+        
+        ET_Network_params = ckpt_state_dict['hyper_parameters']['ET_Network_params']
+        type_number = ckpt_state_dict['hyper_parameters']['type_number']
+        type2id = ckpt_state_dict['hyper_parameters']['type2id']
+        
+        print('Instantiating {} class ...'.format(ET_Network_params['name']))
+        start = time.time()
+        ckpt = IMPLEMENTED_CLASSES_LVL0[ET_Network_params['name']](**ET_Network_params, 
+                                                                    type_number=type_number,
+                                                                    type2id=type2id,
+                                                                    mask_token_id = self.mask_token_id)
+        print('Instantiated in {:.2f} seconds'.format(time.time() - start))
+        
+        print('Loading from checkpoint with load_from_checkpoint...')
+        start = time.time()
+        ckpt.load_from_checkpoint(checkpoint_to_load = checkpoint_to_load, strict = False)
+        print('Loaded in {:.2f} seconds'.format(time.time() - start))
+        
+        return ckpt
+
+    def training_step(self, batch, batch_step):
+        network_output, type_representations = self.ET_Network(batch)
+        _, _, true_types = batch
+        true_types = self.get_true_types_for_metrics(true_types)
+        network_output_for_loss = self.get_output_for_loss(network_output)
+        loss = self.loss.compute_loss_for_training_step(encoded_input=network_output_for_loss, type_representation=type_representations)
+        network_output_for_inference = self.get_output_for_inference(network_output)
+        inferred_types = self.inference_manager.infer_types(network_output_for_inference)
+        self.train_metric_manager.update(inferred_types, true_types)
+
+        return loss
+    
+    def training_epoch_end(self, out):
+        losses = [v for elem in out for k, v in elem.items()]
+        self.logger_module.log_loss(name = 'train_loss', value = torch.mean(torch.tensor(losses)))
+        metrics = self.train_metric_manager.compute()
+        self.logger_module.log_all_metrics(metrics)
+        return super().training_epoch_end(out)
+    
+
+    def validation_step(self, batch, batch_step):
+        _, _, true_types = batch
+        true_types = self.get_true_types_for_metrics(true_types)
+        network_output, type_representations = self.ET_Network(batch)
+        network_output_for_loss = self.get_output_for_loss(network_output)
+        network_output_for_inference = self.get_output_for_inference(network_output)
+
+        # TODO: check if is the same for every projector
+        loss = self.loss.compute_loss_for_validation_step(encoded_input=network_output_for_loss, type_representation=true_types)
+
+        inferred_types = self.inference_manager.infer_types(network_output_for_inference)
+        
+        if self.trainer.state.status == 'running' or not self.avoid_sanity_logging:
+            self.metric_manager.update(inferred_types, true_types)
+
+        # accumulate dev network output for threshold calibration
+        if self.is_calibrating_threshold:
+            if self.dev_network_output != None:
+                self.dev_network_output = torch.vstack([self.dev_network_output, network_output_for_inference])
+                self.dev_true_types = torch.vstack([self.dev_true_types, true_types])
+            else:
+                self.dev_network_output = network_output_for_inference
+                self.dev_true_types = true_types
+
+        return loss
+    
+    def on_validation_start(self):
+        self.metric_manager.set_device(self.device)
+        self.test_metric_manager.set_device(self.device)
+    
+    def on_fit_start(self):
+        self.metric_manager.set_device(self.device)
+        self.test_metric_manager.set_device(self.device)
+        self.train_metric_manager.set_device(self.device)
+        
+    def validation_epoch_end(self, out):
+        if self.trainer.state.status == 'running' or not self.avoid_sanity_logging:
+            
+            metrics = self.metric_manager.compute()
+            
+            if not self.is_calibrating_threshold:
+                self.logger_module.add(key = 'epoch', value = self.current_epoch)
+                self.logger_module.log_all_metrics(metrics)
+                val_loss = torch.mean(torch.tensor(out))
+                self.logger_module.log_loss(name = 'val_loss', value = val_loss)
+                self.val_losses_for_log = defaultdict(list)
+
+                self.logger_module.log_all()
+                self.log("val_loss", val_loss)
+            
+            # was used for threshold calibration
+            self.last_validation_metrics = metrics
+    
+    def test_step(self, batch, batch_step):
+        _, _, true_types = batch
+        true_types = self.get_true_types_for_metrics(true_types)
+        network_output, type_representations = self.ET_Network(batch)
+        network_output_for_inference = self.get_output_for_inference(network_output)
+        inferred_types = self.inference_manager.infer_types(network_output_for_inference)
+        self.test_metric_manager.update(inferred_types, true_types)
+    
+    def test_epoch_end(self, out):
+        metrics = self.test_metric_manager.compute()
+        df_metrics = self.metric_manager.df_metrics()
+        self.logger_module.log_dataframe(df_metrics)
+        self.logger_module.log_all_metrics(metrics)
+        self.logger_module.log_all()
+    
+    def get_output_for_loss(self, network_output):
+        return network_output.squeeze()
+    
+    def get_output_for_inference(self, network_output):
+        return network_output.squeeze()          
