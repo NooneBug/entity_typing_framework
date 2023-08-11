@@ -699,6 +699,7 @@ class ALIGNIEMainModule(MainModule):
         self.verbalizer = verbalizer
         self.lambda_scale = float(lambda_scale)
         self.tokenizer = AutoTokenizer.from_pretrained(ET_Network_params['network_params']['encoder_params']['bertlike_model_name'])
+        self.vocab_size = self.tokenizer.vocab_size
         self.id2type = {v:k for k, v in self.type2id.items()}
         self.train_losses_for_log = defaultdict(list)
         self.val_losses_for_log = defaultdict(list)
@@ -715,7 +716,8 @@ class ALIGNIEMainModule(MainModule):
                                                                         type_number = self.type_number, 
                                                                         type2id = self.type2id, 
                                                                         mask_token_id = self.mask_token_id,
-                                                                        init_verbalizer = self.verbalizer)
+                                                                        init_verbalizer = self.verbalizer,
+                                                                        vocab_size = self.vocab_size)
 
     def configure_optimizers(self):
     

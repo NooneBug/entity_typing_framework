@@ -221,9 +221,10 @@ class CrossDatasetEntityTypingNetwork(BaseEntityTypingNetwork):
 
 class ALIGNIENetwork(BaseEntityTypingNetwork):
 
-    def __init__(self, name, network_params, type_number, type2id, mask_token_id, init_verbalizer):
+    def __init__(self, name, network_params, type_number, type2id, mask_token_id, init_verbalizer, vocab_size):
         self.mask_token_id = mask_token_id
         self.init_verbalizer = init_verbalizer
+        self.vocab_size = vocab_size
         super().__init__(name, network_params, type_number, type2id)
 
     def instance_encoder(self, network_params):
@@ -237,6 +238,7 @@ class ALIGNIENetwork(BaseEntityTypingNetwork):
                                             input_dim = self.encoder.get_representation_dim(), 
                                             type2id = self.type2id,
                                             verbalizer = self.init_verbalizer,
+                                            vocab_size = self.vocab_size,
                                             **input_projector_params)
 
     def update_verbalizer(self, epoch_id):

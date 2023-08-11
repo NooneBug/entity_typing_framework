@@ -450,16 +450,40 @@ class GradMultiplyLayer(torch.nn.Module):
 
 class ALIGNIEProjector(Projector):
 
-    def __init__(self, verbalizer = {}, **kwargs):
+    def __init__(self, verbalizer = {}, vocab_size=50265, activation_output='none', activation_vocab='softmax',**kwargs):
         super().__init__(**kwargs)
         self.verbalizer = verbalizer
+        self.vocab_size = vocab_size
         self.instance_correlation_matrix()
+        self.activation_vocab = self.instance_activation(activation_vocab)
+        self.activation_output = self.instance_activation(activation_output)
         self.softmax = torch.nn.Softmax(dim=-1)
         self.relu = torch.nn.ReLU()
+    
+    def instance_activation(self, activation_name):
+        '''
+        instances the activation function. This procedure is driven by the :code:`yaml` configuration file
+
+        parameters:
+            activation name:
+                name of the activation function to use, specified in the key: :code:`model.ET_Network_params.input_projector_params.layer_id.activation` of the :code:`yaml` configuration file
+
+                supported value : :code:`['relu', 'sigmoid']`
+
+        '''
+        if activation_name == 'relu':
+            return ReLU()
+        elif activation_name == 'sigmoid':
+            return Sigmoid()
+        elif activation_name == 'softmax':
+            return Softmax(dim=-1)
+        elif activation_name == 'none':
+            return None
+        else:
+            raise Exception('An unknown name (\'{}\')is given for activation, check the yaml or implement an activation that correspond to that name'.format(activation_name))
 
     def instance_correlation_matrix(self):
-        matrix = Linear(in_features=50265, out_features=len(self.type2id))
-        # matrix = Linear(in_features=30522, out_features=len(self.type2id))
+        matrix = Linear(in_features=self.vocab_size, out_features=len(self.type2id))
         torch.nn.init.uniform_(matrix.weight, 1/len(self.verbalizer), 1/len(self.verbalizer))
         torch.nn.init.zeros_(matrix.bias)
 
@@ -488,12 +512,15 @@ class ALIGNIEProjector(Projector):
         
         return self.verbalizer
 
-    def forward(self, batched_logits_of_mask):
+    def forward(self, h):
         
-        softmax = self.softmax(batched_logits_of_mask)
-        class_likelihoods = self.verbalizer_matrix(softmax)
+        if self.activation_vocab:
+            h = self.activation_vocab(h)
+        h = self.verbalizer_matrix(h)
+        if self.activation_output:
+            h = self.activation_output(h)
         
-        return class_likelihoods.squeeze(), self.verbalizer_matrix
+        return h.squeeze(), self.verbalizer_matrix
     
     def check_parameters(self):
         pass
