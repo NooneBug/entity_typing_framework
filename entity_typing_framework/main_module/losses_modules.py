@@ -7,7 +7,7 @@ from torch.nn.modules.loss import _WeightedLoss
 from torch.nn import CrossEntropyLoss, KLDivLoss
 from collections import defaultdict
 from itertools import combinations
-from torch.nn.functional import cosine_similarity, log_softmax 
+from torch.nn.functional import cosine_similarity, log_softmax
 
 from fast_soft_sort.pytorch_ops import soft_rank
 
@@ -202,10 +202,11 @@ class FlatBCELossModule(BCELossModule):
 
                 
 class ALIGNIELossModule(LossModule):
-    def __init__(self, type2id, loss_params, enable_hierarchic_losses = True, enable_verbalizer_losses = True, **kwargs) -> None:
+    def __init__(self, type2id, loss_params, main_loss='KLDivLossModule', enable_hierarchic_losses = True, enable_verbalizer_losses = True, **kwargs) -> None:
         super().__init__(type2id, loss_params, **kwargs)
+        self.main_loss = globals()[main_loss](type2id=type2id, loss_params=loss_params)
         # self.ce_loss = CELossModule(type2id=type2id, loss_params=loss_params)
-        self.kld = KLDivLossModule(type2id=type2id, loss_params=loss_params)
+        # self.kld = KLDivLossModule(type2id=type2id, loss_params=loss_params)
         self.verbalizer_loss = VerbalizerLossModule(type2id=type2id, loss_params=loss_params)
         self.hierarchic_loss = HierarchicLossModule(type2id=type2id, loss_params=loss_params)
 
@@ -230,7 +231,7 @@ class ALIGNIELossModule(LossModule):
 
     def compute_loss(self, encoded_input, verbalizer_matrix, verbalizer, type_representation):
         # ce_loss_value = self.ce_loss.compute_loss(encoded_input, type_representation)
-        ce_loss_value = self.kld.compute_loss(encoded_input, type_representation)
+        main_loss_value = self.main_loss.compute_loss(encoded_input, type_representation)
         verbalizer_loss_value = 0.
         incl_loss_value, excl_loss_value = 0., 0.
 
@@ -240,7 +241,7 @@ class ALIGNIELossModule(LossModule):
         if self.enable_hierarchic_losses:
             incl_loss_value, excl_loss_value = self.hierarchic_loss.compute_loss(verbalizer_matrix.weight)
         
-        return {'ce_loss': ce_loss_value, 
+        return {'main_loss': main_loss_value, 
                 'verbalizer_loss' : verbalizer_loss_value, 
                 'incl_loss_value' : incl_loss_value, 
                 'excl_loss_value' : excl_loss_value}

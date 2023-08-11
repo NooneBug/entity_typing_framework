@@ -812,19 +812,19 @@ class ALIGNIEMainModule(MainModule):
         network_output_for_inference = self.get_output_for_inference(network_output)
         inferred_types = self.inference_manager.infer_types(network_output_for_inference)
         self.train_metric_manager.update(inferred_types, true_types)
-        self.train_losses_for_log['ce_loss'].append(loss['ce_loss'])
+        self.train_losses_for_log['main_loss'].append(loss['main_loss'])
         self.train_losses_for_log['verbalizer_loss'].append(loss['verbalizer_loss'])
         self.train_losses_for_log['incl_loss_value'].append(loss['incl_loss_value'])
         self.train_losses_for_log['excl_loss_value'].append(loss['excl_loss_value'])
         if self.current_epoch == 0:
-            return loss['ce_loss'] + loss['incl_loss_value'] + loss['excl_loss_value']
+            return loss['main_loss'] + loss['incl_loss_value'] + loss['excl_loss_value']
         else:
-            return loss['ce_loss'] + loss['verbalizer_loss'] + loss['incl_loss_value'] + loss['excl_loss_value']
+            return loss['main_loss'] + loss['verbalizer_loss'] + loss['incl_loss_value'] + loss['excl_loss_value']
     
     def training_epoch_end(self, out):
         losses = [v for elem in out for k, v in elem.items()]
         self.logger_module.log_loss(name = 'train_loss', value = torch.mean(torch.tensor(losses)))
-        self.logger_module.log_loss(name = 'train_ce_loss', value = torch.mean(torch.tensor(self.train_losses_for_log['ce_loss'])))
+        self.logger_module.log_loss(name = 'train_main_loss', value = torch.mean(torch.tensor(self.train_losses_for_log['main_loss'])))
         self.logger_module.log_loss(name = 'train_verbalizer_loss', value = torch.mean(torch.tensor(self.train_losses_for_log['verbalizer_loss'])))
         self.logger_module.log_loss(name = 'train_incl_loss', value = torch.mean(torch.tensor(self.train_losses_for_log['incl_loss_value'])))
         self.logger_module.log_loss(name = 'train_excl_loss', value = torch.mean(torch.tensor(self.train_losses_for_log['excl_loss_value'])))
@@ -860,12 +860,12 @@ class ALIGNIEMainModule(MainModule):
                 self.dev_network_output = network_output_for_inference
                 self.dev_true_types = true_types
 
-        self.val_losses_for_log['ce_loss'].append(loss['ce_loss'])
+        self.val_losses_for_log['main_loss'].append(loss['main_loss'])
         self.val_losses_for_log['verbalizer_loss'].append(loss['verbalizer_loss'])
         self.val_losses_for_log['incl_loss_value'].append(loss['incl_loss_value'])
         self.val_losses_for_log['excl_loss_value'].append(loss['excl_loss_value'])
 
-        return loss['ce_loss'] + loss['verbalizer_loss'] + loss['incl_loss_value'] + loss['excl_loss_value']
+        return loss['main_loss'] + loss['verbalizer_loss'] + loss['incl_loss_value'] + loss['excl_loss_value']
     
     def on_validation_start(self):
         self.metric_manager.set_device(self.device)
@@ -886,10 +886,10 @@ class ALIGNIEMainModule(MainModule):
                 self.logger_module.add(key = 'epoch', value = self.current_epoch)
                 self.logger_module.log_all_metrics(metrics)
                 val_loss = torch.mean(torch.tensor(out))
-                val_ce_loss = torch.mean(torch.tensor(self.val_losses_for_log['ce_loss']))
+                val_main_loss = torch.mean(torch.tensor(self.val_losses_for_log['main_loss']))
                 self.logger_module.log_loss(name = 'val_loss', value = val_loss)
 
-                self.logger_module.log_loss(name = 'val_ce_loss', value = torch.mean(torch.tensor(self.val_losses_for_log['ce_loss'])))
+                self.logger_module.log_loss(name = 'val_main_loss', value = torch.mean(torch.tensor(self.val_losses_for_log['main_loss'])))
                 self.logger_module.log_loss(name = 'val_verbalizer_loss', value = torch.mean(torch.tensor(self.val_losses_for_log['verbalizer_loss'])))
                 self.logger_module.log_loss(name = 'val_incl_loss', value = torch.mean(torch.tensor(self.val_losses_for_log['incl_loss_value'])))
                 self.logger_module.log_loss(name = 'val_excl_loss', value = torch.mean(torch.tensor(self.val_losses_for_log['excl_loss_value'])))
@@ -898,7 +898,7 @@ class ALIGNIEMainModule(MainModule):
                 self.logger_module.log_all()
                 self.log("val_loss", val_loss)
                 self.log("val_micro", list(metrics.values())[0])
-                self.log("val_ce_loss", val_ce_loss)
+                self.log("val_main_loss", val_main_loss)
             
             # was used for threshold calibration
             self.last_validation_metrics = metrics
