@@ -697,7 +697,7 @@ class ALIGNIEMainModule(MainModule):
         super().__init__(ET_Network_params, type_number, type2id, logger, loss_module_params, inference_params, checkpoint_to_load, avoid_sanity_logging, smart_save, learning_rate, metric_manager_name)
         self.mask_token_id = mask_token_id
         self.verbalizer = verbalizer
-        self.lambda_scale = lambda_scale
+        self.lambda_scale = float(lambda_scale)
         self.tokenizer = AutoTokenizer.from_pretrained(ET_Network_params['network_params']['encoder_params']['bertlike_model_name'])
         self.id2type = {v:k for k, v in self.type2id.items()}
         self.train_losses_for_log = defaultdict(list)
@@ -913,7 +913,7 @@ class ALIGNIEMainModule(MainModule):
     
     def test_epoch_end(self, out):
         metrics = self.test_metric_manager.compute()
-        df_metrics = self.metric_manager.df_metrics()
+        df_metrics = self.test_metric_manager.df_metrics()
         self.logger_module.log_dataframe(df_metrics)
         self.logger_module.log_all_metrics(metrics)
         self.logger_module.log_all()
@@ -927,8 +927,8 @@ class PROMETMainModule(MainModule):
         self.id2type = {v:k for k, v in self.type2id.items()}
         self.train_losses_for_log = defaultdict(list)
         self.val_losses_for_log = defaultdict(list)
-        self.lambda_scale = lambda_scale
-        self.wd_proj = wd
+        self.lambda_scale = float(lambda_scale)
+        self.wd_proj = float(wd)
         self.inference_manager = IMPLEMENTED_CLASSES_LVL0[inference_params['name']](type2id=self.type2id, **inference_params)
         self.metric_manager = IMPLEMENTED_CLASSES_LVL0[metric_manager_name](num_classes=self.inference_manager.num_class_inf, device=self.device, 
                                                                             type2id = self.inference_manager.type2id_inference, prefix='dev')
@@ -1079,7 +1079,7 @@ class PROMETMainModule(MainModule):
     
     def test_epoch_end(self, out):
         metrics = self.test_metric_manager.compute()
-        df_metrics = self.metric_manager.df_metrics()
+        df_metrics = self.test_metric_manager.df_metrics()
         self.logger_module.log_dataframe(df_metrics)
         self.logger_module.log_all_metrics(metrics)
         self.logger_module.log_all()
