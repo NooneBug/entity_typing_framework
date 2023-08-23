@@ -261,3 +261,13 @@ class PROMETNetwork(BaseEntityTypingNetwork):
                                             input_dim = self.encoder.get_representation_dim(), 
                                             type2id = self.type2id,
                                             **input_projector_params)
+        
+    def forward(self, batch):
+
+        batched_sentences, batched_attn_masks, batched_labels = batch
+        
+        encoded_input = self.encoder(batched_sentences, batched_attn_masks)
+        projected_input = self.input_projector(encoded_input)
+        encoded_types = self.type_encoder(batched_labels)
+
+        return projected_input, encoded_types

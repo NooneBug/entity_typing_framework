@@ -20,6 +20,8 @@ class BaseInferenceManager():
         
         self.threshold = self.init_threshold(threshold)
         self.type2id = type2id
+        self.type2id_inference = type2id
+        self.num_class_inf = len(self.type2id)
         self.transitive = transitive
         # prepare map to fill missing predictions
         if self.transitive:
@@ -250,3 +252,4 @@ class ALIGNIEInferenceManager(BaseInferenceManager):
         full_ids = flat_ids.new([self.inference_idx[idx.item()] for idx in flat_ids])
         transformed_types = F.one_hot(full_ids, len(self.type2id_inference)).sum(dim=1)
         return transformed_types
+

@@ -697,6 +697,7 @@ class ALIGNIEMainModule(MainModule):
         super().__init__(ET_Network_params, type_number, type2id, logger, loss_module_params, inference_params, checkpoint_to_load, avoid_sanity_logging, smart_save, learning_rate, metric_manager_name)
         self.mask_token_id = mask_token_id
         self.verbalizer = verbalizer
+        self.loss_name = loss_module_params['main_loss']
         self.lambda_scale = float(lambda_scale)
         self.tokenizer = AutoTokenizer.from_pretrained(ET_Network_params['network_params']['encoder_params']['bertlike_model_name'])
         self.vocab_size = self.tokenizer.vocab_size
@@ -768,6 +769,8 @@ class ALIGNIEMainModule(MainModule):
         return super().get_output_for_loss((network_output[0], network_output[1], self.verbalizer))
     
     def get_output_for_inference(self, network_output):
+        if self.loss_name == 'BCELossModule':
+            return torch.sigmoid(network_output[0])  
         return network_output[0]
     
     def load_ET_Network(self, ET_Network_params, checkpoint_to_load):
@@ -775,7 +778,8 @@ class ALIGNIEMainModule(MainModule):
                                                                     type_number = self.type_number,
                                                                     type2id = self.type2id,
                                                                     mask_token_id = self.mask_token_id,
-                                                                    init_verbalizer = self.verbalizer).load_from_checkpoint(checkpoint_to_load = checkpoint_to_load, 
+                                                                    init_verbalizer = self.verbalizer,
+                                                                    vocab_size = self.vocab_size).load_from_checkpoint(checkpoint_to_load = checkpoint_to_load, 
                                                                                                                             strict = False)
 
     def load_ET_Network_for_test_(self, checkpoint_to_load):
@@ -927,6 +931,7 @@ class PROMETMainModule(MainModule):
         super().__init__(ET_Network_params, type_number, type2id, logger, loss_module_params, inference_params, checkpoint_to_load, avoid_sanity_logging, smart_save, learning_rate, metric_manager_name)
         self.mask_token_id = mask_token_id
         self.id2type = {v:k for k, v in self.type2id.items()}
+        self.loss_name = loss_module_params['name']
         self.train_losses_for_log = defaultdict(list)
         self.val_losses_for_log = defaultdict(list)
         self.lambda_scale = float(lambda_scale)
@@ -1090,4 +1095,6 @@ class PROMETMainModule(MainModule):
         return network_output.squeeze()
     
     def get_output_for_inference(self, network_output):
+        if self.loss_name == 'BCELossModule':
+            return torch.sigmoid(network_output.squeeze())
         return network_output.squeeze()          
