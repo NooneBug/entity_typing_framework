@@ -2,7 +2,8 @@ from typing import Any
 from transformers import AutoModel, AutoModelForMaskedLM, BartForConditionalGeneration
 from pytorch_lightning.core.lightning import LightningModule
 from transformers import PfeifferConfig, HoulsbyConfig
-from torch.nn import LSTM, Dropout
+from torch.nn import LSTM, Dropout, Sigmoid, ReLU, Dropout, Softmax, GeLu
+
 
 class BaseBERTLikeEncoder(LightningModule):
     '''
@@ -543,12 +544,27 @@ class BARTEncoder(BERTEncoder):
         mlm_output = self.encoder(batched_tokenized_sentence, batched_attn_masks)
 
 class PROMETBERTEncoder(BERTEncoder):
-    def __init__(self, mask_token_id, bertlike_model_name: str = 'bert-base-uncased', embedding_dropout=None, **kwargs) -> None:
+    def __init__(self, mask_token_id, bertlike_model_name: str = 'bert-base-uncased', embedding_dropout=None, activation_name='none', **kwargs) -> None:
         super().__init__(bertlike_model_name, is_mlm = False, **kwargs)
         self.mask_token_id = mask_token_id
 
         if embedding_dropout:
             self.dropout = Dropout(embedding_dropout)
+        else:
+            self.dropout = None
+
+        if activation_name == 'relu':
+            self.activation = ReLU()
+        elif activation_name == 'sigmoid':
+            self.activation = Sigmoid()
+        elif activation_name == 'softmax':
+            self.activation = Softmax(dim=1)
+        elif activation_name == 'gelu':
+            self.activation = GeLu()
+        elif activation_name == 'none':
+            self.activation = None
+        else:
+            raise Exception('An unknown name (\'{}\')is given for activation, check the yaml or implement an activation that correspond to that name'.format(activation_name))
     
     def forward(self, batched_tokenized_sentence, batched_attn_masks):
 
@@ -570,13 +586,28 @@ class PROMETBERTEncoder(BERTEncoder):
         return score
 
 class PROMETAdapterBERTEncoder(AdapterBERTEncoder):
-    def __init__(self, mask_token_id, bertlike_model_name: str = 'bert-base-uncased', embedding_dropout=None, **kwargs) -> None:
+    def __init__(self, mask_token_id, bertlike_model_name: str = 'bert-base-uncased', embedding_dropout=None, activation_name='none', **kwargs) -> None:
         super().__init__(bertlike_model_name, is_mlm = False, **kwargs)
         self.mask_token_id = mask_token_id
 
         if embedding_dropout:
             self.dropout = Dropout(embedding_dropout)
-    
+        else:
+            self.dropout = None
+
+        if activation_name == 'relu':
+            self.activation = ReLU()
+        elif activation_name == 'sigmoid':
+            self.activation = Sigmoid()
+        elif activation_name == 'softmax':
+            self.activation = Softmax(dim=1)
+        elif activation_name == 'gelu':
+            self.activation = GeLu()
+        elif activation_name == 'none':
+            self.activation = None
+        else:
+            raise Exception('An unknown name (\'{}\')is given for activation, check the yaml or implement an activation that correspond to that name'.format(activation_name))
+        
     def forward(self, batched_tokenized_sentence, batched_attn_masks):
 
         batched_tokenized_sentence = batched_tokenized_sentence.to(torch.int32)
