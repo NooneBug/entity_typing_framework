@@ -39,10 +39,7 @@ class BCELossModule(LossModule):
         super().__init__(type2id, loss_params)
         name = loss_params.pop('name')
         if 'pos_weight' in loss_params:
-            if type(loss_params['pos_weight']) == int or type(loss_params['pos_weight']) == float:
-                loss_params['pos_weight'] = torch.tensor([loss_params['pos_weight']] * len(type2id))
-            else:
-                print('Invalid pos_weight input, try with a number')
+            loss_params['pos_weight'] = torch.tensor([float(loss_params['pos_weight'])] * len(type2id))
         self.loss = IMPLEMENTED_CLASSES_LVL1[name](**loss_params)
     
     def compute_loss(self, encoded_input, type_representation):

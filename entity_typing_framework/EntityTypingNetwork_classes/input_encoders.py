@@ -2,7 +2,7 @@ from typing import Any
 from transformers import AutoModel, AutoModelForMaskedLM, BartForConditionalGeneration
 from pytorch_lightning.core.lightning import LightningModule
 from transformers import PfeifferConfig, HoulsbyConfig
-from torch.nn import LSTM, Dropout, Sigmoid, ReLU, Dropout, Softmax, GeLu
+from torch.nn import LSTM, Dropout, Sigmoid, ReLU, Dropout, Softmax, GELU
 
 
 class BaseBERTLikeEncoder(LightningModule):
@@ -544,12 +544,13 @@ class BARTEncoder(BERTEncoder):
         mlm_output = self.encoder(batched_tokenized_sentence, batched_attn_masks)
 
 class PROMETBERTEncoder(BERTEncoder):
-    def __init__(self, mask_token_id, bertlike_model_name: str = 'bert-base-uncased', embedding_dropout=None, activation_name='none', **kwargs) -> None:
-        super().__init__(bertlike_model_name, is_mlm = False, **kwargs)
+    def __init__(self, mask_token_id, bertlike_model_name: str = 'bert-base-uncased', embedding_dropout=None, activation_name='none', 
+                 is_mlm=False, is_bart=False, **kwargs) -> None:
+        super().__init__(bertlike_model_name, is_mlm = is_mlm, is_bart=is_bart,**kwargs)
         self.mask_token_id = mask_token_id
 
         if embedding_dropout:
-            self.dropout = Dropout(embedding_dropout)
+            self.dropout = Dropout(float(embedding_dropout))
         else:
             self.dropout = None
 
@@ -560,7 +561,7 @@ class PROMETBERTEncoder(BERTEncoder):
         elif activation_name == 'softmax':
             self.activation = Softmax(dim=1)
         elif activation_name == 'gelu':
-            self.activation = GeLu()
+            self.activation = GELU()
         elif activation_name == 'none':
             self.activation = None
         else:
@@ -580,18 +581,22 @@ class PROMETBERTEncoder(BERTEncoder):
         masked_ids = masked_ids.repeat(1, 1, input_shape[2]).reshape(input_shape[0], 1, input_shape[2])
         score = torch.gather(mlm_output, 1, masked_ids) # batch x 1 x encoder_dim
 
+        if self.activation:
+            score = self.activation(score)
+
         if self.dropout:
             score = self.dropout(score)
 
         return score
 
 class PROMETAdapterBERTEncoder(AdapterBERTEncoder):
-    def __init__(self, mask_token_id, bertlike_model_name: str = 'bert-base-uncased', embedding_dropout=None, activation_name='none', **kwargs) -> None:
-        super().__init__(bertlike_model_name, is_mlm = False, **kwargs)
+    def __init__(self, mask_token_id, bertlike_model_name: str = 'bert-base-uncased', embedding_dropout=None, activation_name='none', 
+                 is_mlm = False, is_bart=False,**kwargs) -> None:
+        super().__init__(bertlike_model_name, is_mlm=is_mlm, is_bart=is_bart,**kwargs)
         self.mask_token_id = mask_token_id
 
         if embedding_dropout:
-            self.dropout = Dropout(embedding_dropout)
+            self.dropout = Dropout(float(embedding_dropout))
         else:
             self.dropout = None
 
@@ -602,7 +607,7 @@ class PROMETAdapterBERTEncoder(AdapterBERTEncoder):
         elif activation_name == 'softmax':
             self.activation = Softmax(dim=1)
         elif activation_name == 'gelu':
-            self.activation = GeLu()
+            self.activation = GELU()
         elif activation_name == 'none':
             self.activation = None
         else:
@@ -622,7 +627,14 @@ class PROMETAdapterBERTEncoder(AdapterBERTEncoder):
         masked_ids = masked_ids.repeat(1, 1, input_shape[2]).reshape(input_shape[0], 1, input_shape[2])
         score = torch.gather(mlm_output, 1, masked_ids) # batch x 1 x encoder_dim
 
+        if self.activation:
+            score = self.activation(score)
+            
         if self.dropout:
             score = self.dropout(score)
 
         return score
+    
+class PROMETBARTEncoder(PROMETBERTEncoder):
+    def __init__(self, mask_token_id, bertlike_model_name: str = 'facebook/bart-base', embedding_dropout=None, activation_name='none', is_mlm=False, is_bart=True, **kwargs) -> None:
+        super().__init__(mask_token_id, bertlike_model_name, embedding_dropout, activation_name, is_mlm, is_bart, **kwargs)
