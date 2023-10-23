@@ -559,6 +559,13 @@ class IncrementalKENNMultilossMainModule(KENNMultilossMainModule, IncrementalMai
         # return prekenn and postkenn output (same as returning the output as is...)
         return torch.concat(network_output[0], dim=1), torch.concat(network_output[1], dim=1)
 
+class IncrementalBoxKENNMultilossMainModule(IncrementalKENNMultilossMainModule):
+    # NOTE: depth-first left-to-right MRO, do not change inheritance order!
+    
+    def get_output_for_inference(self, network_output):
+        # network_output is logprob
+        return torch.exp(network_output[1][0]), torch.exp(network_output[1][1])
+
 class BoxEmbeddingMainModule(MainModule):
     def get_output_for_inference(self, network_output):
         return torch.exp(network_output[1])
@@ -582,14 +589,11 @@ class IncrementalBoxEmbeddingMainModule(BoxEmbeddingMainModule, IncrementalMainM
         return torch.concat(network_output, dim=1)
 
 class BoxEmbeddingMainModuleForOpt(BoxEmbeddingMainModule):
-    # def test_step(self, batch, batch_step):
-    #     pass
 
     def on_fit_end(self) -> None:
         with open('opt_losses.txt', 'a') as out:
             out.write(f'{self.trainer.checkpoint_callback.best_model_score.item()}\n')
 
-# TODO: tmp code... a bit duplicated...
 class CrossDatasetMainModule(MainModule):
     # NOTE: depth-first left-to-right MRO, do not change inheritance order!
     
@@ -601,7 +605,7 @@ class CrossDatasetMainModule(MainModule):
         # # test
         # self.test_metric_manager = MetricManager(num_classes=self.type_number, device=self.device, prefix='test', type2id=self.type2id)
         # test per type
-        self.val_per_type_metric_manager = MetricManagerForIncrementalTypes(self.type_number, device=self.device, prefix='val')
+        # self.val_per_type_metric_manager = MetricManagerForIncrementalTypes(self.type_number, device=self.device, prefix='val')
         self.test_per_type_metric_manager = MetricManagerForIncrementalTypes(self.type_number, device=self.device, prefix='test')
 
 
@@ -680,7 +684,6 @@ class CrossDatasetMainModule(MainModule):
         self.logger_module.log_all_metrics(metrics)
         self.logger_module.log_all()
 
-# TODO: not using KENN inheritance...
 class CrossDatasetKENNMultilossMainModule(CrossDatasetMainModule):
     
     def get_output_for_inference(self, network_output):

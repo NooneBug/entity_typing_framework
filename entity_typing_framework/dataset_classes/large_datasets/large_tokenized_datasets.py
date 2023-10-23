@@ -8,7 +8,6 @@ from tqdm import tqdm
 
 class SliceManager():
   
-  # TODO: pass partition_name to GeneralTokenizedDataset
   def __init__(self, partition_name, slice_dirpath, slice_dimension, n_examples):
     self.slice_dimension = slice_dimension
     self.slice_dirpath = slice_dirpath

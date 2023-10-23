@@ -1,7 +1,7 @@
 from entity_typing_framework.EntityTypingNetwork_classes.KENN_networks.kenn_network import KENNClassifier, KENNClassifierForIncrementalTraining, KENNClassifierForIncrementalTrainingOntonotes, KENNClassifierForCrossDatasetTraining
 from entity_typing_framework.EntityTypingNetwork_classes.L2AWE_modules.L2AWE_projector import L2AWEClassifierForCrossDatasetTraining
 # from entity_typing_framework.EntityTypingNetwork_classes.NFETC_modules.nfetc_classifier import NFETCClassifier
-from entity_typing_framework.EntityTypingNetwork_classes.box_embeddings_kenn_modules.box_embeddings_kenn import BoxEmbeddingKENNProjector#, BoxEmbeddingKENNProjectorForIncrementalTraining
+from entity_typing_framework.EntityTypingNetwork_classes.box_embeddings_kenn_modules.box_embeddings_kenn import BoxEmbeddingKENNProjector, BoxEmbeddingKENNProjectorForIncrementalTraining
 from entity_typing_framework.EntityTypingNetwork_classes.box_embeddings_modules.box_embedding_projector import BoxEmbeddingProjector, BoxEmbeddingIncrementalProjector
 from entity_typing_framework.EntityTypingNetwork_classes.box_embeddings_modules.box_embedding_projector_fixed import BoxEmbeddingProjectorFixed, BoxEmbeddingProjectorFixedConstrained
 from entity_typing_framework.EntityTypingNetwork_classes.box_embeddings_modules.vector_projector import VectorEmbeddingIncrementalProjector, VectorEmbeddingProjector
@@ -32,7 +32,7 @@ IMPLEMENTED_CLASSES_LVL1 = {
     'BoxEmbeddingIncrementalProjector' : BoxEmbeddingIncrementalProjector,
     'VectorEmbeddingIncrementalProjector' : VectorEmbeddingIncrementalProjector,
     'BoxEmbeddingKENNProjector' : BoxEmbeddingKENNProjector,
-    # 'BoxEmbeddingKENNProjectorForIncrementalTraining' : BoxEmbeddingKENNProjectorForIncrementalTraining,
+    'BoxEmbeddingKENNProjectorForIncrementalTraining' : BoxEmbeddingKENNProjectorForIncrementalTraining,
     'L2AWEClassifierForCrossDatasetTraining' : L2AWEClassifierForCrossDatasetTraining,
     'Type2VecProjector' : Type2VecProjector,
     # 'NFETCClassifier' : NFETCClassifier,

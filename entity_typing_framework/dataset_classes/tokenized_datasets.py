@@ -26,15 +26,8 @@ class GeneralTokenizedDataset(Dataset):
         self.sentences = self.extract_sentences_from_dataset(dataset)
         self.processed_sentences = [self.create_sentence(s) for s in self.sentences]
         self.max_len, self.avg_len = self.compute_max_length()
-        # self.max_len, self.avg_len = 52, 26.4
 
         self.tokenized_data = self.tokenize(self.sentences, self.processed_sentences, self.dataset.labels) # è un dict, valutare se si vuole srotolare in variabili
-        
-        
-
-        
-        # self.tokenized_types = self.tokenize_types(dataset) # TODO: never used, remove?
-        # self.one_hot_types = self.types2onehot(num_types = len(self.type2id), types = self.tokenized_types)
     
     def types2onehot(self, num_types, types):
         '''
@@ -55,7 +48,7 @@ class GeneralTokenizedDataset(Dataset):
             one_hot[id, t] = 1
         return one_hot
     
-    # TODO: modifica documentazione
+    # TODO: modify documentation
     def tokenize_types(self, types):
         '''
         tokenize alphanumerical types using ids in :code:`type2id`
@@ -196,16 +189,6 @@ class ELMoTokenizedDataset(GeneralTokenizedDataset):
             'mention_mask' : mention_mask
         }
         return input_ids
-
-    # def tokenize_sentences(self, max_len):
-    #     # create a fake sentence to force the tokenizer pad the sentence to tokenize
-    #     # assuming to use allennlp.modules.elmo.batch_to_ids
-    #     tokenized_sentences = []
-    #     fake_s = ['a' for _ in range(max_len)]
-    #     for _ in tqdm(range(len(self.sentences)), desc=f'tokenize sentences with max_lenght: {max_len}'):
-    #         s = self.sentences.pop(0)
-    #         tokenized_sentences.append(self.tokenizer([s, fake_s])[0][:max_len,:])
-    #     return torch.stack(tokenized_sentences)
 
     def tokenize_single_sentence(self, sentence):
         # assuming to use allennlp.modules.elmo.batch_to_ids
@@ -363,7 +346,6 @@ class BaseBERTTokenizedDataset(GeneralTokenizedDataset):
             return ' '.join(string) 
    
     def tokenize_sentences(self, processed_sentences, **kwargs):
-    # def tokenize_sentences(self, sentences, max_len):
         tokenized_sentences = self.tokenizer(processed_sentences, return_tensors='pt', max_length = self.max_len, padding = 'max_length', truncation=True)
         tokenized_sentences = {
             'input_ids' : tokenized_sentences['input_ids'].to(torch.int32),

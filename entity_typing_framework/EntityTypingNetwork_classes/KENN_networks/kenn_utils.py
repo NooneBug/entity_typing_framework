@@ -30,7 +30,8 @@ def create_tree(labels, label2pred = False):
 
 ### KENN CONSTRAINTS ###
 # mode in ['bottom_up','top_down','hybrid','hybrid_in','hybrid_out','bottom_up_skip', 'top_down_skip']
-def generate_constraints(types_list, mode, filepath = None, weight='_'):
+def generate_constraints(types_list, mode, filepath = None, learnable_clause_weight = True, clause_weight='_'):
+    weight = '_' if learnable_clause_weight else clause_weight
     # create ontology tree
     tree = create_tree(types_list, label2pred = True)
     # generate predicate list
@@ -76,7 +77,8 @@ def generate_constraints(types_list, mode, filepath = None, weight='_'):
 
     return save_kb(filepath, kb)
 
-def generate_constraints_incremental(all_types, new_types, filepath = None, weight='_', mode='top_down'):
+def generate_constraints_incremental(all_types, new_types, filepath = None, learnable_clause_weight = True, clause_weight='_', mode='top_down'):
+    weight = '_' if learnable_clause_weight else clause_weight
     # create ontology tree from all_types
     tree = create_tree(all_types, label2pred = True)
     # create specialization clauses
@@ -109,25 +111,6 @@ def generate_constraints_incremental(all_types, new_types, filepath = None, weig
 
 def label2pred(t):
     return f'P{t}'
-
-# def generate_constraints_cross_dataset(all_types, new_types, filepath = None, weight='_', tgt2src={}):
-#     # create ontology tree from all_types
-#     types_src = list(tgt2src.values())
-#     # create cross dataset clauses
-#     direct_clauses = [f'{weight}:{label2pred(t_src)},{label2pred(t_dst)}' for t_dst, t_src in tgt2src.items() if t_dst]
-#     # TODO: add trasversal (with tgt2src_clause parameter it would replace the line above)
-#     new_types_unmapped = list(set(new_types) - set(tgt2src.keys()))
-#     negative_clauses = [ f'{weight}:n{label2pred(t_src)},n{label2pred(t_dst)}' for t_src in types_src for t_dst in new_types_unmapped]
-#     # generate predicate list
-#     # TODO: check order
-#     predicates = generate_predicates(all_types)
-#     # print number of clauses
-#     clauses = direct_clauses + negative_clauses
-#     print(clauses.count('\n'), 'cross-dataset clauses created')
-#     # create kb
-#     kb = predicates + '\n\n' + '\n'.join(clauses) + '\n'
-
-#     return save_kb(filepath, kb)
 
 def generate_constraints_cross_dataset(all_types, new_types, filepath = None, weight='_', tgt2src={}):
     # create ontology tree from all_types
