@@ -275,24 +275,34 @@ class HierarchicLossModule(LossModule):
         fathers = []
 
         for t in type2id.keys():
-            if t.split('/other')[-1] == '':
-                fathers.append(t.split('/other')[0])
+            # if t.split('/other')[-1] == '':
+            #     fathers.append(t.split('/other')[0])
+            # else:
+            divided_types = t.split('/')
+            if len(divided_types) > 2:
+                fathers.append(divided_types[1])
 
+        fathers = list(set(fathers))
         for f in fathers:
             for type2 in type2id.keys():
-                if f + '/other' != type2 and f + '/' in type2:
-                    father_son_dict[type2id[f + '/other']].append(type2id[type2])
+                # if f + '/other' != type2 and f + '/' in type2:
+                #     father_son_dict[type2id[f + '/other']].append(type2id[type2])
+                if f + '/' in type2:
+                    father_son_dict['/' + f].append(type2)
         
         self.father_son_couples = []
 
         for father, sons in father_son_dict.items():
-            for s in sons:
-                self.father_son_couples.append((father, s))
+            if father in type2id:
+                for s in sons:
+                    self.father_son_couples.append((type2id[father], type2id[s]))
         
         self.siblings_couples = []
         for sons in father_son_dict.values():
             if len(sons) > 1:
+                sons = [type2id[s] for s in sons]
                 self.siblings_couples.extend(list(combinations(sons, 2)))
+        x=0
     
     def compute_loss(self, verbalizer_matrix):
         incl_loss_value = self.incl_loss(verbalizer_matrix)

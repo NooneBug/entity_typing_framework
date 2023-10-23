@@ -5,7 +5,7 @@ from entity_typing_framework.EntityTypingNetwork_classes.box_embeddings_kenn_mod
 from entity_typing_framework.EntityTypingNetwork_classes.box_embeddings_modules.box_embedding_projector import BoxEmbeddingProjector, BoxEmbeddingIncrementalProjector
 from entity_typing_framework.EntityTypingNetwork_classes.box_embeddings_modules.box_embedding_projector_fixed import BoxEmbeddingProjectorFixed, BoxEmbeddingProjectorFixedConstrained
 from entity_typing_framework.EntityTypingNetwork_classes.box_embeddings_modules.vector_projector import VectorEmbeddingIncrementalProjector, VectorEmbeddingProjector
-from entity_typing_framework.EntityTypingNetwork_classes.input_encoders import BERTEncoder, DistilBERTEncoder, AdapterDistilBERTEncoder, AdapterBERTEncoder, ELMoEncoder, GloVeEncoder, LSTMGloVeEncoder, MLMBERTEncoder, BARTEncoder, PROMETBERTEncoder, PROMETAdapterBERTEncoder, PROMETBARTEncoder
+from entity_typing_framework.EntityTypingNetwork_classes.input_encoders import BERTEncoder, DistilBERTEncoder, AdapterDistilBERTEncoder, AdapterBERTEncoder, ELMoEncoder, GloVeEncoder, LSTMGloVeEncoder, MLMBERTEncoder, BARTEncoder, PROMETBERTEncoder, PROMETAdapterBERTEncoder, PROMETBARTEncoder, PROMETAdapterBARTEncoder
 from entity_typing_framework.EntityTypingNetwork_classes.projectors import ALIGNIEProjector, Classifier, ClassifierForIncrementalTraining, ClassifierForCrossDatasetTraining
 from entity_typing_framework.EntityTypingNetwork_classes.type2vec_modules.type2vec_projector import Type2VecProjector
 from entity_typing_framework.EntityTypingNetwork_classes.type_encoders import OneHotTypeEncoder
@@ -50,5 +50,6 @@ IMPLEMENTED_CLASSES_LVL1 = {
     'PROMETBERTEncoder': PROMETBERTEncoder,
     'BCEWithLogitsLoss': BCEWithLogitsLoss,
     'PROMETAdapterBERTEncoder': PROMETAdapterBERTEncoder,
-    'PROMETBARTEncoder': PROMETBARTEncoder
+    'PROMETBARTEncoder': PROMETBARTEncoder,
+    'PROMETAdapterBARTEncoder': PROMETAdapterBARTEncoder
     }

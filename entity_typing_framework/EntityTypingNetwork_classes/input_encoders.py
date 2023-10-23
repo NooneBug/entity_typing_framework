@@ -638,3 +638,7 @@ class PROMETAdapterBERTEncoder(AdapterBERTEncoder):
 class PROMETBARTEncoder(PROMETBERTEncoder):
     def __init__(self, mask_token_id, bertlike_model_name: str = 'facebook/bart-base', embedding_dropout=None, activation_name='none', is_mlm=False, is_bart=True, **kwargs) -> None:
         super().__init__(mask_token_id, bertlike_model_name, embedding_dropout, activation_name, is_mlm, is_bart, **kwargs)
+
+class PROMETAdapterBARTEncoder(PROMETAdapterBERTEncoder):
+    def __init__(self, mask_token_id, bertlike_model_name: str = 'facebook/bart-base', embedding_dropout=None, activation_name='none', is_mlm=False, is_bart=True, **kwargs) -> None:
+        super().__init__(mask_token_id, bertlike_model_name, embedding_dropout, activation_name, is_mlm, is_bart, **kwargs)
